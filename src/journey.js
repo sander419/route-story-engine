@@ -44,7 +44,7 @@
     for (let i = 1; i < st.length; i++) if (st[i].s <= st[i - 1].s) st[i].s = Math.min(route.total, st[i - 1].s + 1);
     return {
       route,
-      journey: { stops: st, note: data.note, introLine: data.introLine, summary: data.summary },
+      journey: { stops: st, note: data.note, introLine: data.introLine, summary: data.summary && { ...data.summary, cells: (data.summary.cells || []).map(([l, v]) => [l, l === 'ОСТАНОВОК' ? String(st.length) : v]) } },
       title: data.title, subtitle: data.subtitle,
     };
   }
