@@ -167,11 +167,13 @@
     $('jdurBox').hidden = m === 'track';
     t = 0; rebuild();
   }
+  $('export2').onclick = () => $('export').click();
   function refreshModes() {
     const hasR = !!state.route, hasJ = !!state.journeyData;
     $('mode').hidden = !(hasJ);
     [...$('mode').children].forEach((b) => { b.disabled = (b.dataset.v === 'track' && !hasR) || (b.dataset.v === 'both' && !(hasR && hasJ)); });
     ['s2', 's3', 's4'].forEach((id) => $(id).classList.remove('off'));
+    $('export2').disabled = false;
     $('empty').style.display = 'none'; cv.style.display = 'block';
   }
   [...$('mode').children].forEach((b) => (b.onclick = () => setMode(b.dataset.v)));
@@ -234,7 +236,7 @@
     if (abort) { abort.abort(); return; }
     abort = new AbortController();
     play(false);
-    btn.textContent = 'Отменить';
+    btn.textContent = 'Отменить'; $('export2').textContent = 'Отмена';
     $('prog').hidden = false; $('result').hidden = true; showErr('');
     const [W, H] = SIZES[state.fmt][$('res').value];
     const o = { ...state.o };
@@ -257,7 +259,7 @@
     } catch (e) {
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));
     } finally {
-      abort = null; btn.textContent = 'Экспортировать видео'; $('prog').hidden = true;
+      abort = null; btn.textContent = 'Экспортировать видео'; $('export2').textContent = 'Экспорт'; $('prog').hidden = true;
     }
   };
 
