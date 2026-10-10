@@ -10,6 +10,7 @@ p.on('pageerror', e => console.log('pageerror:', e.message));
 await p.goto('http://localhost:4180/');
 if (gpx.includes('samarkand')) await p.click('#demo'); else await p.setInputFiles('#file', gpx);
 await p.waitForFunction(() => window.__app.scene);
+if (gpx.includes('samarkand')) await p.waitForFunction(() => window.__app.state.o.places.length >= 3, null, { timeout: 100000 }).catch(() => console.log('подписи мест не нашлись'));
 await p.evaluate(([s,d]) => { const a=window.__app; a.state.styleId=s; a.state.o.duration=+d; }, [style, dur]);
 await p.click(`#fmt button[data-v="${fmt}"]`);
 await p.selectOption('#res', res);

@@ -82,8 +82,8 @@
   };
 
   const I18N = {
-    ru: { dist: 'ДИСТАНЦИЯ', km: 'км', speed: 'СКОРОСТЬ', kmh: 'км/ч', ele: 'ВЫСОТА', m: 'м', day: 'ДЕНЬ', start: 'СТАРТ', finish: 'ФИНИШ', total: 'ВСЕГО', gain: 'НАБОР ВЫСОТЫ', avg: 'СРЕДНЯЯ', days: 'ДНЕЙ', top: 'ВЫСШАЯ ТОЧКА', left: 'осталось', rem: 'ОСТАЛОСЬ', locale: 'ru-RU', dayWord: (n) => (n % 10 === 1 && n % 100 !== 11 ? 'день' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'дня' : 'дней') },
-    en: { dist: 'DISTANCE', km: 'km', speed: 'SPEED', kmh: 'km/h', ele: 'ELEVATION', m: 'm', day: 'DAY', start: 'START', finish: 'FINISH', total: 'TOTAL', gain: 'ELEVATION GAIN', avg: 'AVG SPEED', days: 'DAYS', top: 'HIGHEST POINT', left: 'left', rem: 'REMAINING', locale: 'en-GB', dayWord: (n) => (n === 1 ? 'day' : 'days') },
+    ru: { dist: 'ДИСТАНЦИЯ', km: 'км', speed: 'СКОРОСТЬ', kmh: 'км/ч', ele: 'ВЫСОТА', m: 'м', day: 'ДЕНЬ', start: 'СТАРТ', finish: 'ФИНИШ', total: 'ВСЕГО', gain: 'НАБОР ВЫСОТЫ', avg: 'СРЕДНЯЯ', days: 'ДНЕЙ', top: 'ВЫСШАЯ ТОЧКА', left: 'осталось', rem: 'ОСТАЛОСЬ', when: 'КОГДА', countries: 'СТРАН', passed: 'ПРОЙДЕНО', byAuthor: 'по словам автора', stops: 'ОСТАНОВОК', approx: 'примерное место', locale: 'ru-RU', dayWord: (n) => (n % 10 === 1 && n % 100 !== 11 ? 'день' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'дня' : 'дней') },
+    en: { dist: 'DISTANCE', km: 'km', speed: 'SPEED', kmh: 'km/h', ele: 'ELEVATION', m: 'm', day: 'DAY', start: 'START', finish: 'FINISH', total: 'TOTAL', gain: 'ELEVATION GAIN', avg: 'AVG SPEED', days: 'DAYS', top: 'HIGHEST POINT', left: 'left', rem: 'REMAINING', when: 'WHEN', countries: 'COUNTRIES', passed: 'COVERED', byAuthor: 'per the author', stops: 'STOPS', approx: 'approximate place', locale: 'en-GB', dayWord: (n) => (n === 1 ? 'day' : 'days') },
   };
 
   const fmt = (v, d = 0, loc = 'ru-RU') => v.toLocaleString(loc, { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -107,8 +107,10 @@
     const portrait = H > W;
     const L = I18N[o.lang] || I18N.ru;
     const D = o.duration;
-    const t0 = Math.min(2.2, D * 0.2);          // конец заставки
-    const t1 = D - Math.min(4, D * 0.28);        // конец пути, начало итога
+    const J = o.journey || null;                 // режим «весь путь»: остановки вместо одного трека
+    let t0 = Math.min(2.2, D * 0.2);             // конец заставки
+    let t1 = D - Math.min(4, D * 0.28);          // конец пути, начало итога
+    if (J) { t0 = Math.min(2.2, D * 0.14); t1 = D - (J.noOutro ? 1.0 : Math.min(4.5, D * 0.15)); }
     const total = route.total;
 
     // положение «якоря» камеры на экране и рамка для общего плана
@@ -119,17 +121,51 @@
     const zFol = clamp(zFit + 1.7, zFit, 15);
     const cx0 = (route.bx0 + route.bx1) / 2, cy0 = (route.by0 + route.by1) / 2;
 
-    const prog = (t) => { const x = clamp((t - t0) / (t1 - t0), 0, 1); return lerp(x, smooth(x), 0.45); };
+    // режим «весь путь»: на каждой остановке пауза, между ними переезд (чем дальше — тем дольше)
+    const jt = { arr: [], leave: [], z: [] };
+    const jpos = [];
+    const kmShown = [];
+    if (J) {
+      const st = J.stops, n = st.length;
+      const legW = [];
+      for (let i = 1; i < n; i++) legW.push(0.8 + Math.sqrt(Math.max(0, st[i].s - st[i - 1].s) / 1e6) * 0.5);
+      const dw = 1.55, sumW = legW.reduce((a, b) => a + b, 0) + n * dw, sc = (t1 - t0) / sumW;
+      let c = t0;
+      for (let i = 0; i < n; i++) { if (i > 0) c += legW[i - 1] * sc; jt.arr.push(c); c += dw * sc; jt.leave.push(c); }
+      st.forEach((q) => jpos.push(at(route, q.s)));
+      st.forEach((q, i) => {
+        let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        for (let j = Math.max(0, i - 1); j <= Math.min(n - 1, i + 1); j++) { x0 = Math.min(x0, jpos[j].x); x1 = Math.max(x1, jpos[j].x); y0 = Math.min(y0, jpos[j].y); y1 = Math.max(y1, jpos[j].y); }
+        const z = Math.log2(Math.min(fitW / Math.max(x1 - x0, 1e-7), fitH / Math.max(y1 - y0, 1e-7)));
+        jt.z.push(clamp(z - 0.15, 3.6, 8.2));
+      });
+      let last = null;
+      st.forEach((q) => { if (q.km != null) last = q.km; kmShown.push(last); });
+    }
+    const jSeg = (t) => {                         // где мы: на остановке i или в пути между i и i+1
+      const n = jt.arr.length;
+      if (t <= jt.arr[0]) return { i: 0, leg: false, u: 0 };
+      for (let i = 0; i < n - 1; i++) {
+        if (t < jt.arr[i + 1]) {
+          if (t <= jt.leave[i]) return { i, leg: false, u: 0 };
+          return { i, leg: true, u: easeIO((t - jt.leave[i]) / (jt.arr[i + 1] - jt.leave[i])) };
+        }
+      }
+      return { i: n - 1, leg: false, u: 0 };
+    };
+    const jS = (t) => { const g = jSeg(t); return g.leg ? lerp(J.stops[g.i].s, J.stops[g.i + 1].s, g.u) : J.stops[g.i].s; };
+    const jZ = (t) => { const g = jSeg(t); return g.leg ? lerp(jt.z[g.i], jt.z[g.i + 1], g.u) : jt.z[g.i]; };
+    const prog = (t) => { if (J) return jS(t) / total; const x = clamp((t - t0) / (t1 - t0), 0, 1); return lerp(x, smooth(x), 0.45); };
     const tOfProg = (p) => { let a = t0, b = t1; for (let i = 0; i < 24; i++) { const m = (a + b) / 2; if (prog(m) < p) a = m; else b = m; } return a; };
 
     function cam(t) {
       const p = prog(t), s = p * total;
-      let fx = 0, fy = 0; const n = 7, w = total * 0.012;
+      let fx = 0, fy = 0; const n = 7, w = total * (J ? 0.004 : 0.012);
       for (let j = 0; j < n; j++) { const q = at(route, s - j * w); fx += q.x; fy += q.y; }
       fx /= n; fy /= n;
       const a = easeIO(clamp((t - (t0 - 0.9)) / 2.0, 0, 1));
-      const b = easeIO(clamp((t - t1) / 2.4, 0, 1));
-      let z = lerp(zFit, zFol, a), cx = lerp(cx0, fx, a), cy = lerp(cy0, fy, a);
+      const b = J && J.noOutro ? 0 : easeIO(clamp((t - t1) / 2.4, 0, 1));
+      let z = lerp(zFit, J ? jZ(t) : zFol, a), cx = lerp(cx0, fx, a), cy = lerp(cy0, fy, a);
       z = lerp(z, zFit, b); cx = lerp(cx, cx0, b); cy = lerp(cy, cy0, b);
       return { z, cx, cy };
     }
@@ -154,7 +190,7 @@
 
     /* события-«вехи» */
     const events = [];
-    {
+    if (!J) {
       const km = total / 1000;
       const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
       const stp = steps.find((s) => km / s <= 5.5 && km / s >= 2) || steps.find((s) => km / s <= 6) || km;
@@ -238,7 +274,8 @@
       };
       path(route.n - 1);
       ctx.strokeStyle = S.ghost; ctx.lineWidth = S.ghostW * u;
-      if (S.ghostDash) ctx.setLineDash(S.ghostDash.map((d) => d * u)); ctx.stroke(); ctx.setLineDash([]);
+      const gd = J ? [10, 16] : S.ghostDash;
+      if (gd) ctx.setLineDash(gd.map((d) => d * u)); ctx.stroke(); ctx.setLineDash([]);
 
       const hx = sx(head.x), hy = sy(head.y);
       path(head.i); ctx.lineTo(hx, hy);
@@ -246,7 +283,7 @@
       const x0 = sx(route.X[0]), y0 = sy(route.Y[0]);
       const gr = ctx.createLinearGradient(x0, y0, Math.abs(hx - x0) + Math.abs(hy - y0) < 2 ? x0 + 1 : hx, hy);
       S.line.stops.forEach((col, i, a) => gr.addColorStop(i / (a.length - 1), col));
-      ctx.strokeStyle = gr; ctx.lineWidth = S.line.w * u; ctx.stroke();
+      ctx.strokeStyle = gr; ctx.lineWidth = S.line.w * u; if (J) ctx.setLineDash([34 * u, 22 * u]); ctx.stroke(); ctx.setLineDash([]);
       {
         const j = at(route, Math.max(0, s - total * 0.06)).i;
         ctx.beginPath(); ctx.moveTo(sx(route.X[j]), sy(route.Y[j]));
@@ -277,8 +314,18 @@
         const r = smooth(clamp((s - pl.s) / (total * 0.012), 0, 1));
         if (r > 0.01) label(pl.x, pl.y, '', pl.name, r);
       }
-      label(route.X[0], route.Y[0], L.start, o.startName, 1);
-      label(route.X[route.n - 1], route.Y[route.n - 1], L.finish, o.endName, smooth(clamp((p - 0.82) / 0.18, 0, 1)) * 0.85 + 0.15);
+      if (J) {
+        J.stops.forEach((q, i) => {
+          const x = sx(jpos[i].x), y = sy(jpos[i].y);
+          const seen = t >= jt.arr[i] - 0.05;
+          ctx.beginPath(); ctx.arc(x, y, (seen ? 11 : 8) * u, 0, 6.2832);
+          if (seen && q.precision !== 'region') { ctx.fillStyle = S.accent; ctx.fill(); ctx.lineWidth = 4 * u; ctx.strokeStyle = S.head; ctx.stroke(); }
+          else { ctx.fillStyle = seen ? S.panel : 'rgba(0,0,0,0)'; ctx.fill(); ctx.lineWidth = 4 * u; ctx.strokeStyle = seen ? S.accent : S.ghost; ctx.stroke(); }
+        });
+      } else {
+        label(route.X[0], route.Y[0], L.start, o.startName, 1);
+        label(route.X[route.n - 1], route.Y[route.n - 1], L.finish, o.endName, smooth(clamp((p - 0.82) / 0.18, 0, 1)) * 0.85 + 0.15);
+      }
 
       // голова маршрута
       const pulse = (t * 1.6) % 1;
@@ -301,6 +348,7 @@
       }
 
       overlay(ctx, t, p, head);
+      if (J && J.note) T(ctx, J.note, W / 2, H - (S.paper ? 54 : 26) * u - 30 * u, { size: 19, weight: 600, color: S.ink, align: 'center', alpha: 0.85, max: W / u - 120 });
       T(ctx, S.credit, W / 2, H - (S.paper ? 54 : 26) * u, { size: 17, weight: 500, color: S.dim, align: 'center', alpha: 0.75 });
       ctx.restore();
     }
@@ -328,13 +376,14 @@
       const mx = (portrait ? 64 : 100) * u;
       // верхний блок — название
       const intro = 1 - smooth(clamp((t - 0.9) / (t0 - 0.9), 0, 1));
-      const outro = smooth(clamp((t - (t1 + 0.9)) / 0.9, 0, 1));
+      const outro = J && J.noOutro ? 0 : smooth(clamp((t - (t1 + 0.9)) / 0.9, 0, 1));
       const topA = 1;
       if (o.title) {
         T(ctx, o.title.toUpperCase(), mx, (portrait ? 150 : 130) * u, { size: portrait ? 76 : 70, fam: S.fHead, weight: S.headW, ls: 2, max: (W / u) - (portrait ? 128 : 200), shadow: sh, alpha: topA * (1 - intro) });
         if (o.subtitle) T(ctx, o.subtitle.toUpperCase(), mx, (portrait ? 150 : 130) * u + 56 * u, { size: 30, weight: 600, color: S.accent, ls: 5, max: (W / u) - 160, shadow: sh, alpha: topA * (1 - intro) });
       }
 
+      if (J) { jOverlay(ctx, t, intro, outro, mx, sh); return; }
       // стат-панель
       const cells = [];
       if (route.speed && o.showSpeed) cells.push({ l: L.speed, v: fmt(head.speed, 0, L.locale), u: L.kmh });
@@ -442,6 +491,94 @@
           T(ctx, v, cxx, yy + h - 70 * u + (portrait ? 40 * u : 0), { size: 46, fam: S.fHead, weight: S.headW, align: 'center', max: colW / u - 20 });
         });
         if (o.startName && o.endName) T(ctx, `${o.startName}  →  ${o.endName}`.toUpperCase(), W / 2, yy + h - 28 * u, { size: 24, weight: 600, color: S.accent, align: 'center', ls: 4, max: w / u - 60 });
+        ctx.restore();
+      }
+    }
+
+    function wrapText(ctx, text, maxW, font, maxLines) {
+      ctx.save(); ctx.font = font;
+      const words = String(text).split(/\s+/); const lines = []; let cur = '';
+      for (const w of words) { const tt = cur ? cur + ' ' + w : w; if (ctx.measureText(tt).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tt; }
+      if (cur) lines.push(cur);
+      ctx.restore();
+      if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].replace(/[\s,.;:]*$/, '') + '…'; }
+      return lines;
+    }
+
+    function jOverlay(ctx, t, intro, outro, mx, sh) {
+      const st = J.stops, n = st.length, g = jSeg(t);
+      const panelA = (1 - intro) * (1 - outro);
+      const i = g.i, ca = smooth(clamp((t - jt.arr[i]) / 0.35, 0, 1)) * (1 - smooth(clamp((t - jt.leave[i]) / 0.3, 0, 1)));
+      const pw = W - 2 * mx, ph = 230 * u, py0 = portrait ? H - 330 * u - ph : H - 120 * u - ph;
+      // карточка остановки
+      if (ca > 0.01 && t >= jt.arr[0] && outro < 0.5) {
+        const q = st[i];
+        const cw = portrait ? pw : 720 * u, chh = portrait ? 380 * u : 470 * u;
+        const cx = portrait ? mx : W - mx - cw, cy = (portrait ? py0 - 28 * u - chh : H * 0.205) + (1 - ca) * 26 * u;
+        ctx.save(); ctx.globalAlpha = ca * (1 - outro);
+        ctx.fillStyle = S.panel; ctx.strokeStyle = S.accent; ctx.lineWidth = 3 * u;
+        rr(ctx, cx, cy, cw, chh, 28 * u); ctx.fill(); ctx.stroke();
+        T(ctx, (q.country + (q.precision === 'region' ? '  ·  ≈' : '')).toUpperCase(), cx + 40 * u, cy + 62 * u, { size: 26, weight: 600, color: S.accent, ls: 5, max: cw / u - 80 });
+        T(ctx, q.name, cx + 40 * u, cy + 150 * u, { size: portrait ? 84 : 76, fam: S.fHead, weight: S.headW, max: cw / u - 80 });
+        T(ctx, q.dateLabel, cx + 40 * u, cy + 200 * u, { size: 34, weight: 600, color: S.dim });
+        const font = `500 ${34 * u}px ${S.fBody}`;
+        wrapText(ctx, q.fact, cw - 80 * u, font, portrait ? 3 : 5).forEach((ln, k) => T(ctx, ln, cx + 40 * u, cy + 256 * u + k * 46 * u, { size: 34, weight: 500, fam: S.fBody }));
+        ctx.restore();
+      }
+      // нижняя панель: когда / страны / пройдено + лента остановок
+      ctx.save(); ctx.globalAlpha = panelA;
+      ctx.fillStyle = S.panel; ctx.strokeStyle = S.panelLine; ctx.lineWidth = 2 * u;
+      rr(ctx, mx, py0, pw, ph, 28 * u); ctx.fill(); ctx.stroke();
+      const dispI = g.leg && g.u > 0.5 ? g.i + 1 : g.i;
+      const seen = new Set(); for (let k = 0; k <= dispI; k++) seen.add(st[k].country);
+      const all = new Set(st.map((x) => x.country));
+      let km = kmShown[g.i];
+      if (g.leg && kmShown[g.i] != null && kmShown[g.i + 1] != null) km = lerp(kmShown[g.i], kmShown[g.i + 1], g.u);
+      else if (g.leg && kmShown[g.i] == null && kmShown[g.i + 1] != null) km = null;
+      const cells = [{ l: L.when, v: st[dispI].dateLabel, small: true }, { l: L.countries, v: seen.size + ' / ' + all.size }];
+      if (km != null) cells.push({ l: L.passed, v: fmt(km, 0, L.locale), u: L.km });
+      const colW = (pw - 80 * u) / cells.length;
+      cells.forEach((cl, k) => {
+        const x = mx + 40 * u + k * colW;
+        T(ctx, cl.l, x, py0 + 52 * u, { size: 22, weight: 600, color: S.dim, ls: 4 });
+        T(ctx, cl.v, x, py0 + 118 * u, { size: cl.small ? 40 : 66, fam: S.fHead, weight: S.headW, max: colW / u - 40 });
+        if (cl.u) { ctx.font = `${S.headW} ${66 * u}px ${S.fHead}`; const vw = ctx.measureText(cl.v).width; T(ctx, cl.u, x + vw + 12 * u, py0 + 118 * u, { size: 30, weight: 500, color: S.accent }); }
+      });
+      const bx0 = mx + 40 * u, bx1 = mx + pw - 40 * u, by = py0 + ph - 46 * u;
+      ctx.lineCap = 'round'; ctx.lineWidth = 6 * u; ctx.strokeStyle = S.panelLine;
+      ctx.beginPath(); ctx.moveTo(bx0, by); ctx.lineTo(bx1, by); ctx.stroke();
+      const f = clamp((g.i + (g.leg ? g.u : 0)) / Math.max(1, n - 1), 0, 1);
+      ctx.strokeStyle = S.accent; ctx.beginPath(); ctx.moveTo(bx0, by); ctx.lineTo(lerp(bx0, bx1, f), by); ctx.stroke();
+      st.forEach((q, k) => { ctx.beginPath(); ctx.arc(lerp(bx0, bx1, k / Math.max(1, n - 1)), by, 8 * u, 0, 6.2832); ctx.fillStyle = k <= g.i ? S.accent : S.panel; ctx.fill(); ctx.lineWidth = 3 * u; ctx.strokeStyle = k <= g.i ? S.head : S.panelLine; ctx.stroke(); });
+      ctx.restore();
+      // заставка
+      if (intro > 0.01) {
+        ctx.save(); ctx.globalAlpha = intro;
+        const sc = S.scrim.join(',');
+        ctx.fillStyle = `rgba(${sc},${S.paper ? 0.55 : 0.5})`; ctx.fillRect(0, 0, W, H);
+        const cy = portrait ? H * 0.42 : H * 0.46, sl = (1 - intro) * -30 * u;
+        T(ctx, (o.title || route.name).toUpperCase(), W / 2, cy + sl, { size: portrait ? 118 : 120, fam: S.fHead, weight: S.headW, align: 'center', ls: 4, max: (W / u) - 140, shadow: sh });
+        if (o.subtitle) T(ctx, o.subtitle.toUpperCase(), W / 2, cy + 72 * u + sl, { size: 36, weight: 600, color: S.accent, align: 'center', ls: 8, max: (W / u) - 160, shadow: sh });
+        if (J.introLine) T(ctx, J.introLine, W / 2, cy + 150 * u + sl, { size: 40, weight: 600, align: 'center', ls: 6, shadow: sh, max: (W / u) - 160 });
+        ctx.restore();
+      }
+      // итог пути
+      if (outro > 0.01 && J.summary) {
+        const sm = J.summary;
+        ctx.save(); ctx.globalAlpha = outro;
+        const w = Math.min(pw, 900 * u), h = (portrait ? 560 : 520) * u, x = W / 2 - w / 2;
+        const y = (portrait ? H * 0.66 - h / 2 : H * 0.5 - h / 2 + 20 * u) + (1 - outro) * 30 * u;
+        ctx.fillStyle = S.panel; ctx.strokeStyle = S.accent; ctx.lineWidth = 3 * u; rr(ctx, x, y, w, h, 32 * u); ctx.fill(); ctx.stroke();
+        T(ctx, (o.title || route.name).toUpperCase(), W / 2, y + 80 * u, { size: 44, fam: S.fHead, weight: S.headW, align: 'center', ls: 3, max: w / u - 80 });
+        T(ctx, L.passed, W / 2, y + 118 * u, { size: 24, weight: 600, color: S.dim, align: 'center', ls: 6 });
+        T(ctx, sm.big, W / 2, y + 255 * u, { size: portrait ? 150 : 140, fam: S.fHead, weight: S.headW, align: 'center', max: w / u - 80 });
+        T(ctx, sm.note, W / 2, y + 305 * u, { size: 24, weight: 600, color: S.accent, align: 'center', ls: 2, max: w / u - 80 });
+        const cs = sm.cells || [], colW = (w - 80 * u) / Math.max(1, cs.length);
+        cs.forEach(([l, v], k) => {
+          const cxx = x + 40 * u + colW * (k + 0.5);
+          T(ctx, l, cxx, y + h - 115 * u, { size: 20, weight: 600, color: S.dim, align: 'center', ls: 3 });
+          T(ctx, v, cxx, y + h - 55 * u, { size: 46, fam: S.fHead, weight: S.headW, align: 'center', max: colW / u - 20 });
+        });
         ctx.restore();
       }
     }

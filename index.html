@@ -26,6 +26,12 @@
         <span>GPX · GeoJSON · CSV (lat, lon, ele, time)</span>
       </label>
       <button class="ghost" id="demo">Попробовать на демо-треке</button>
+      <button class="ghost" id="wj">Весь путь: кругосветка @wahrider</button>
+      <div class="seg" id="mode" hidden>
+        <button data-v="track" class="on">Трек дня</button>
+        <button data-v="journey">Весь путь</button>
+        <button data-v="both">Путь + трек дня</button>
+      </div>
       <div class="info" id="info" hidden></div>
       <div class="err" id="err" hidden></div>
     </section>
@@ -43,6 +49,9 @@
         <label class="f">Старт<input id="startName" maxlength="32"></label>
         <label class="f">Финиш<input id="endName" maxlength="32"></label>
       </div>
+      <label class="f" id="jdurBox" hidden>Длина предыстории
+        <select id="jdur"><option value="6">Коротко — 6 мест (~20 сек)</option><option value="10">10 мест (~30 сек)</option><option value="99" selected>Все места (~40 сек)</option></select>
+      </label>
       <div class="two">
         <label class="f">Длина ролика
           <select id="duration"><option value="12">12 сек</option><option value="20" selected>20 сек</option><option value="30">30 сек</option><option value="45">45 сек</option></select>
@@ -87,6 +96,7 @@
 <script src="vendor/mp4-muxer.min.js"></script>
 <script src="src/route.js"></script>
 <script src="src/scene.js"></script>
+<script src="src/journey.js"></script>
 <script src="src/export.js"></script>
 <script src="src/ui.js"></script>
 </body>

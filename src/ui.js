@@ -5,7 +5,7 @@
   const { createScene, STYLES } = window.RS;
 
   const state = {
-    route: null, styleId: 'night', fmt: 'v',
+    route: null, journeyData: null, mode: 'track', styleId: 'night', fmt: 'v', jcount: 99,
     o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru', places: [] },
   };
   const touched = {};
@@ -62,6 +62,7 @@
   function loadText(text, filename) {
     showErr('');
     try {
+      if (text.trimStart().startsWith('{')) { const j = JSON.parse(text); if (Array.isArray(j.stops) && j.stops.length > 1 && j.stops[0].lat != null) { loadJourney(j); return; } }
       const parsed = parseAny(text, filename);
       const route = prepare(parsed, filename.replace(/\.[^.]+$/, ''));
       state.route = route;
@@ -78,9 +79,9 @@
       $('showSpeed').disabled = !route.speed; $('noSpeed').textContent = route.speed ? '' : '(в файле нет времени)';
       $('showEle').disabled = !route.ele; $('noEle').textContent = route.ele ? '' : '(в файле нет высоты)';
       state.o.showSpeed = !!route.speed && $('showSpeed').checked; state.o.showEle = !!route.ele && $('showEle').checked;
-      ['s2', 's3', 's4'].forEach((id) => $(id).classList.remove('off'));
-      $('empty').style.display = 'none'; cv.style.display = 'block';
-      t = 0; rebuild(); play(true);
+      refreshModes();
+      if (state.mode === 'journey') state.mode = 'both';
+      setMode(state.journeyData ? state.mode : 'track'); play(true);
       state.o.places = []; renderPlaces();
       geocode(route);
     } catch (e) { showErr(e.message || String(e)); }
@@ -146,13 +147,56 @@
     $('placesHint').hidden = state.o.places.length > 0;
   }
 
+  /* ---- сборка сцены: трек дня / весь путь / оба подряд ---- */
+  function buildScene(w, h) {
+    const o = { ...state.o };
+    const parts = [];
+    if (state.mode !== 'track' && state.journeyData) {
+      const jb = window.Journey.build(state.journeyData, state.jcount);
+      const jd = Math.max(12, Math.min(48, Math.round(jb.journey.stops.length * 2.4 + 5)));
+      parts.push(createScene(jb.route, state.styleId, { ...o, title: jb.title, subtitle: jb.subtitle, duration: jd, places: [], journey: { ...jb.journey, noOutro: state.mode === 'both' } }, w, h));
+    }
+    if (state.mode !== 'journey' && state.route) parts.push(createScene(state.route, state.styleId, o, w, h));
+    return parts.length > 1 ? window.Journey.composite(parts, w, h) : parts[0];
+  }
+  function ready() { return state.mode === 'journey' ? !!state.journeyData : state.mode === 'both' ? !!(state.journeyData && state.route) : !!state.route; }
+
+  function setMode(m) {
+    state.mode = m;
+    [...$('mode').children].forEach((b) => b.classList.toggle('on', b.dataset.v === m));
+    $('jdurBox').hidden = m === 'track';
+    t = 0; rebuild();
+  }
+  function refreshModes() {
+    const hasR = !!state.route, hasJ = !!state.journeyData;
+    $('mode').hidden = !(hasJ);
+    [...$('mode').children].forEach((b) => { b.disabled = (b.dataset.v === 'track' && !hasR) || (b.dataset.v === 'both' && !(hasR && hasJ)); });
+    ['s2', 's3', 's4'].forEach((id) => $(id).classList.remove('off'));
+    $('empty').style.display = 'none'; cv.style.display = 'block';
+  }
+  [...$('mode').children].forEach((b) => (b.onclick = () => setMode(b.dataset.v)));
+  $('jdur').onchange = () => { state.jcount = +$('jdur').value; t = 0; rebuild(); };
+
+  async function loadJourney(data, label) {
+    state.journeyData = data;
+    $('info').hidden = false;
+    $('info').innerHTML = `<span><b>${data.title}</b></span><span>Остановок: <b>${data.stops.length}</b> · пунктир — схема по постам, не GPS</span>`;
+    refreshModes();
+    state.mode = state.route ? 'both' : 'journey';
+    setMode(state.mode); play(true);
+  }
+  $('wj').onclick = async () => {
+    try { loadJourney(await (await fetch('data/journey-wahrider.json')).json()); }
+    catch (e) { showErr('Не удалось загрузить путь: ' + e.message); }
+  };
+
   /* ---- превью ---- */
   function rebuild(keepT) {
-    if (!state.route) return;
+    if (!ready()) return;
     const [w, h] = previewSize();
     cv.width = w; cv.height = h;
     fontsReady.then(() => {
-      scene = createScene(state.route, state.styleId, { ...state.o }, w, h);
+      scene = buildScene(w, h);
       if (!keepT && t > scene.duration) t = 0;
       dirty = true;
     });
@@ -184,7 +228,7 @@
 
   /* ---- экспорт ---- */
   $('export').onclick = async () => {
-    if (!state.route) return;
+    if (!ready()) return;
     const btn = $('export');
     if (abort) { abort.abort(); return; }
     abort = new AbortController();
@@ -193,17 +237,18 @@
     $('prog').hidden = false; $('result').hidden = true; showErr('');
     const [W, H] = SIZES[state.fmt][$('res').value];
     const o = { ...state.o };
-    const styleId = state.styleId, route = state.route;
+    const route = state.route || { name: state.journeyData.title };
+    const dur = buildScene(W, H).duration;
     try {
       await fontsReady;
       const res = await window.RSExport.exportVideo({
-        makeScene: (w, h) => createScene(route, styleId, o, w, h),
-        W, H, fps: 30, duration: o.duration, signal: abort.signal,
+        makeScene: (w, h) => buildScene(w, h),
+        W, H, fps: 30, duration: dur, signal: abort.signal,
         onStage: (txt, p) => { $('stage').textContent = `${txt} ${Math.round(p * 100)}%`; $('bar').style.width = p * 100 + '%'; },
       });
       if (objUrl) URL.revokeObjectURL(objUrl);
       objUrl = URL.createObjectURL(res.blob);
-      const slug = (o.title || route.name).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
+      const slug = (state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
       const name = `${slug}-${state.fmt === 'v' ? '9x16' : '16x9'}.${res.ext}`;
       $('result').innerHTML = `<video src="${objUrl}" controls playsinline></video><a href="${objUrl}" download="${name}">Скачать ${name}</a><small>${W}×${H}, ${(res.blob.size / 1048576).toFixed(1)} МБ, ${res.ext.toUpperCase()}</small>`;
       $('result').hidden = false;
@@ -215,5 +260,5 @@
     }
   };
 
-  window.__app = { state, loadText, rebuild, SIZES, get scene() { return scene; } };
+  window.__app = { state, loadText, loadJourney, setMode, rebuild, buildScene, SIZES, get scene() { return scene; } };
 })();
