@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Story — трек в ролик</title>
+<meta name="description" content="Загрузите GPX-трек, выберите стиль и получите готовый MP4 для Reels и YouTube.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&family=Oswald:wght@500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="dot"></span>Route Story</div>
+  <div class="tag">трек → стиль → ролик</div>
+</header>
+
+<main class="app">
+  <aside class="side">
+    <section class="step" id="s1">
+      <h2><i>1</i>Маршрут</h2>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".gpx,.geojson,.json,.csv,.txt,.tsv">
+        <b>Перетащите файл сюда</b>
+        <span>GPX · GeoJSON · CSV (lat, lon, ele, time)</span>
+      </label>
+      <button class="ghost" id="demo">Попробовать на демо-треке</button>
+      <div class="info" id="info" hidden></div>
+      <div class="err" id="err" hidden></div>
+    </section>
+
+    <section class="step off" id="s2">
+      <h2><i>2</i>Стиль</h2>
+      <div class="styles" id="styles"></div>
+    </section>
+
+    <section class="step off" id="s3">
+      <h2><i>3</i>История</h2>
+      <label class="f">Название<input id="title" maxlength="60"></label>
+      <label class="f">Подзаголовок (страна, этап)<input id="subtitle" maxlength="70"></label>
+      <div class="two">
+        <label class="f">Старт<input id="startName" maxlength="32"></label>
+        <label class="f">Финиш<input id="endName" maxlength="32"></label>
+      </div>
+      <div class="two">
+        <label class="f">Длина ролика
+          <select id="duration"><option value="12">12 сек</option><option value="20" selected>20 сек</option><option value="30">30 сек</option><option value="45">45 сек</option></select>
+        </label>
+        <label class="f">Язык надписей
+          <select id="lang"><option value="ru">Русский</option><option value="en">English</option></select>
+        </label>
+      </div>
+      <label class="c"><input type="checkbox" id="showSpeed" checked>Показывать скорость <small id="noSpeed"></small></label>
+      <label class="c"><input type="checkbox" id="showEle" checked>Показывать высоту и профиль <small id="noEle"></small></label>
+    </section>
+
+    <section class="step off" id="s4">
+      <h2><i>4</i>Экспорт</h2>
+      <div class="seg" id="fmt">
+        <button data-v="v" class="on">9:16 · Reels / Shorts</button>
+        <button data-v="h">16:9 · YouTube</button>
+      </div>
+      <label class="f">Качество
+        <select id="res"><option value="hd" selected>Full HD (1080)</option><option value="sd">HD (720) — быстрее</option></select>
+      </label>
+      <button class="go" id="export">Экспортировать видео</button>
+      <div class="prog" id="prog" hidden><div id="bar"></div><span id="stage"></span></div>
+      <div class="result" id="result" hidden></div>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <div class="screen" id="screen">
+      <canvas id="cv"></canvas>
+      <div class="empty" id="empty">Загрузите трек — здесь появится превью</div>
+    </div>
+    <div class="ctrl">
+      <button id="play" aria-label="Играть">▶</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Время">
+      <span id="time">0:00</span>
+    </div>
+  </section>
+</main>
+
+<script src="vendor/mp4-muxer.min.js"></script>
+<script src="src/route.js"></script>
+<script src="src/scene.js"></script>
+<script src="src/export.js"></script>
+<script src="src/ui.js"></script>
+</body>
+</html>
