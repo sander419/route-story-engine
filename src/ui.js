@@ -207,18 +207,19 @@
   $('play').onclick = () => { if (!playing && scene && t >= scene.duration) t = 0; play(!playing); };
   $('scrub').oninput = () => { play(false); t = ($('scrub').value / 1000) * (scene ? scene.duration : 1); dirty = true; };
 
+  const clampT = (x) => Math.max(0, Math.min(x, scene.duration));
   function tick(ts) {
     requestAnimationFrame(tick);
     if (!scene) return;
     if (playing) {
-      t += (ts - last) / 1000;
+      t += Math.max(0, ts - last) / 1000;
       if (t > scene.duration + 1.2) t = 0;
       dirty = true;
     }
     last = ts;
     if (dirty) {
       dirty = false;
-      scene.draw(ctx, Math.min(t, scene.duration));
+      scene.draw(ctx, clampT(t));
       $('scrub').value = Math.round((Math.min(t, scene.duration) / scene.duration) * 1000);
       const s = Math.floor(Math.min(t, scene.duration));
       $('time').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;

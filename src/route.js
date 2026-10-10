@@ -17,7 +17,7 @@
   }
 
   function parseGPX(text) {
-    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    const doc = new DOMParser().parseFromString(text.trim(), 'application/xml');
     if (doc.querySelector('parsererror')) throw new Error('Файл GPX повреждён или это не GPX.');
     let nodes = [...doc.getElementsByTagName('trkpt')];
     if (!nodes.length) nodes = [...doc.getElementsByTagName('rtept')];
@@ -56,6 +56,9 @@
         o.coordinates.forEach((c, i) => addLine(c, ct && Array.isArray(ct[i]) ? ct[i] : (ct && !Array.isArray(ct[0]) ? ct : null)));
       }
     })(obj);
+    if (!pts.length) { // файл из одних точек — берём их по порядку
+      (function pw(o) { if (!o) return; if (o.type === 'FeatureCollection') o.features.forEach(pw); else if (o.type === 'Feature') pw(o.geometry); else if (o.type === 'Point') pts.push({ lon: +o.coordinates[0], lat: +o.coordinates[1], ele: o.coordinates.length > 2 ? +o.coordinates[2] : NaN, t: NaN }); else if (o.type === 'MultiPoint') o.coordinates.forEach((c) => pts.push({ lon: +c[0], lat: +c[1], ele: c.length > 2 ? +c[2] : NaN, t: NaN })); })(obj);
+    }
     return { name: String(name || ''), pts };
   }
 
@@ -84,10 +87,47 @@
     return { name: '', pts };
   }
 
+  function xmlDoc(text) {
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    if (doc.querySelector('parsererror')) throw new Error('Файл повреждён или это не XML.');
+    return doc;
+  }
+  const kid = (n, name) => { const c = n.getElementsByTagName(name)[0]; return c ? c.textContent : null; };
+
+  function parseTCX(text) {
+    const doc = xmlDoc(text);
+    const pts = [...doc.getElementsByTagName('Trackpoint')].map((n) => ({
+      lat: +kid(n, 'LatitudeDegrees'), lon: +kid(n, 'LongitudeDegrees'),
+      ele: kid(n, 'AltitudeMeters') != null ? +kid(n, 'AltitudeMeters') : NaN, t: parseTime(kid(n, 'Time')),
+    }));
+    return { name: (kid(doc, 'Name') || '').trim(), pts };
+  }
+
+  function parseKML(text) {
+    const doc = xmlDoc(text);
+    const pts = [];
+    const gx = [...doc.getElementsByTagName('gx:coord')];
+    if (gx.length) {
+      const when = [...doc.getElementsByTagName('when')].map((n) => parseTime(n.textContent));
+      gx.forEach((n, i) => { const [lon, lat, ele] = n.textContent.trim().split(/\s+/).map(Number); pts.push({ lat, lon, ele: ele == null ? NaN : ele, t: when[i] ?? NaN }); });
+    } else {
+      [...doc.getElementsByTagName('coordinates')].forEach((n) => n.textContent.trim().split(/\s+/).forEach((tr) => {
+        const [lon, lat, ele] = tr.split(',').map(Number);
+        if (isFinite(lat) && isFinite(lon)) pts.push({ lat, lon, ele: ele == null || !isFinite(ele) ? NaN : ele, t: NaN });
+      }));
+    }
+    return { name: (kid(doc, 'name') || '').trim(), pts };
+  }
+
   function parseAny(text, filename) {
     const f = (filename || '').toLowerCase();
-    const s = text.trimStart();
-    if (s.startsWith('<')) return parseGPX(text);
+    text = text.replace(/^﻿/, '').trim();
+    const s = text;
+    if (s.startsWith('<')) {
+      if (/<TrainingCenterDatabase/i.test(s.slice(0, 600))) return parseTCX(text);
+      if (/<kml/i.test(s.slice(0, 600))) return parseKML(text);
+      return parseGPX(text);
+    }
     if (s.startsWith('{') || s.startsWith('[')) return parseGeoJSON(JSON.parse(text));
     if (/\.(csv|txt|tsv)$/.test(f) || /[,;\t]/.test(s.split('\n')[0])) return parseCSV(text);
     throw new Error('Не знаю этот формат. Нужен GPX, GeoJSON или CSV.');
