@@ -62,3 +62,7 @@ button:hover{border-color:var(--acc)}
   .screen{height:68vh;min-height:360px;order:-1}
   .stage{order:-1}
 }
+
+.prow{display:grid;grid-template-columns:1fr auto 32px;gap:6px;align-items:center;margin-top:6px}
+.prow small{color:var(--dim)}
+.prow button{padding:4px 0;line-height:1}

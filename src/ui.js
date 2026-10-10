@@ -6,7 +6,7 @@
 
   const state = {
     route: null, styleId: 'night', fmt: 'v',
-    o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru' },
+    o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru', places: [] },
   };
   const touched = {};
   let scene = null, playing = false, t = 0, last = 0, dirty = true, objUrl = null, abort = null;
@@ -81,6 +81,7 @@
       ['s2', 's3', 's4'].forEach((id) => $(id).classList.remove('off'));
       $('empty').style.display = 'none'; cv.style.display = 'block';
       t = 0; rebuild(); play(true);
+      state.o.places = []; renderPlaces();
       geocode(route);
     } catch (e) { showErr(e.message || String(e)); }
   }
@@ -102,7 +103,47 @@
         state.o.subtitle = s; $('subtitle').value = s;
       }
       rebuild(true);
+      // подписи мест по пути: 6 точек между стартом и финишем, не чаще 1 запроса в секунду
+      const found = [];
+      for (const f of [0.14, 0.28, 0.42, 0.56, 0.7, 0.84]) {
+        if (state.route !== route) return;
+        const s = f * route.total, a = window.RouteLib.at(route, s);
+        try {
+          const name = await placeNear(route.lat[a.i], route.lon[a.i], state.o.lang);
+          if (name && ![state.o.startName, state.o.endName, ...found.map((x) => x.name)].includes(name)) found.push({ s, name });
+          if (state.route === route && !touchedPlaces) { state.o.places = found.slice(); renderPlaces(); rebuild(true); }
+        } catch (e) { /* пропускаем точку */ }
+        await new Promise((r) => setTimeout(r, 1100));
+      }
     } catch (e) { /* без сети просто остаются пустые поля */ }
+  }
+  /* ближайший настоящий населённый пункт: город ≤30 км, иначе город/посёлок ≤20 км, иначе село ≤10 км (OSM Overpass) */
+  async function placeNear(lat, lon, lang) {
+    const q = `[out:json][timeout:15];node(around:30000,${lat},${lon})[place~"^(city|town|village)$"][name];out 40;`;
+    const j = await (await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q))).json();
+    const rank = { city: 3, town: 2, village: 1 }, lim = { city: 30000, town: 20000, village: 10000 };
+    let best = null, bs = -1;
+    for (const e of j.elements || []) {
+      const d = window.RouteLib.hav({ lat, lon }, { lat: e.lat, lon: e.lon }), k = e.tags.place;
+      if (d > lim[k]) continue;
+      const score = rank[k] * 100000 - d;
+      if (score > bs) { bs = score; best = e; }
+    }
+    return best ? best.tags['name:' + lang] || best.tags.name : '';
+  }
+  let touchedPlaces = false;
+  function renderPlaces() {
+    const box = $('places'); box.innerHTML = '';
+    state.o.places.forEach((pl, i) => {
+      const row = document.createElement('div'); row.className = 'prow';
+      const inp = document.createElement('input'); inp.value = pl.name; inp.maxLength = 28;
+      inp.oninput = () => { pl.name = inp.value; touchedPlaces = true; rebuild(true); };
+      const km = document.createElement('small'); km.textContent = Math.round(pl.s / 1000) + ' км';
+      const del = document.createElement('button'); del.textContent = '×'; del.title = 'Убрать подпись';
+      del.onclick = () => { state.o.places.splice(i, 1); touchedPlaces = true; renderPlaces(); rebuild(true); };
+      row.append(inp, km, del); box.appendChild(row);
+    });
+    $('placesHint').hidden = state.o.places.length > 0;
   }
 
   /* ---- превью ---- */

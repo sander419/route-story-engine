@@ -1,0 +1,15 @@
+import { createRequire } from 'node:module';
+import { writeFileSync } from 'node:fs';
+const require = createRequire('C:/Users/glina/route-story-spike/package.json');
+const { chromium } = require('playwright');
+const b = await chromium.launch({ channel: 'msedge', headless: true });
+const p = await b.newPage({ viewport: { width: 1400, height: 900 } });
+await p.goto('http://localhost:4180/'); await p.click('#demo');
+await p.waitForFunction(() => window.__app.state.o.places.length >= 3, null, { timeout: 100000 }).catch(()=>console.log('мало мест'));
+console.log(await p.evaluate(() => JSON.stringify(window.__app.state.o.places.map(x => [Math.round(x.s/1000), x.name]))));
+console.log(await p.evaluate(() => document.getElementById('startName').value + ' → ' + document.getElementById('endName').value));
+await p.evaluate(() => { document.querySelectorAll('#styles button')[0].click(); });
+await p.waitForTimeout(600);
+const png = await p.evaluate(async () => { const sc=window.__app.scene, cv=document.getElementById('cv'), c=cv.getContext('2d'); const t=16.5; for(let k=0;k<3;k++) for(const q of sc.tilesAt(t)) await window.RS.getTile(q.layer,q.z,q.x,q.y,true).p; sc.draw(c,t); return cv.toDataURL(); });
+writeFileSync('out/places.png', Buffer.from(png.split(',')[1],'base64'));
+await b.close();

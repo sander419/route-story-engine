@@ -46,7 +46,8 @@
       name: 'Ночной неон',
       bg: '#0b0f14',
       layers: [esri('dark', 'Canvas/World_Dark_Gray_Base', { filter: 'brightness(1.15) contrast(1.2)' }), L_DARK()],
-      ghost: 'rgba(255,255,255,.28)', ghostW: 7, ghostDash: null,
+      tint: { mode: 'overlay', stops: ['#5b2bd6', '#0e86c9', '#0fb5a6'] },
+      ghost: 'rgba(255,255,255,.34)', ghostW: 7, ghostDash: null,
       line: { stops: ['#22d3ee', '#a78bfa', '#fb7185'], glow: 'rgba(125,211,252,.38)', w: 11 },
       head: '#ffffff', headHalo: 'rgba(125,211,252,.55)',
       ink: '#f8fafc', dim: 'rgba(226,232,240,.62)', accent: '#67e8f9',
@@ -185,6 +186,7 @@
       prof.min = mn - pad; prof.max = mx + pad;
     }
 
+    const places = (o.places || []).filter((q) => q && q.name && q.s > 0 && q.s < total).map((q) => { const a = at(route, q.s); return { s: q.s, name: q.name, x: a.x, y: a.y }; });
     const cache = {};
     function gradient(ctx, key, make) { return cache[key] || (cache[key] = make(ctx)); }
 
@@ -221,6 +223,11 @@
         }
       }
       ctx.filter = 'none';
+      if (S.tint) {
+        const tg = ctx.createLinearGradient(0, 0, W * 0.4, H);
+        S.tint.stops.forEach((c, i, a) => tg.addColorStop(i / (a.length - 1), c));
+        ctx.globalAlpha = 0.72; ctx.globalCompositeOperation = S.tint.mode; ctx.fillStyle = tg; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+      }
       if (S.paper) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.35)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
 
       // линия маршрута
@@ -240,6 +247,14 @@
       const gr = ctx.createLinearGradient(x0, y0, Math.abs(hx - x0) + Math.abs(hy - y0) < 2 ? x0 + 1 : hx, hy);
       S.line.stops.forEach((col, i, a) => gr.addColorStop(i / (a.length - 1), col));
       ctx.strokeStyle = gr; ctx.lineWidth = S.line.w * u; ctx.stroke();
+      {
+        const j = at(route, Math.max(0, s - total * 0.06)).i;
+        ctx.beginPath(); ctx.moveTo(sx(route.X[j]), sy(route.Y[j]));
+        for (let i = j + 1; i <= head.i; i++) ctx.lineTo(sx(route.X[i]), sy(route.Y[i]));
+        ctx.lineTo(hx, hy);
+        ctx.save(); ctx.shadowColor = S.head; ctx.shadowBlur = 26 * u;
+        ctx.strokeStyle = S.head; ctx.globalAlpha = 0.9; ctx.lineWidth = S.line.w * 0.42 * u; ctx.stroke(); ctx.restore();
+      }
 
       // старт / финиш
       const label = (X, Y, kind, name, reach) => {
@@ -258,6 +273,10 @@
         ctx.fillStyle = S.ink; ctx.textBaseline = 'middle'; ctx.fillText(txt, bx + pad, by + bh2 / 2 + 1 * u);
         ctx.restore();
       };
+      for (const pl of places) {
+        const r = smooth(clamp((s - pl.s) / (total * 0.012), 0, 1));
+        if (r > 0.01) label(pl.x, pl.y, '', pl.name, r);
+      }
       label(route.X[0], route.Y[0], L.start, o.startName, 1);
       label(route.X[route.n - 1], route.Y[route.n - 1], L.finish, o.endName, smooth(clamp((p - 0.82) / 0.18, 0, 1)) * 0.85 + 0.15);
 
