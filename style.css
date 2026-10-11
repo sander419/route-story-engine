@@ -68,6 +68,9 @@ button:hover{border-color:var(--acc)}
   .stage{order:-1;position:static}
 }
 
+.lbox{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px dashed var(--line);border-radius:12px}
+.hint{color:var(--dim);font-size:12px}
+.result video.chk{background:repeating-conic-gradient(#8884 0 25%,#fff4 0 50%) 0 0/16px 16px}
 .prow{display:grid;grid-template-columns:1fr auto 32px;gap:6px;align-items:center;margin-top:6px}
 .prow small{color:var(--dim)}
 .prow button{padding:4px 0;line-height:1}

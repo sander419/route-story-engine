@@ -67,6 +67,26 @@
 
     <section class="step off" id="s4">
       <h2><i>4</i>Экспорт</h2>
+      <div class="seg" id="xmode">
+        <button data-v="video" class="on">Готовое видео</button>
+        <button data-v="layers">Слои для монтажа</button>
+      </div>
+      <div id="layersBox" class="lbox" hidden>
+        <small class="hint">Фон прозрачный: кладёте слои поверх своих фото и видео в любом редакторе.</small>
+        <label class="c"><input type="checkbox" id="lyMap" checked>Карта (линии и подписи)</label>
+        <label class="c"><input type="checkbox" id="lyRoute" checked>Маршрут и маркеры</label>
+        <label class="c"><input type="checkbox" id="lyHud" checked>Плашки и текст</label>
+        <label class="c"><input type="checkbox" id="lySplit">Каждый слой отдельным файлом</label>
+        <label class="f">Кадров в секунду
+          <select id="lyFps"><option value="30" selected>30 — как в видео</option><option value="24">24 — кино, архив легче</option><option value="15">15 — самый лёгкий архив</option></select>
+        </label>
+        <label class="f">Формат
+          <select id="lyFmt">
+            <option value="png">PNG-кадры в архиве — подходит любому редактору</option>
+            <option value="webm">WebM с прозрачностью — один файл (Chrome / Edge)</option>
+          </select>
+        </label>
+      </div>
       <div class="seg" id="fmt">
         <button data-v="v" class="on">9:16 · Reels / Shorts</button>
         <button data-v="h">16:9 · YouTube</button>
@@ -100,6 +120,7 @@
 <script src="src/scene.js"></script>
 <script src="src/journey.js"></script>
 <script src="src/export.js"></script>
+<script src="src/layers-export.js"></script>
 <script src="src/ui.js"></script>
 </body>
 </html>

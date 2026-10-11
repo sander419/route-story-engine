@@ -96,5 +96,5 @@
     return { blob: new Blob(chunks, { type: 'video/webm' }), ext: 'webm', codec: mime };
   }
 
-  window.RSExport = { exportVideo };
+  window.RSExport = { exportVideo, prefetch };
 })();

@@ -225,6 +225,7 @@
     }
 
     const places = (o.places || []).filter((q) => q && q.name && q.s > 0 && q.s < total).map((q) => { const a = at(route, q.s); return { s: q.s, name: q.name, x: a.x, y: a.y }; });
+    let curTR = false;                 // идёт экспорт прозрачных слоёв: без затемнения кадра
     const cache = {};
     function gradient(ctx, key, make) { return cache[key] || (cache[key] = make(ctx)); }
 
@@ -232,6 +233,7 @@
     function draw(ctx, t, opts) {
       const LY = (opts && opts.layers) || { map: true, route: true, hud: true };
       const TR = !!(opts && opts.transparent);
+      curTR = TR;
       const c = cam(t);
       const p = prog(t), s = p * total;
       const head = at(route, s);
@@ -474,7 +476,7 @@
       if (intro > 0.01) {
         ctx.save(); ctx.globalAlpha = intro;
         const sc = S.scrim.join(',');
-        ctx.fillStyle = `rgba(${sc},${S.paper ? 0.55 : 0.5})`; ctx.fillRect(0, 0, W, H);
+        if (!curTR) { ctx.fillStyle = `rgba(${sc},${S.paper ? 0.55 : 0.5})`; ctx.fillRect(0, 0, W, H); }
         const cy = portrait ? H * 0.42 : H * 0.46;
         const sl = (1 - intro) * -30 * u;
         T(ctx, (o.title || route.name).toUpperCase(), W / 2, cy + sl, { size: portrait ? 118 : 120, fam: S.fHead, weight: S.headW, align: 'center', ls: 4, max: (W / u) - 140, shadow: sh });
@@ -564,7 +566,7 @@
       if (intro > 0.01) {
         ctx.save(); ctx.globalAlpha = intro;
         const sc = S.scrim.join(',');
-        ctx.fillStyle = `rgba(${sc},${S.paper ? 0.55 : 0.5})`; ctx.fillRect(0, 0, W, H);
+        if (!curTR) { ctx.fillStyle = `rgba(${sc},${S.paper ? 0.55 : 0.5})`; ctx.fillRect(0, 0, W, H); }
         const cy = portrait ? H * 0.42 : H * 0.46, sl = (1 - intro) * -30 * u;
         T(ctx, (o.title || route.name).toUpperCase(), W / 2, cy + sl, { size: portrait ? 118 : 120, fam: S.fHead, weight: S.headW, align: 'center', ls: 4, max: (W / u) - 140, shadow: sh });
         if (o.subtitle) T(ctx, o.subtitle.toUpperCase(), W / 2, cy + 72 * u + sl, { size: 36, weight: 600, color: S.accent, align: 'center', ls: 8, max: (W / u) - 160, shadow: sh });

@@ -234,6 +234,15 @@
   requestAnimationFrame(tick);
 
   /* ---- экспорт ---- */
+  state.xmode = 'video';
+  const exportLabel = () => (state.xmode === 'layers' ? 'Экспортировать слои' : 'Экспортировать видео');
+  [...$('xmode').children].forEach((b) => (b.onclick = () => {
+    state.xmode = b.dataset.v;
+    [...$('xmode').children].forEach((x) => x.classList.toggle('on', x === b));
+    $('layersBox').hidden = state.xmode !== 'layers';
+    $('export').textContent = exportLabel();
+  }));
+  let layerUrls = [];
   $('export').onclick = async () => {
     if (!ready()) return;
     const btn = $('export');
@@ -248,6 +257,30 @@
     const dur = buildScene(W, H).duration;
     try {
       await fontsReady;
+      const slug0 = (state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
+      const sz = state.fmt === 'v' ? '9x16' : '16x9';
+      if (state.xmode === 'layers') {
+        const Ls = { map: $('lyMap').checked, route: $('lyRoute').checked, hud: $('lyHud').checked };
+        const keys = Object.keys(Ls).filter((k) => Ls[k]);
+        if (!keys.length) throw new Error('Отметьте хотя бы один слой.');
+        const groups = $('lySplit').checked ? keys.map((k) => ({ id: k, layers: { map: k === 'map', route: k === 'route', hud: k === 'hud' } })) : [{ id: 'layers', layers: Ls }];
+        const labels = { map: 'карта', route: 'маршрут', hud: 'плашки', layers: 'слои' };
+        const fmt = $('lyFmt').value, links = [];
+        layerUrls.forEach((u) => URL.revokeObjectURL(u)); layerUrls = [];
+        for (let gi = 0; gi < groups.length; gi++) {
+          const g = groups[gi];
+          const lr = await window.RSLayers.exportLayerFile({
+            makeScene: (w, h) => buildScene(w, h), W, H, fps: +$('lyFps').value, duration: dur, layers: g.layers, format: fmt, name: slug0 + ' — ' + labels[g.id], signal: abort.signal,
+            onStage: (txt, p) => { const pp = (gi + p) / groups.length; $('stage').textContent = `${groups.length > 1 ? '[' + (gi + 1) + '/' + groups.length + '] ' : ''}${txt} ${Math.round(p * 100)}%`; $('bar').style.width = pp * 100 + '%'; },
+          });
+          const url = URL.createObjectURL(lr.blob); layerUrls.push(url);
+          links.push({ url, nm: `${slug0}-${g.id}-${sz}-${fmt === 'png' ? 'png' : 'alpha'}.${lr.ext}`, size: lr.blob.size, ext: lr.ext, frames: lr.frames });
+        }
+        $('result').innerHTML = links.map((l) => (l.ext === 'webm' ? `<video class="chk" src="${l.url}" controls loop muted playsinline></video>` : '') + `<a href="${l.url}" download="${l.nm}">Скачать ${l.nm}</a><small>${W}×${H} · ${(l.size / 1048576).toFixed(1)} МБ</small>`).join('') + '<small>Фон прозрачный. Положите слои поверх своих фото и видео в любом редакторе.</small>';
+        $('result').hidden = false;
+        window.__lastLayers = links;
+        return;
+      }
       const res = await window.RSExport.exportVideo({
         makeScene: (w, h) => buildScene(w, h),
         W, H, fps: 30, duration: dur, signal: abort.signal,
@@ -263,7 +296,7 @@
     } catch (e) {
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));
     } finally {
-      abort = null; btn.textContent = 'Экспортировать видео'; $('export2').textContent = 'Экспорт'; $('prog').hidden = true;
+      abort = null; btn.textContent = exportLabel(); $('export2').textContent = 'Экспорт'; $('prog').hidden = true;
     }
   };
 
