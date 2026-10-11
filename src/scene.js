@@ -260,7 +260,7 @@
     const panelSolid = S.panel.replace(/,\s*[\d.]+\)$/, ',0.95)');
     let curTR = false;                 // идёт экспорт прозрачных слоёв: без затемнения кадра
     const photos = J ? J.stops.map((q) => (q.photo ? loadImg(q.photo) : null)) : [];
-    const assetsReady = Promise.all(photos.filter(Boolean).map((e) => e.p));
+    const assetsReady = Promise.all([...photos.filter(Boolean).map((e) => e.p), ...PH.map((q) => q.e.p)]);
     const cache = {};
     function gradient(ctx, key, make) { return cache[key] || (cache[key] = make(ctx)); }
 
