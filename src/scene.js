@@ -40,6 +40,23 @@
     return e || null;
   }
 
+  /* ---------- картинки (фото остановок) ---------- */
+  const imgs = new Map();
+  function loadImg(url) {
+    let e = imgs.get(url);
+    if (!e) {
+      e = { img: null, ok: false };
+      e.p = new Promise((res) => {
+        const im = new Image();
+        im.onload = () => { e.img = im; e.ok = true; onTile(); res(); };
+        im.onerror = () => res();
+        im.src = url;
+      });
+      imgs.set(url, e);
+    }
+    return e;
+  }
+
   /* ---------- стили ---------- */
   const STYLES = {
     night: {
@@ -115,8 +132,8 @@
     const total = route.total;
 
     // положение «якоря» камеры на экране и рамка для общего плана
-    const ax = W / 2, ay = portrait ? H * 0.38 : H * 0.44;
-    const fitW = portrait ? W * 0.84 : W * 0.7, fitH = portrait ? H * 0.34 : H * 0.46;
+    const ax = J && !portrait ? W * 0.36 : W / 2, ay = portrait ? H * (J ? 0.275 : 0.38) : H * 0.44;
+    const fitW = portrait ? W * 0.84 : W * (J ? 0.58 : 0.7), fitH = portrait ? H * (J ? 0.26 : 0.34) : H * 0.46;
     const bw = Math.max(route.bx1 - route.bx0, 1e-7), bh = Math.max(route.by1 - route.by0, 1e-7);
     const zFit = clamp(Math.log2(Math.min(fitW / bw, fitH / bh)), 2, 16);
     const zFol = clamp(zFit + 1.7, zFit, 15);
@@ -225,7 +242,10 @@
     }
 
     const places = (o.places || []).filter((q) => q && q.name && q.s > 0 && q.s < total).map((q) => { const a = at(route, q.s); return { s: q.s, name: q.name, x: a.x, y: a.y }; });
+    const panelSolid = S.panel.replace(/,\s*[\d.]+\)$/, ',0.95)');
     let curTR = false;                 // идёт экспорт прозрачных слоёв: без затемнения кадра
+    const photos = J ? J.stops.map((q) => (q.photo ? loadImg(q.photo) : null)) : [];
+    const assetsReady = Promise.all(photos.filter(Boolean).map((e) => e.p));
     const cache = {};
     function gradient(ctx, key, make) { return cache[key] || (cache[key] = make(ctx)); }
 
@@ -362,7 +382,7 @@
 
       if (LY.hud) {
       overlay(ctx, t, p, head);
-      if (J && J.note) T(ctx, J.note, (portrait ? 64 : 100) * u, (portrait ? 268 : 238) * u, { size: 26, weight: 700, color: S.accent, ls: 2, max: W / u - (portrait ? 128 : 200), shadow: S.paper ? null : 'rgba(0,0,0,.5)' });
+      if (J && J.note) T(ctx, J.note, (portrait ? 64 : 100) * u, (portrait ? 268 : 238) * u, { size: portrait ? 26 : 22, weight: 700, color: S.accent, ls: 2, max: W / u - (portrait ? 128 : 1000), shadow: S.paper ? null : 'rgba(0,0,0,.5)' });
       T(ctx, S.credit, W / 2, H - (S.paper ? 54 : 26) * u, { size: 17, weight: 500, color: S.dim, align: 'center', alpha: 0.75 });
       }
       ctx.restore();
@@ -525,19 +545,37 @@
       const panelA = (1 - intro) * (1 - outro);
       const i = g.i, ca = smooth(clamp((t - jt.arr[i]) / 0.35, 0, 1)) * (1 - smooth(clamp((t - jt.leave[i]) / 0.3, 0, 1)));
       const pw = W - 2 * mx, ph = 230 * u, py0 = portrait ? H - 330 * u - ph : H - 120 * u - ph;
-      // карточка остановки
+      // карточка остановки (с фото, если оно есть)
       if (ca > 0.01 && t >= jt.arr[0] && outro < 0.5) {
-        const q = st[i];
-        const cw = portrait ? pw : 720 * u, chh = portrait ? 380 * u : 470 * u;
+        const q = st[i], ph0 = photos[i], hasPh = !!(ph0 && ph0.ok);
+        const cw = portrait ? pw : (hasPh ? 920 : 720) * u;
+        const chh = portrait ? (hasPh ? 648 : 380) * u : (hasPh ? 440 : 470) * u;
         const cx = portrait ? mx : W - mx - cw, cy = (portrait ? py0 - 28 * u - chh : H * 0.205) + (1 - ca) * 26 * u;
         ctx.save(); ctx.globalAlpha = ca * (1 - outro);
-        ctx.fillStyle = S.panel; ctx.strokeStyle = S.accent; ctx.lineWidth = 3 * u;
+        ctx.fillStyle = panelSolid; ctx.strokeStyle = S.accent; ctx.lineWidth = 3 * u;
         rr(ctx, cx, cy, cw, chh, 28 * u); ctx.fill(); ctx.stroke();
-        T(ctx, (q.country + (q.precision === 'region' ? '  ·  ≈' : '')).toUpperCase(), cx + 40 * u, cy + 62 * u, { size: 26, weight: 600, color: S.accent, ls: 5, max: cw / u - 80 });
-        T(ctx, q.name, cx + 40 * u, cy + 150 * u, { size: portrait ? 84 : 76, fam: S.fHead, weight: S.headW, max: cw / u - 80 });
-        T(ctx, q.dateLabel, cx + 40 * u, cy + 200 * u, { size: 34, weight: 600, color: S.dim });
-        const font = `500 ${34 * u}px ${S.fBody}`;
-        wrapText(ctx, q.fact, cw - 80 * u, font, portrait ? 3 : 5).forEach((ln, k) => T(ctx, ln, cx + 40 * u, cy + 256 * u + k * 46 * u, { size: 34, weight: 500, fam: S.fBody }));
+        let tx = cx + 40 * u, ty = cy, tw = cw - 80 * u;
+        if (hasPh) {
+          const inset = 16 * u;
+          const px_ = cx + inset, py_ = cy + inset;
+          const pw_ = portrait ? cw - 2 * inset : 360 * u - inset, ph_ = portrait ? 300 * u - inset : chh - 2 * inset;
+          ctx.save(); rr(ctx, px_, py_, pw_, ph_, 20 * u); ctx.clip();
+          const im = ph0.img, k0 = clamp((t - jt.arr[i]) / (jt.leave[i] - jt.arr[i]), 0, 1), zoomK = 1 + 0.09 * k0;
+          const sc = Math.max(pw_ / im.width, ph_ / im.height) * zoomK, dw = im.width * sc, dh = im.height * sc;
+          ctx.drawImage(im, px_ + (pw_ - dw) / 2, py_ + (ph_ - dh) * (0.45 - 0.1 * k0), dw, dh);
+          const gg = ctx.createLinearGradient(0, py_ + ph_ - 60 * u, 0, py_ + ph_); gg.addColorStop(0, 'rgba(0,0,0,0)'); gg.addColorStop(1, 'rgba(0,0,0,0.55)');
+          ctx.fillStyle = gg; ctx.fillRect(px_, py_ + ph_ - 60 * u, pw_, 60 * u);
+          T(ctx, ('Фото @wahrider · пост ' + q.photoPost).toUpperCase(), px_ + 16 * u, py_ + ph_ - 16 * u, { size: 15, weight: 600, color: '#fff', ls: 2 });
+          ctx.restore();
+          if (portrait) { ty = cy + 300 * u; } else { tx = cx + 360 * u + 36 * u; tw = cw - 360 * u - 36 * u - 36 * u; }
+        }
+        const compact = hasPh && portrait;
+        T(ctx, (q.country + (q.precision === 'region' ? '  ·  ≈' : '')).toUpperCase(), tx, ty + (compact ? 50 : 62) * u, { size: 24, weight: 600, color: S.accent, ls: 5, max: tw / u });
+        T(ctx, q.name, tx, ty + (compact ? 128 : 150) * u, { size: hasPh && !portrait ? 62 : (compact ? 76 : (portrait ? 84 : 76)), fam: S.fHead, weight: S.headW, max: tw / u });
+        T(ctx, q.dateLabel, tx, ty + (compact ? 172 : 200) * u, { size: compact ? 30 : 34, weight: 600, color: S.dim, max: tw / u });
+        const fs = compact ? 31 : (hasPh ? 30 : 34), lh = compact ? 42 : (hasPh ? 40 : 46);
+        const font = `500 ${fs * u}px ${S.fBody}`;
+        wrapText(ctx, q.fact, tw, font, portrait ? (compact ? 3 : 3) : (hasPh ? 5 : 5)).forEach((ln, k) => T(ctx, ln, tx, ty + (compact ? 222 : 256) * u + k * lh * u, { size: fs, weight: 500, fam: S.fBody }));
         ctx.restore();
       }
       // нижняя панель: когда / страны / пройдено + лента остановок
@@ -547,9 +585,9 @@
       const dispI = g.leg && g.u > 0.5 ? g.i + 1 : g.i;
       const seen = new Set(); for (let k = 0; k <= dispI; k++) seen.add(st[k].country);
       const all = new Set(st.map((x) => x.country));
+      // число меняется только там, где автор назвал новую цифру; на переезде показываем последнюю названную (без выдуманных промежуточных)
       let km = kmShown[g.i];
-      if (g.leg && kmShown[g.i] != null && kmShown[g.i + 1] != null) km = lerp(kmShown[g.i], kmShown[g.i + 1], g.u);
-      else if (g.leg && kmShown[g.i] == null && kmShown[g.i + 1] != null) km = null;
+      if (!g.leg && st[g.i].km != null && g.i > 0 && kmShown[g.i - 1] != null) km = lerp(kmShown[g.i - 1], st[g.i].km, smooth(clamp((t - jt.arr[g.i]) / 0.8, 0, 1)));
       const cells = [{ l: L.when, v: st[dispI].dateLabel, small: true }, { l: L.countries, v: seen.size + ' / ' + all.size }];
       if (km != null) cells.push({ l: L.passed, v: fmt(km, 0, L.locale), u: L.km });
       const colW = (pw - 80 * u) / cells.length;
@@ -557,7 +595,7 @@
         const x = mx + 40 * u + k * colW;
         T(ctx, cl.l, x, py0 + 52 * u, { size: 22, weight: 600, color: S.dim, ls: 4 });
         T(ctx, cl.v, x, py0 + 118 * u, { size: cl.small ? 40 : 66, fam: S.fHead, weight: S.headW, max: colW / u - 40 });
-        if (cl.u) { ctx.font = `${S.headW} ${66 * u}px ${S.fHead}`; const vw = ctx.measureText(cl.v).width; T(ctx, cl.u, x + vw + 12 * u, py0 + 118 * u, { size: 30, weight: 500, color: S.accent }); }
+        if (cl.u) { ctx.font = `${S.headW} ${66 * u}px ${S.fHead}`; const vw = ctx.measureText(cl.v).width; T(ctx, cl.u, x + vw + 12 * u, py0 + 118 * u, { size: 30, weight: 500, color: S.accent }); T(ctx, L.byAuthor.toUpperCase(), x, py0 + 150 * u, { size: 17, weight: 600, color: S.dim, ls: 3 }); }
       });
       // номер этапа вместо ленты точек: «где мы» без шкалы прогресса
       T(ctx, 'ЭТАП ' + (dispI + 1) + ' ИЗ ' + n, mx + pw - 40 * u, py0 + ph - 34 * u, { size: 22, weight: 600, color: S.dim, align: 'right', ls: 4 });
@@ -579,7 +617,7 @@
         ctx.save(); ctx.globalAlpha = outro;
         const w = Math.min(pw, 900 * u), h = (portrait ? 560 : 520) * u, x = W / 2 - w / 2;
         const y = (portrait ? H * 0.66 - h / 2 : H * 0.5 - h / 2 + 20 * u) + (1 - outro) * 30 * u;
-        ctx.fillStyle = S.panel; ctx.strokeStyle = S.accent; ctx.lineWidth = 3 * u; rr(ctx, x, y, w, h, 32 * u); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = panelSolid; ctx.strokeStyle = S.accent; ctx.lineWidth = 3 * u; rr(ctx, x, y, w, h, 32 * u); ctx.fill(); ctx.stroke();
         T(ctx, (o.title || route.name).toUpperCase(), W / 2, y + 80 * u, { size: 44, fam: S.fHead, weight: S.headW, align: 'center', ls: 3, max: w / u - 80 });
         T(ctx, L.passed, W / 2, y + 118 * u, { size: 24, weight: 600, color: S.dim, align: 'center', ls: 6 });
         T(ctx, sm.big, W / 2, y + 255 * u, { size: portrait ? 150 : 140, fam: S.fHead, weight: S.headW, align: 'center', max: w / u - 80 });
@@ -611,7 +649,7 @@
       ctx.restore();
     }
 
-    return { draw, tilesAt, cam, W, H, duration: D, events, style: S };
+    return { draw, tilesAt, cam, W, H, duration: D, events, style: S, assetsReady };
   }
 
   window.RS = { createScene, STYLES, I18N, getTile, setOnTile: (f) => { onTile = f; } };

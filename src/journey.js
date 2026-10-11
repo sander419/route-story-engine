@@ -38,7 +38,7 @@
     const st = stops.map((q) => {
       let bi = 0, bd = Infinity;
       for (let i = 0; i < route.n; i++) { const d = Math.abs(route.lat[i] - q.lat) + Math.abs(route.lon[i] - q.lon); if (d < bd) { bd = d; bi = i; } }
-      return { name: q.name, country: q.country, precision: q.precision, dateLabel: q.dateLabel, fact: q.fact, km: q.km, s: route.D[bi] };
+      return { name: q.name, country: q.country, precision: q.precision, dateLabel: q.dateLabel, fact: q.fact, km: q.km, photo: q.photo, photoPost: q.photoPost, s: route.D[bi] };
     });
     // защита от нулевых/обратных отрезков
     for (let i = 1; i < st.length; i++) if (st[i].s <= st[i - 1].s) st[i].s = Math.min(route.total, st[i - 1].s + 1);
@@ -58,6 +58,7 @@
     const idx = (t) => { let i = parts.length - 1; while (i > 0 && t < offs[i]) i--; return i; };
     return {
       duration: acc, W, H, events: [],
+      assetsReady: Promise.all(parts.map((p) => p.assetsReady)),
       draw(ctx, t) {
         const i = idx(t), lt = t - offs[i];
         parts[i].draw(ctx, Math.min(lt, parts[i].duration));

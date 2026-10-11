@@ -62,7 +62,9 @@
       "src": [
         98,
         107
-      ]
+      ],
+      "photo": "media/photos/w107-1.jpg",
+      "photoPost": 107
     },
     {
       "name": "Ванадзор",
@@ -90,7 +92,9 @@
       "src": [
         135,
         145
-      ]
+      ],
+      "photo": "media/photos/w135-1.jpg",
+      "photoPost": 135
     },
     {
       "name": "Иран",
@@ -118,7 +122,9 @@
       "src": [
         185,
         192
-      ]
+      ],
+      "photo": "media/photos/w185-1.jpg",
+      "photoPost": 185
     },
     {
       "name": "Дахма Шылпык",
@@ -131,7 +137,9 @@
       "km": null,
       "src": [
         407
-      ]
+      ],
+      "photo": "media/photos/w407-1.jpg",
+      "photoPost": 407
     },
     {
       "name": "Хива",
@@ -145,7 +153,9 @@
       "src": [
         214,
         408
-      ]
+      ],
+      "photo": "media/photos/w214-4.jpg",
+      "photoPost": 214
     },
     {
       "name": "Самарканд",
@@ -175,7 +185,9 @@
         354,
         384,
         404
-      ]
+      ],
+      "photo": "media/photos/w349-3.jpg",
+      "photoPost": 349
     },
     {
       "name": "Кыргызстан",
@@ -214,7 +226,9 @@
       "src": [
         464,
         479
-      ]
+      ],
+      "photo": "media/photos/w479-4.jpg",
+      "photoPost": 479
     },
     {
       "name": "Урумчи",
@@ -223,12 +237,14 @@
       "lon": 87.6168,
       "precision": "city",
       "dateLabel": "Август 2026",
-      "fact": "Синьцзян: уйгурское гостеприимство, домашняя лапша с говядиной и арбуз.",
+      "fact": "Синьцзян: уйгурское гостеприимство, домашняя лапша и арбуз. На улицах — военные и бронетехника.",
       "km": null,
       "src": [
         468,
         504
-      ]
+      ],
+      "photo": "media/photos/w504-2.jpg",
+      "photoPost": 504
     },
     {
       "name": "Точка автора",
@@ -242,7 +258,9 @@
       "src": [
         577,
         578
-      ]
+      ],
+      "photo": "media/photos/w578-1.jpg",
+      "photoPost": 578
     },
     {
       "name": "Последняя точка",
@@ -258,5 +276,6 @@
         586
       ]
     }
-  ]
+  ],
+  "photoCredit": "Фото: @wahrider (t.me/wahrider)"
 }

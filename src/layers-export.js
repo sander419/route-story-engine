@@ -61,6 +61,7 @@
   async function exportLayerFile({ makeScene, W, H, fps = 30, duration, layers, format, name, onStage, signal }) {
     const scene = makeScene(W, H);
     onStage('Загружаю карту…', 0);
+    if (scene.assetsReady) await scene.assetsReady;
     await prefetchAll(scene, fps, duration, onStage, signal);
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d', { alpha: true });

@@ -43,6 +43,7 @@
   async function exportVideo({ makeScene, W, H, fps = 30, duration, onStage, signal }) {
     const scene = makeScene(W, H);
     onStage('Загружаю карту…', 0);
+    if (scene.assetsReady) await scene.assetsReady;
     await prefetch(scene, fps, duration, (p) => onStage('Загружаю карту…', p), signal);
 
     const cv = document.createElement('canvas');
@@ -64,7 +65,8 @@
         const vf = new VideoFrame(cv, { timestamp: Math.round((i * 1e6) / fps), duration: Math.round(1e6 / fps) });
         enc.encode(vf, { keyFrame: i % 60 === 0 });
         vf.close();
-        while (enc.encodeQueueSize > 8) await yieldNow();
+        // ждём, пока кодировщик разгребёт очередь: по его же сигналу «dequeue» (холостой цикл здесь вешал страницу)
+        while (enc.encodeQueueSize > 3) await new Promise((r) => { let fin = false; const f = () => { if (!fin) { fin = true; r(); } }; enc.addEventListener('dequeue', f, { once: true }); setTimeout(f, 80); });
         if (i % 3 === 0) { onStage('Рендерю кадры…', i / frames); await yieldNow(); }
       }
       onStage('Собираю файл…', 1);
