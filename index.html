@@ -37,11 +37,12 @@
         <div id="change" class="change"></div>
       </div>
       <label class="drop" id="drop">
-        <input type="file" id="file" accept=".gpx,.tcx,.kml,.geojson,.json,.csv,.txt,.tsv">
-        <b>Перетащите GPX нового дня</b>
-        <span>или нажмите, чтобы выбрать файл · GPX, TCX, KML, GeoJSON, CSV</span>
+        <input type="file" id="file" accept=".gpx,.tcx,.kml,.geojson,.json,.csv,.txt,.tsv" multiple>
+        <b>Перетащите GPX своего дня</b>
+        <span>можно сразу несколько дней · GPX, TCX, KML, GeoJSON, CSV</span>
       </label>
-      <button class="ghost" id="day47">Нет своего трека? Взять демо-день 47</button>
+      <button class="go" id="continue" hidden></button>
+      <button class="ghost" id="day47">Нет своего трека? Посмотреть демо: день 47</button>
       <div class="f">Фото дня
         <input type="file" id="photos" accept="image/jpeg,image/png,image/webp" multiple>
         <div id="photoList"></div>
@@ -91,6 +92,7 @@
         <div class="info" id="info" hidden></div>
         <details id="planBox"><summary>Как режиссёр собрал серию</summary><div id="plan"></div></details>
         <button class="ghost" id="remember">Запомнить серию — следующая будет разнообразнее</button>
+        <button class="ghost" id="resetOwn">Удалить моё путешествие из браузера</button>
         <small class="hint">Демо-путешествие — вымышленный путешественник на реальных дорогах OpenStreetMap.</small>
       </section>
 

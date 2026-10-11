@@ -45,7 +45,7 @@
 
   /* ---- главная мысль и фото дня ---- */
   let photoFiles = [];   // { name, url, meta, caption, how }
-  $('note').oninput = () => { state.o.note = $('note').value.trim(); state.demoNote = false; rebuild(true); };
+  $('note').oninput = () => { state.o.note = $('note').value.trim(); state.demoNote = false; rebuild(true); };   // (в своём путешествии фраза сохраняется вместе с днём при следующей загрузке)
   $('photos').onchange = async (e) => {
     const files = [...e.target.files].slice(0, Math.max(0, 4 - photoFiles.length));
     for (const f of files) {
@@ -86,10 +86,10 @@
 
   /* ---- загрузка ---- */
   const drop = $('drop');
-  $('file').onchange = (e) => e.target.files[0] && readFile(e.target.files[0]);
+  $('file').onchange = (e) => { if (e.target.files.length) handleFiles([...e.target.files]); e.target.value = ''; };
   ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', (e) => e.dataTransfer.files[0] && readFile(e.dataTransfer.files[0]));
+  drop.addEventListener('drop', (e) => e.dataTransfer.files.length && handleFiles([...e.dataTransfer.files]));
   $('demo').onclick = async () => {
     try {
       const r = await fetch('samples/samarkand-bukhara.gpx');
@@ -138,15 +138,16 @@
   /* города старта/финиша — необязательная подсказка (OpenStreetMap Nominatim) */
   async function geocode(route) {
     const one = async (i) => {
-      const u = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=${state.o.lang}&lat=${route.lat[i]}&lon=${route.lon[i]}`;
+      const u = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=${state.o.lang}&lat=${route.lat[i]}&lon=${route.lon[i]}`;
       const j = await (await fetch(u)).json(); const a = j.address || {};
-      return { place: a.city || a.town || a.village || a.municipality || a.county || a.state || '', country: a.country || '' };
+      // населённый пункт важнее района: «Листвянка», а не «Иркутский муниципальный округ»
+      return { place: a.city || a.town || a.village || a.hamlet || a.suburb || a.municipality || a.county || a.state || '', country: a.country || '' };
     };
     try {
       const [a, b] = await Promise.all([one(0), one(route.n - 1)]);
       if (state.route !== route) return;
       if (!touched.startName && a.place) { state.o.startName = a.place; $('startName').value = a.place; }
-      if (!touched.endName && !state.demoDay && b.place) { state.o.endName = b.place; $('endName').value = b.place; }
+      if (!touched.endName && !state.demoDay && b.place) { state.o.endName = b.place; $('endName').value = b.place; if (isOwn()) { state.seriesBase = ownToday().J; saveOwn(); } }
       if (!touched.subtitle) {
         const s = a.country && a.country === b.country ? a.country : [a.country, b.country].filter(Boolean).join(' → ');
         state.o.subtitle = s; $('subtitle').value = s;
@@ -199,20 +200,24 @@
 
   /* ---- сборка сцены: трек дня / весь путь / оба подряд ---- */
   /* ---- серия: путешествие по дням + новый день → план режиссёра → эпизод ---- */
+  function segOf(r, to) {
+    const step = Math.max(1, Math.floor(r.n / 250)), line = [];
+    for (let i = 0; i < r.n; i += step) line.push([+r.lon[i].toFixed(5), +r.lat[i].toFixed(5)]);
+    line.push([+r.lon[r.n - 1].toFixed(5), +r.lat[r.n - 1].toFixed(5)]);
+    const date = r.t ? new Date(r.t[0] + (r.lon[0] / 15) * 3600e3).toISOString().slice(0, 10) : null;
+    return { km: Math.round(r.total / 100) / 10, line, date, to: to || null, gain: r.ele ? Math.round(r.stats.gain) : 0 };
+  }
   function seriesInput() {
+    if (isOwn()) return ownToday();
     let J = state.seriesBase, change = null;
     if (state.route && !state.routeIsDemo) {
-      const r = state.route, step = Math.max(1, Math.floor(r.n / 250)), line = [];
-      for (let i = 0; i < r.n; i += step) line.push([r.lon[i], r.lat[i]]);
-      line.push([r.lon[r.n - 1], r.lat[r.n - 1]]);
-      const date = r.t ? new Date(r.t[0] + (r.lon[0] / 15) * 3600e3).toISOString().slice(0, 10) : null;
-      const seg = { km: Math.round(r.total / 100) / 10, line, date, to: state.o.endName || null, gain: r.ele ? Math.round(r.stats.gain) : 0 };
+      const seg = segOf(state.route, state.o.endName), line = seg.line;
       const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
       const notes = state.o.note ? [{ text: state.o.note }] : [];
       const lastDay = [...J.days].sort((a, b) => a.day - b.day).pop();
       const gapKm = lastDay ? window.RouteLib.hav({ lon: lastDay.line[lastDay.line.length - 1][0], lat: lastDay.line[lastDay.line.length - 1][1] }, { lon: line[0][0], lat: line[0][1] }) / 1000 : 0;
       ({ journey: J, change } = window.Director.addDay(J, seg, media, notes));
-      change.gapKm = Math.round(gapKm);
+      change.gapKm = J.days.length > 1 ? Math.round(gapKm) : 0;
     }
     return { J, change };
   }
@@ -226,9 +231,10 @@
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {
     const S = window.Director.summarize(J), fmt = (v) => Math.round(v).toLocaleString('ru-RU');
-    $('change').innerHTML = J.schematic ? `<b>Кругосветка @wahrider</b>${J.days.length} мест по постам · 7 260 км по словам автора` : change
+    const ownHead = isOwn() ? `<div class="cand">${J.title} · ${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км · сохраняется в этом браузере</div>` : '';
+    $('change').innerHTML = ownHead + (J.schematic ? `<b>Кругосветка @wahrider</b>${J.days.length} мест по постам · 7 260 км по словам автора` : change
       ? `<b>+${fmt(change.km)} км · День ${change.day}</b><br>${change.media ? change.media + ' фото · ' : ''}${change.notes ? 'заметка · ' : ''}всего ${fmt(change.totalAfter)} км${change.arrival ? ' · прибытие: ' + change.arrival : ''}${change.milestones.length ? ' · веха: ' + change.milestones.map(fmt).join(', ') + ' км' : ''}${change.gapKm > 30 ? `<div class="warn">Этот день начинается в ${fmt(change.gapKm)} км от места, где закончился предыдущий. Это точно продолжение путешествия?</div>` : ''}`
-      : `<b>${J.title}</b><br>${S.daysCount} дней · ${fmt(S.totalKm)} км. Добавьте новый день: свой GPX или демо-день 47.`;
+      : `<b>${J.title}</b><br>${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км. Добавьте следующий день — свой GPX.`);
     const v = window.Director.validate(res.plan, J);
     $('plan').innerHTML = `<div>${res.plan.episodeType} · ${res.plan.durationSec} с · зерно ${res.plan.seed}${res.plan.fallback ? ' · запасной план: ' + res.plan.fallback : ''}${v.ok ? ' · проверка пройдена' : ' · ошибки: ' + v.errors.join('; ')}</div>` +
       res.log.map((l) => `<div class="beat"><b>${NAMES[l.beat] || l.beat}</b>: ${l.selected || '—'}<div class="cand">${l.candidates.map((c) => `<span class="${c.id === l.selected ? 'sel' : ''}">${c.id} ${c.eligible ? c.total : '✕'}</span>`).join(' · ')}</div><div class="cand">${l.reason}</div></div>`).join('') +
@@ -246,6 +252,64 @@
     } catch (e) { showErr('Не удалось загрузить демо-путешествие: ' + e.message); }
   }
   $('series').onclick = loadSeries;
+
+  /* ---- моё путешествие: свои GPX становятся днями, путешествие хранится в браузере ---- */
+  const OWN_KEY = 'route-story-my-journey';
+  const isOwn = () => state.seriesBase && state.seriesBase.id === 'my';
+  function newOwn(title) { return { id: 'my', title: title || 'Моё путешествие', traveler: '', days: [], media: [], notes: [], checkpoints: [], episodes: [] }; }
+  function saveOwn() {
+    if (!isOwn()) return;
+    const J = state.seriesBase, keep = { ...J, media: [], days: J.days.map((d) => ({ ...d, media: [] })) };   // фото (адреса в памяти браузера) не сохраняются
+    try { localStorage.setItem(OWN_KEY, JSON.stringify(keep)); } catch (e) { /* нет места или приватный режим — работаем без сохранения */ }
+  }
+  function loadOwnSaved() { try { const j = JSON.parse(localStorage.getItem(OWN_KEY) || 'null'); return j && j.id === 'my' && j.days && j.days.length ? j : null; } catch (e) { return null; } }
+  // своё путешествие: «сегодня» — последний сохранённый день; текущие фото, фраза и место относятся к нему
+  function ownToday() {
+    const J = state.seriesBase, days = [...J.days].sort((a, b) => a.day - b.day), last = days[days.length - 1];
+    if (!last) return { J, change: null };
+    const prev = { ...J, days: days.slice(0, -1), checkpoints: (J.checkpoints || []).filter((c) => c.day < last.day), media: (J.media || []).filter((m) => m.day < last.day), notes: (J.notes || []).filter((n) => n.day < last.day) };
+    const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
+    const notes = state.o.note ? [{ text: state.o.note }] : [];
+    const pl = days[days.length - 2], gapKm = pl ? window.RouteLib.hav({ lon: pl.line[pl.line.length - 1][0], lat: pl.line[pl.line.length - 1][1] }, { lon: last.line[0][0], lat: last.line[0][1] }) / 1000 : 0;
+    const { line, km, date, gain } = last;
+    const res = window.Director.addDay(prev, { day: last.day, line, km, date, gain, to: state.o.endName || last.to || null }, media, notes);
+    res.change.gapKm = Math.round(gapKm);
+    return { J: res.journey, change: res.change };
+  }
+  function bakeToday() { if (isOwn() && state.seriesBase.days.length) { state.seriesBase = ownToday().J; photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = ''; $('note').value = ''; state.o.endName = ''; $('endName').value = ''; touched.endName = false; } }
+  async function handleFiles(files) {
+    showErr('');
+    if (state.mode === 'track') { readFile(files[0]); return; }
+    const got = [];
+    for (const f of files) {
+      try { const tx = await f.text(); const r = prepare(parseAny(tx, f.name), f.name.replace(/\.[^.]+$/, '')); got.push({ r, name: f.name }); }
+      catch (e) { showErr(`${f.name}: ${e.message || e}`); }
+    }
+    if (!got.length) return;
+    got.sort((a, b) => (a.r.t && b.r.t ? a.r.t[0] - b.r.t[0] : a.name.localeCompare(b.name, 'ru', { numeric: true })));
+    // свой трек начинает (или продолжает) своё путешествие — не клеится к демо
+    if (!isOwn()) { state.seriesBase = loadOwnSaved() || newOwn(); state.route = null; }
+    else bakeToday();
+    if (state.demoDay || state.demoNote) { photoFiles = photoFiles.filter((p) => !p.demo); if (state.demoNote) { state.o.note = ''; $('note').value = ''; } state.demoDay = false; state.demoNote = false; }
+    got.forEach((g) => { state.seriesBase = window.Director.addDay(state.seriesBase, segOf(g.r, null), [], []).journey; });   // каждый файл — сохранённый день
+    const last = got[got.length - 1];
+    state.route = last.r; state.routeIsDemo = false;
+    state.etype = 'returning-viewer'; $('etype').value = 'returning-viewer';
+    if (!touched.endName) { state.o.endName = ''; $('endName').value = ''; }
+    saveOwn(); placePhotos(); refreshModes(); setMode('series'); play(true);
+    $('continue').hidden = true;
+    geocode(last.r);
+  }
+  $('continue').onclick = () => {
+    const J = loadOwnSaved(); if (!J) return;
+    state.seriesBase = J; state.route = null; state.routeIsDemo = false; state.demoDay = false;
+    photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = ''; $('note').value = ''; state.demoNote = false;
+    state.o.endName = ''; $('endName').value = ''; touched.endName = false;
+    state.etype = 'story-so-far'; $('etype').value = 'story-so-far';
+    $('continue').hidden = true; refreshModes(); setMode('series'); play(true);
+  };
+  $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; if (isOwn()) loadSeries().then(() => $('day47').click()); };
+  { const J = loadOwnSaved(); if (J) { $('continue').hidden = false; $('continue').textContent = `Продолжить моё путешествие · ${J.days.length} ${J.days.length % 10 === 1 && J.days.length % 100 !== 11 ? 'день' : J.days.length % 10 >= 2 && J.days.length % 10 <= 4 && (J.days.length % 100 < 10 || J.days.length % 100 >= 20) ? 'дня' : 'дней'}`; } }
   $('day47').onclick = async () => {
     try {
       if (!state.seriesBase || state.seriesBase.schematic || state.mode !== 'series') await loadSeries();   // демо-день 47 — только к демо-путешествию, не к кругосветке героя

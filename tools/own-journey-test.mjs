@@ -1,0 +1,18 @@
+import { createRequire } from 'node:module';
+const require = createRequire('C:/Users/glina/route-story-spike/package.json');
+const { chromium } = require('playwright');
+const b = await chromium.launch({ channel: 'msedge', headless: true });
+const ctx = await b.newContext(); const p = await ctx.newPage();
+const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+const st = () => p.evaluate(() => { const s = window.__app.state; return `${s.seriesBase.id} дней в базе: ${s.seriesBase.days.length}, сегодня: ${!!s.route} | ${document.getElementById('change').innerText.replace(/\n/g, ' / ').slice(0, 140)} | план: ${s.lastEp.res.plan.beats.map((x) => x.recipe).join(',')}`; });
+await p.goto('http://localhost:4180/'); await p.waitForFunction(() => window.__app && window.__app.state.lastEp);
+await p.setInputFiles('#file', ['samples/own-day2.gpx', 'samples/own-day1.gpx']); await p.waitForTimeout(1200);
+console.log('1) два файла сразу:', await st());
+await p.reload(); await p.waitForFunction(() => window.__app && window.__app.state.lastEp);
+console.log('2) после перезагрузки кнопка:', await p.evaluate(() => { const c = document.getElementById('continue'); return c.hidden ? 'скрыта' : c.textContent; }));
+await p.evaluate(() => document.getElementById('continue').click()); await p.waitForTimeout(800);
+console.log('3) продолжить:', await st());
+await p.setInputFiles('#file', 'samples/day47.gpx'); await p.waitForTimeout(1200);
+console.log('4) третий день (далеко):', await st());
+console.log('ошибки:', errs.length ? errs : 'нет');
+await b.close();
