@@ -40,7 +40,7 @@
     return null;
   }
 
-  async function exportVideo({ makeScene, W, H, fps = 30, duration, onStage, signal }) {
+  async function exportVideo({ makeScene, W, H, fps = 30, duration, onStage, signal, audio }) {
     const scene = makeScene(W, H);
     onStage('Загружаю карту…', 0);
     if (scene.assetsReady) await scene.assetsReady;
@@ -54,7 +54,9 @@
     const cfg = await pickCodec(W, H, fps, bitrate);
 
     if (cfg && window.Mp4Muxer) {
-      const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H }, fastStart: 'in-memory' });
+      const withAudio = !!(audio && window.RSAudio && (await window.RSAudio.supported()));
+      const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H }, audio: withAudio ? { codec: 'aac', numberOfChannels: 2, sampleRate: window.RSAudio.SR } : undefined, fastStart: 'in-memory' });
+      if (withAudio) { onStage('Записываю звук…', 0); await window.RSAudio.encodeInto(muxer, audio); }
       let encErr = null;
       const enc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { encErr = e; } });
       enc.configure({ ...cfg, latencyMode: 'quality', avc: { format: 'avc' } });

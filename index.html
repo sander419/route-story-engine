@@ -65,6 +65,10 @@
         <button data-v="v" class="on">9:16 · Reels</button>
         <button data-v="h">16:9 · YouTube</button>
       </div>
+      <label class="f">Музыка
+        <select id="music"><option value="builtin" selected>Встроенная — подстроена под кадры</option><option value="own">Своя (файл)</option><option value="none">Без музыки</option></select>
+      </label>
+      <input type="file" id="musicFile" accept="audio/*" hidden>
       <button class="go" id="export">Скачать видео</button>
       <div class="prog" id="prog" hidden><div id="bar"></div><span id="stage"></span></div>
       <div class="result" id="result" hidden></div>
@@ -155,6 +159,7 @@
 <script src="src/director.js"></script>
 <script src="src/episode.js"></script>
 <script src="src/exif.js"></script>
+<script src="src/audio.js"></script>
 <script src="src/export.js"></script>
 <script src="src/layers-export.js"></script>
 <script src="src/ui.js"></script>

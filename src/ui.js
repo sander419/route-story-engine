@@ -408,14 +408,37 @@
       scene = buildScene(w, h);
       if (!keepT && t > scene.duration) t = 0;
       dirty = true;
+      syncAudio();
     });
   }
   window.RS.setOnTile(() => { dirty = true; });
   window.VMap.setOnTile(() => { dirty = true; });
 
-  function play(on) { playing = on; $('play').textContent = on ? '❚❚' : '▶'; last = performance.now(); }
+  /* ---- звук ---- */
+  state.music = 'builtin'; let musicFileBuf = null, audioKey = '', audioBuf = null, audioJob = null;
+  async function audioFor(sc) {
+    if (!sc || state.music === 'none' || !window.RSAudio) return null;
+    const cues = (sc.plan ? sc.plan.beats : []).map((b) => ({ t: b.startSec, recipe: b.recipe, dur: b.durationSec }));
+    const key = state.music + '|' + sc.duration + '|' + cues.map((c) => c.recipe + c.t).join(',') + '|' + (musicFileBuf ? musicFileBuf.byteLength : 0);
+    if (key === audioKey && audioBuf) return audioBuf;
+    if (state.music === 'own') { if (!musicFileBuf) return null; audioBuf = await window.RSAudio.fromFile(musicFileBuf, sc.duration); }
+    else audioBuf = await window.RSAudio.compose(sc.duration, cues);
+    audioKey = key; return audioBuf;
+  }
+  async function syncAudio() {
+    if (!playing || !scene) { window.RSAudio && window.RSAudio.stop(); return; }
+    const sc = scene, job = (audioJob = {});
+    const buf = await audioFor(sc).catch(() => null);
+    if (job !== audioJob || !playing || sc !== scene) return;
+    if (buf) window.RSAudio.playAt(buf, t); else window.RSAudio.stop();
+  }
+  $('music').onchange = () => { state.music = $('music').value; if (state.music === 'own' && !musicFileBuf) $('musicFile').click(); audioKey = ''; syncAudio(); };
+  $('musicFile').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { musicFileBuf = await f.arrayBuffer(); await window.RSAudio.fromFile(musicFileBuf, 1); } catch (er) { musicFileBuf = null; showErr('Не получилось прочитать музыку: ' + (er.message || er)); } audioKey = ''; syncAudio(); };
+  document.addEventListener('pointerdown', () => { if (playing) syncAudio(); }, { once: true });   // браузер разрешает звук только после действия пользователя
+
+  function play(on) { playing = on; $('play').textContent = on ? '❚❚' : '▶'; last = performance.now(); syncAudio(); }
   $('play').onclick = () => { if (!playing && scene && t >= scene.duration) t = 0; play(!playing); };
-  $('scrub').oninput = () => { play(false); t = ($('scrub').value / 1000) * (scene ? scene.duration : 1); dirty = true; };
+  $('scrub').oninput = () => { play(false); window.RSAudio && window.RSAudio.stop(); t = ($('scrub').value / 1000) * (scene ? scene.duration : 1); dirty = true; };
 
   const clampT = (x) => Math.max(0, Math.min(x, scene.duration));
   function tick(ts) {
@@ -423,7 +446,7 @@
     if (!scene) return;
     if (playing) {
       t += Math.max(0, ts - last) / 1000;
-      if (t > scene.duration + 1.2) t = 0;
+      if (t > scene.duration + 1.2) { t = 0; syncAudio(); }
       dirty = true;
     }
     last = ts;
@@ -485,7 +508,8 @@
         window.__lastLayers = links;
         return;
       }
-      const res = await window.RSExport.exportVideo({
+      const audio = await audioFor(buildScene(W, H)).catch(() => null);
+      const res = await window.RSExport.exportVideo({ audio,
         makeScene: (w, h) => buildScene(w, h),
         W, H, fps: 30, duration: dur, signal: abort.signal,
         onStage: (txt, p) => { $('stage').textContent = `${txt} ${Math.round(p * 100)}%`; $('bar').style.width = p * 100 + '%'; },
