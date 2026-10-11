@@ -45,7 +45,7 @@
 
   /* ---- главная мысль и фото дня ---- */
   let photoFiles = [];   // { name, url, meta, caption, how }
-  $('note').oninput = () => { state.o.note = $('note').value.trim(); rebuild(true); };
+  $('note').oninput = () => { state.o.note = $('note').value.trim(); state.demoNote = false; rebuild(true); };
   $('photos').onchange = async (e) => {
     const files = [...e.target.files].slice(0, Math.max(0, 4 - photoFiles.length));
     for (const f of files) {
@@ -93,7 +93,7 @@
   $('demo').onclick = async () => {
     try {
       const r = await fetch('samples/samarkand-bukhara.gpx');
-      loadText(await r.text(), 'samarkand-bukhara.gpx');
+      loadText(await r.text(), 'samarkand-bukhara.gpx'); state.routeIsDemo = true;
     } catch (e) { showErr('Не удалось загрузить демо: ' + e.message); }
   };
   function readFile(f) { f.text().then((tx) => loadText(tx, f.name)).catch((e) => showErr(e.message)); }
@@ -106,8 +106,13 @@
       if (text.trimStart().startsWith('{')) { const j = JSON.parse(text); if (Array.isArray(j.stops) && j.stops.length > 1 && j.stops[0].lat != null) { loadJourney(j); return; } }
       const parsed = parseAny(text, filename);
       const route = prepare(parsed, filename.replace(/\.[^.]+$/, ''));
+      if (filename !== 'day47.gpx' && state.demoDay) {   // свой трек вместо демо-дня: убираем демо-фото, демо-заметку и демо-место
+        photoFiles = photoFiles.filter((p) => !p.demo);
+        if (state.demoNote) { state.o.note = ''; $('note').value = ''; state.demoNote = false; }
+        state.demoDay = false;
+      }
       state.route = route;
-      state.routeIsDemo = /samarkand-bukhara/.test(filename);
+      state.routeIsDemo = false;   // демо-трек помечает только кнопка «демо-трек», не имя файла
       const km = route.total / 1000;
       $('info').hidden = false;
       $('info').innerHTML =
@@ -141,12 +146,14 @@
       const [a, b] = await Promise.all([one(0), one(route.n - 1)]);
       if (state.route !== route) return;
       if (!touched.startName && a.place) { state.o.startName = a.place; $('startName').value = a.place; }
-      if (!touched.endName && b.place) { state.o.endName = b.place; $('endName').value = b.place; }
+      if (!touched.endName && !state.demoDay && b.place) { state.o.endName = b.place; $('endName').value = b.place; }
       if (!touched.subtitle) {
         const s = a.country && a.country === b.country ? a.country : [a.country, b.country].filter(Boolean).join(' → ');
         state.o.subtitle = s; $('subtitle').value = s;
       }
       rebuild(true);
+      // подписи мест по пути нужны только режиму «один трек»: в серии карта без подписей — не дёргаем сервис зря
+      if (state.mode === 'series') return;
       // подписи мест по пути: 6 точек между стартом и финишем, не чаще 1 запроса в секунду
       const found = [];
       for (const f of [0.14, 0.28, 0.42, 0.56, 0.7, 0.84]) {
@@ -194,7 +201,7 @@
   /* ---- серия: путешествие по дням + новый день → план режиссёра → эпизод ---- */
   function seriesInput() {
     let J = state.seriesBase, change = null;
-    if (state.route) {
+    if (state.route && !state.routeIsDemo) {
       const r = state.route, step = Math.max(1, Math.floor(r.n / 250)), line = [];
       for (let i = 0; i < r.n; i += step) line.push([r.lon[i], r.lat[i]]);
       line.push([r.lon[r.n - 1], r.lat[r.n - 1]]);
@@ -202,7 +209,10 @@
       const seg = { km: Math.round(r.total / 100) / 10, line, date, to: state.o.endName || null, gain: r.ele ? Math.round(r.stats.gain) : 0 };
       const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
       const notes = state.o.note ? [{ text: state.o.note }] : [];
+      const lastDay = [...J.days].sort((a, b) => a.day - b.day).pop();
+      const gapKm = lastDay ? window.RouteLib.hav({ lon: lastDay.line[lastDay.line.length - 1][0], lat: lastDay.line[lastDay.line.length - 1][1] }, { lon: line[0][0], lat: line[0][1] }) / 1000 : 0;
       ({ journey: J, change } = window.Director.addDay(J, seg, media, notes));
+      change.gapKm = Math.round(gapKm);
     }
     return { J, change };
   }
@@ -217,7 +227,7 @@
   function renderSeriesPanel(res, change, J) {
     const S = window.Director.summarize(J), fmt = (v) => Math.round(v).toLocaleString('ru-RU');
     $('change').innerHTML = J.schematic ? `<b>Кругосветка @wahrider</b>${J.days.length} мест по постам · 7 260 км по словам автора` : change
-      ? `<b>+${fmt(change.km)} км · День ${change.day}</b><br>${change.media ? change.media + ' фото · ' : ''}${change.notes ? 'заметка · ' : ''}всего ${fmt(change.totalAfter)} км${change.arrival ? ' · прибытие: ' + change.arrival : ''}${change.milestones.length ? ' · веха: ' + change.milestones.map(fmt).join(', ') + ' км' : ''}`
+      ? `<b>+${fmt(change.km)} км · День ${change.day}</b><br>${change.media ? change.media + ' фото · ' : ''}${change.notes ? 'заметка · ' : ''}всего ${fmt(change.totalAfter)} км${change.arrival ? ' · прибытие: ' + change.arrival : ''}${change.milestones.length ? ' · веха: ' + change.milestones.map(fmt).join(', ') + ' км' : ''}${change.gapKm > 30 ? `<div class="warn">Этот день начинается в ${fmt(change.gapKm)} км от места, где закончился предыдущий. Это точно продолжение путешествия?</div>` : ''}`
       : `<b>${J.title}</b><br>${S.daysCount} дней · ${fmt(S.totalKm)} км. Добавьте новый день: свой GPX или демо-день 47.`;
     const v = window.Director.validate(res.plan, J);
     $('plan').innerHTML = `<div>${res.plan.episodeType} · ${res.plan.durationSec} с · зерно ${res.plan.seed}${res.plan.fallback ? ' · запасной план: ' + res.plan.fallback : ''}${v.ok ? ' · проверка пройдена' : ' · ошибки: ' + v.errors.join('; ')}</div>` +
@@ -228,6 +238,7 @@
   async function loadSeries() {
     try {
       state.seriesBase = await (await fetch('data/demo-journey.json')).json();
+      state.etype = 'returning-viewer'; $('etype').value = 'returning-viewer';
       if (state.routeIsDemo) { state.route = null; state.routeIsDemo = false; }
       $('info').hidden = false;
       $('info').innerHTML = `<span><b>${state.seriesBase.title}</b> — демо-путешествие</span><span>46 дней · вымышленный путешественник на реальных дорогах</span>`;
@@ -236,10 +247,14 @@
   }
   $('series').onclick = loadSeries;
   $('day47').onclick = async () => {
-    try { const tx = await (await fetch('samples/day47.gpx')).text(); loadText(tx, 'day47.gpx'); if (!touched.endName) { touched.endName = true; state.o.endName = 'Байкал'; $('endName').value = 'Байкал'; }
-      // демо-фото (Wikimedia Commons, CC BY-SA 4.0) и заметка — чтобы показать серию в один клик; свои можно заменить
-      if (!photoFiles.length) { const cr = 'Фото: Thomas D. Fischer · CC BY-SA 4.0 · Wikimedia Commons'; photoFiles = [{ name: 'baikal-1.jpg', url: 'media/demo/baikal-1.jpg', meta: {}, caption: 'Первый вид на Байкал', credit: cr }, { name: 'baikal-2.jpg', url: 'media/demo/baikal-2.jpg', meta: {}, caption: 'Берег у Листвянки', credit: cr }]; }
-      if (!state.o.note) { state.o.note = 'Изнурительно, но весело'; $('note').value = state.o.note; }
+    try {
+      if (!state.seriesBase || state.seriesBase.schematic || state.mode !== 'series') await loadSeries();   // демо-день 47 — только к демо-путешествию, не к кругосветке героя
+      const tx = await (await fetch('samples/day47.gpx')).text(); loadText(tx, 'day47.gpx');
+      // демо-фото (Wikimedia Commons, CC BY-SA 4.0), заметка и место — помечены как демо: свой GPX их уберёт
+      state.demoDay = true;
+      if (!touched.endName) { state.o.endName = 'Байкал'; $('endName').value = 'Байкал'; }
+      if (!photoFiles.length) { const cr = 'Фото: Thomas D. Fischer · CC BY-SA 4.0 · Wikimedia Commons'; photoFiles = [{ name: 'baikal-1.jpg', url: 'media/demo/baikal-1.jpg', meta: {}, caption: 'Первый вид на Байкал', credit: cr, demo: true }, { name: 'baikal-2.jpg', url: 'media/demo/baikal-2.jpg', meta: {}, caption: 'Берег у Листвянки', credit: cr, demo: true }]; }
+      if (!state.o.note) { state.o.note = 'Изнурительно, но весело'; $('note').value = state.o.note; state.demoNote = true; }
       placePhotos(); }
     catch (e) { showErr('Не удалось загрузить день 47: ' + e.message); }
   };

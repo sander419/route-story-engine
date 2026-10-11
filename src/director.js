@@ -106,7 +106,7 @@
   /* ================= Shot Recipes (решения; отрисовка — отдельно, в episode.js) ================= */
   // каждая функция base(ctx) возвращает компоненты полезности 0..1
   const RECIPES = [
-    { id: 'day-card', beats: ['hook'], min: 2.6, max: 3.6, flex: true,
+    { id: 'day-card', types: ['new-viewer', 'returning-viewer'], beats: ['hook'], min: 2.6, max: 3.6, flex: true,
       eligible: () => true,
       base: (c) => ({ relevance: 1, novelty: c.type === 'returning-viewer' ? 0.9 : 0.6, emotion: 0.2, visual: 0.4, milestone: c.dayMilestone ? 1 : 0 }),
       pref: (c) => 3,

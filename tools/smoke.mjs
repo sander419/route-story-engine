@@ -1,0 +1,43 @@
+// Обход сценариев: ошибки страницы, состояния, длительности, экспорт.
+import { createRequire } from 'node:module';
+const require = createRequire('C:/Users/glina/route-story-spike/package.json');
+const { chromium } = require('playwright');
+const b = await chromium.launch({ channel: 'msedge', headless: true });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => m.type() === 'error' && !/404|favicon/.test(m.text()) && errs.push('console: ' + m.text().slice(0, 150)));
+const step = async (name, fn) => { const n = errs.length; try { const r = await fn(); console.log(`${errs.length > n ? 'ERR' : 'ok '} ${name}${r ? ' — ' + r : ''}`); } catch (e) { console.log('FAIL', name, '—', e.message.split('\n')[0]); } errs.slice(n).forEach((e) => console.log('     ', e)); };
+const st = () => p.evaluate(() => { const a = window.__app, s = a.state; return { mode: s.mode, etype: s.etype, dur: a.scene && a.scene.duration, plan: s.lastEp && s.lastEp.res.plan.beats.map((x) => x.recipe).join(','), change: document.getElementById('change').textContent.slice(0, 60), route: !!s.route }; });
+const click = (id) => p.evaluate((id) => document.getElementById(id).click(), id);
+await p.goto(process.env.URL || 'http://localhost:4180/');
+await step('открытие: авто-демо', async () => { await p.waitForFunction(() => window.__app && window.__app.state.lastEp && /47/.test(document.getElementById('change').textContent), null, { timeout: 30000 }); return JSON.stringify(await st()); });
+await step('проигрывание 3 с', async () => { await p.waitForTimeout(3000); return await p.evaluate(() => document.getElementById('time').textContent); });
+await step('для новых зрителей', async () => { await p.selectOption('#etype', 'new-viewer'); await p.waitForTimeout(300); return (await st()).plan; });
+await step('трейлер', async () => { await p.selectOption('#etype', 'story-so-far'); await p.waitForTimeout(300); return (await st()).plan; });
+await step('16:9', async () => { await click('fmt') ; await p.evaluate(() => document.querySelector('#fmt button[data-v="h"]').click()); await p.waitForTimeout(300); return await p.evaluate(() => document.getElementById('cv').width + 'x' + document.getElementById('cv').height); });
+await step('стиль «Бумага»', async () => { await p.evaluate(() => [...document.querySelectorAll('#styles button')].find((x) => x.dataset.id === 'paper').click()); await p.waitForTimeout(300); return (await st()).mode; });
+await step('стиль «Спутник»', async () => { await p.evaluate(() => [...document.querySelectorAll('#styles button')].find((x) => x.dataset.id === 'sat').click()); await p.waitForTimeout(800); return (await st()).mode; });
+await step('свой GPX как новый день', async () => { await p.selectOption('#etype', 'returning-viewer'); await p.setInputFiles('#file', 'samples/samarkand-bukhara.gpx'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
+await step('убрать фото', async () => { const n = await p.evaluate(() => document.querySelectorAll('#photoList button').length); for (let i = 0; i < n; i++) await p.evaluate(() => document.querySelector('#photoList button').click()); await p.waitForTimeout(300); return 'фото: ' + (await p.evaluate(() => window.__app.state.o.photos.length)) + ' план: ' + (await st()).plan; });
+await step('пустая заметка', async () => { await p.fill('#note', ''); await p.waitForTimeout(300); return (await st()).plan; });
+await step('битый файл', async () => { await p.setInputFiles('#file', { name: 'bad.gpx', mimeType: 'application/gpx+xml', buffer: Buffer.from('<gpx><trk><trkseg></trkseg></trk></gpx>') }); await p.waitForTimeout(300); return await p.evaluate(() => document.getElementById('err').textContent); });
+await step('трейлер героя', async () => { await click('wj'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
+await step('назад к демо-серии', async () => { await click('series'); await p.waitForTimeout(500); await click('day47'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
+await step('режим «один трек»', async () => { await p.evaluate(() => document.querySelector('#mode button[data-v="track"]').click()); await p.waitForTimeout(500); return JSON.stringify(await st()); });
+await step('демо-трек Самарканд', async () => { await click('demo'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
+await step('обратно в серию через кнопку режима', async () => { await p.evaluate(() => document.querySelector('#mode button[data-v="series"]').click()); await p.waitForTimeout(600); return JSON.stringify(await st()); });
+await step('запомнить серию ×3', async () => { for (let i = 0; i < 3; i++) await click('remember'); await p.waitForTimeout(300); return (await st()).plan; });
+await step('экспорт 720p (серия)', async () => {
+  await p.evaluate(() => { const e = document.getElementById('res'); e.value = 'sd'; e.dispatchEvent(new Event('change')); });
+  await click('export'); await p.waitForFunction(() => window.__lastExport || !document.getElementById('err').hidden, null, { timeout: 300000 });
+  return await p.evaluate(() => (window.__lastExport ? window.__lastExport.name + ' ' + (window.__lastExport.size / 1e6).toFixed(1) + 'MB' : 'ERR ' + document.getElementById('err').textContent));
+});
+await step('отмена экспорта', async () => { await click('export'); await p.waitForTimeout(1500); await click('export'); await p.waitForTimeout(800); return await p.evaluate(() => document.getElementById('export').textContent + ' | prog hidden=' + document.getElementById('prog').hidden); });
+await step('слои PNG (серия)', async () => {
+  await p.evaluate(() => document.querySelector('#xmode button[data-v="layers"]').click());
+  await p.evaluate(() => { const e = document.getElementById('lyFps'); e.value = '15'; });
+  await p.evaluate(() => { window.__lastLayers = null; }); await click('export');
+  await p.waitForFunction(() => window.__lastLayers || !document.getElementById('err').hidden, null, { timeout: 300000 });
+  return await p.evaluate(() => (window.__lastLayers ? window.__lastLayers.map((l) => l.nm + ' ' + (l.size / 1e6).toFixed(0) + 'MB').join(', ') : 'ERR ' + document.getElementById('err').textContent));
+});
+console.log('\nвсего ошибок страницы:', errs.length);
+await b.close();

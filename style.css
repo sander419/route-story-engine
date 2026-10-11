@@ -109,3 +109,5 @@ button:hover{border-color:var(--acc)}
 .ctrl button#play{flex:none}
 @media (max-width:600px){.top{flex-wrap:wrap;gap:4px 12px}.top .tag{font-size:12px;flex-basis:100%}}
 #mode button[data-v="journey"],#mode button[data-v="both"]{display:none}
+
+.warn{margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.5);font-size:13px}
