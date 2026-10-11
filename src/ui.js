@@ -6,7 +6,7 @@
 
   const state = {
     route: null, journeyData: null, mode: 'track', styleId: 'night', fmt: 'v', jcount: 99,
-    o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru', places: [] },
+    o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru', places: [], note: '', photos: [] },
   };
   const touched = {};
   let scene = null, playing = false, t = 0, last = 0, dirty = true, objUrl = null, abort = null;
@@ -42,6 +42,47 @@
   [...$('fmt').children].forEach((b) => (b.onclick = () => {
     state.fmt = b.dataset.v; [...$('fmt').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild();
   }));
+
+  /* ---- главная мысль и фото дня ---- */
+  let photoFiles = [];   // { name, url, meta, caption, how }
+  $('note').oninput = () => { state.o.note = $('note').value.trim(); rebuild(true); };
+  $('photos').onchange = async (e) => {
+    const files = [...e.target.files].slice(0, Math.max(0, 4 - photoFiles.length));
+    for (const f of files) {
+      const meta = window.Exif.readExif(await f.arrayBuffer());
+      const url = URL.createObjectURL(f);
+      const ok = await new Promise((r) => { const im = new Image(); im.onload = () => r(true); im.onerror = () => r(false); im.src = url; });
+      if (!ok) { showErr(`«${f.name}»: браузер не может открыть этот формат (часто это HEIC с iPhone). Сохраните фото как JPEG.`); URL.revokeObjectURL(url); continue; }
+      photoFiles.push({ name: f.name, url, meta, caption: '' });
+    }
+    e.target.value = '';
+    placePhotos();
+  };
+  function placePhotos() {
+    const r = state.route;
+    if (!r) { state.o.photos = []; renderPhotos(); return; }
+    const placed = photoFiles.map((p, i) => { const pl = window.Exif.placeOnRoute(r, p.meta, i, photoFiles.length); p.how = pl.how; p.s = pl.s; return p; });
+    const ev = placed.filter((p) => p.how === 'even');
+    ev.forEach((p, k) => { p.s = (r.total * (k + 1)) / (ev.length + 1); });
+    state.o.photos = placed.map((p) => ({ url: p.url, s: p.s, caption: p.caption }));
+    renderPhotos(); rebuild(true);
+  }
+  function renderPhotos() {
+    const box = $('photoList'); box.innerHTML = '';
+    const how = { gps: 'по GPS из фото', time: 'по времени съёмки', even: 'по порядку' };
+    photoFiles.forEach((p, i) => {
+      const row = document.createElement('div'); row.className = 'phrow';
+      const img = document.createElement('img'); img.src = p.url; img.alt = '';
+      const mid = document.createElement('div');
+      const inp = document.createElement('input'); inp.placeholder = 'Подпись (необязательно)'; inp.maxLength = 40; inp.value = p.caption;
+      inp.oninput = () => { p.caption = inp.value; state.o.photos[i] && (state.o.photos[i].caption = inp.value); rebuild(true); };
+      const sm = document.createElement('small'); sm.textContent = state.route && p.s != null ? `${how[p.how] || ''} · ${(p.s / 1000).toFixed(1)} км` : '';
+      mid.append(inp, sm);
+      const del = document.createElement('button'); del.textContent = '×'; del.title = 'Убрать фото';
+      del.onclick = () => { URL.revokeObjectURL(p.url); photoFiles.splice(i, 1); placePhotos(); };
+      row.append(img, mid, del); box.appendChild(row);
+    });
+  }
 
   /* ---- загрузка ---- */
   const drop = $('drop');
@@ -84,6 +125,7 @@
       if (state.mode === 'journey') state.mode = 'both';
       setMode(state.journeyData ? state.mode : 'track'); play(true);
       state.o.places = []; renderPlaces();
+      placePhotos();
       geocode(route);
     } catch (e) { showErr(e.message || String(e)); }
   }

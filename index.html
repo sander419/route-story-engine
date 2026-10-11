@@ -61,6 +61,14 @@
         </label>
       </div>
       <div class="f">Подписи мест по пути<div id="places"></div><small id="placesHint">Подбираются автоматически по карте (нужен интернет) — можно поправить или убрать</small></div>
+      <label class="f">Главное об этом дне — покажем в начале ролика
+        <textarea id="note" maxlength="140" rows="2" placeholder="Например: 62 км против ветра, но доехал"></textarea>
+      </label>
+      <div class="f">Фото дня (до 4) — встанут на маршрут по времени съёмки или GPS из файла
+        <input type="file" id="photos" accept="image/jpeg,image/png,image/webp" multiple>
+        <div id="photoList"></div>
+        <small class="hint">Фото не загружаются на сервер — всё остаётся в вашем браузере.</small>
+      </div>
       <label class="c"><input type="checkbox" id="showSpeed" checked>Показывать скорость <small id="noSpeed"></small></label>
       <label class="c"><input type="checkbox" id="showEle" checked>Показывать высоту и профиль <small id="noEle"></small></label>
     </section>
@@ -119,6 +127,7 @@
 <script src="src/vector.js"></script>
 <script src="src/scene.js"></script>
 <script src="src/journey.js"></script>
+<script src="src/exif.js"></script>
 <script src="src/export.js"></script>
 <script src="src/layers-export.js"></script>
 <script src="src/ui.js"></script>

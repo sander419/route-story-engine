@@ -173,7 +173,22 @@
     };
     const jS = (t) => { const g = jSeg(t); return g.leg ? lerp(J.stops[g.i].s, J.stops[g.i + 1].s, g.u) : J.stops[g.i].s; };
     const jZ = (t) => { const g = jSeg(t); return g.leg ? lerp(jt.z[g.i], jt.z[g.i + 1], g.u) : jt.z[g.i]; };
-    const prog = (t) => { if (J) return jS(t) / total; const x = clamp((t - t0) / (t1 - t0), 0, 1); return lerp(x, smooth(x), 0.45); };
+    // фото автора на маршруте дня: на каждом — короткая пауза движения
+    const PH = !J && Array.isArray(o.photos) ? o.photos.filter((q) => q && q.url && q.s >= 0 && q.s <= total).map((q, i) => ({ ...q, tilt: i % 2 ? 2.4 : -2.4, e: loadImg(q.url) })).sort((a, b) => a.s - b.s) : [];
+    const pk = { T: [], S: [] };
+    if (PH.length) {
+      const span = t1 - t0; let dw = 1.9; if (PH.length * dw > span * 0.5) dw = (span * 0.5) / PH.length;
+      const travel = span - PH.length * dw; let tc = t0, s0 = 0;
+      pk.T.push(t0); pk.S.push(0);
+      for (const q of PH) { tc += ((q.s - s0) / total) * travel; pk.T.push(tc); pk.S.push(q.s); q.arr = tc; tc += dw; pk.T.push(tc); pk.S.push(q.s); q.leave = tc; s0 = q.s; }
+      pk.T.push(t1); pk.S.push(total);
+    }
+    const phS = (t) => {
+      if (t <= pk.T[0]) return 0;
+      for (let i = 0; i < pk.T.length - 1; i++) if (t < pk.T[i + 1]) { const a = pk.S[i], b = pk.S[i + 1]; return a === b ? a : lerp(a, b, easeIO((t - pk.T[i]) / (pk.T[i + 1] - pk.T[i]))); }
+      return total;
+    };
+    const prog = (t) => { if (J) return jS(t) / total; if (PH.length) return phS(t) / total; const x = clamp((t - t0) / (t1 - t0), 0, 1); return lerp(x, smooth(x), 0.45); };
     const tOfProg = (p) => { let a = t0, b = t1; for (let i = 0; i < 24; i++) { const m = (a + b) / 2; if (prog(m) < p) a = m; else b = m; } return a; };
 
     function cam(t) {
@@ -474,8 +489,38 @@
       }
       ctx.restore();
 
-      // вехи
+      // фото автора: «полароид» с подписью
+      let phActive = false;
+      for (const q of PH) {
+        if (!q.e.ok || t < q.arr - 0.05 || t > q.leave + 0.4) continue;
+        const a = smooth(clamp((t - q.arr) / 0.3, 0, 1)) * (1 - smooth(clamp((t - q.leave) / 0.4, 0, 1)));
+        if (a <= 0.01) continue;
+        phActive = true;
+        const fw = (portrait ? 610 : 640) * u, fh = 480 * u, bottom = 80 * u, pad = 18 * u;
+        const cx = portrait ? W / 2 : W - mx - fw / 2 - 20 * u, cy = portrait ? H * 0.135 + fh / 2 : 160 * u + fh / 2;
+        ctx.save(); ctx.globalAlpha = a * (1 - intro) * (1 - outro);
+        ctx.translate(cx, cy + (1 - a) * 34 * u); ctx.rotate(((q.tilt * (0.5 + 0.5 * a)) * Math.PI) / 180);
+        ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetY = 10 * u;
+        ctx.fillStyle = S.paper ? '#fbf3df' : '#ffffff'; rr(ctx, -fw / 2, -fh / 2, fw, fh, 8 * u); ctx.fill();
+        ctx.shadowColor = 'transparent';
+        const pw_ = fw - 2 * pad, ph_ = fh - pad - bottom;
+        ctx.save(); rr(ctx, -fw / 2 + pad, -fh / 2 + pad, pw_, ph_, 4 * u); ctx.clip();
+        const im = q.e.img, k = clamp((t - q.arr) / Math.max(0.1, q.leave - q.arr), 0, 1), zk = 1 + 0.08 * k;
+        const scl = Math.max(pw_ / im.width, ph_ / im.height) * zk, dw = im.width * scl, dh = im.height * scl;
+        ctx.drawImage(im, -fw / 2 + pad + (pw_ - dw) / 2, -fh / 2 + pad + (ph_ - dh) / 2, dw, dh);
+        ctx.restore();
+        const kmTxt = fmt(q.s / 1000, q.s < 1e5 ? 1 : 0, L.locale) + ' ' + L.km;
+        const ink = S.paper ? '#3b2412' : '#1b1b1b';
+        if (q.caption) {
+          T(ctx, q.caption, -fw / 2 + pad + 6 * u, fh / 2 - bottom / 2 + 12 * u, { size: 32, weight: 600, color: ink, max: (pw_ - 150 * u) / u, fam: S.fBody });
+          T(ctx, kmTxt, fw / 2 - pad - 6 * u, fh / 2 - bottom / 2 + 12 * u, { size: 24, weight: 600, color: '#888', align: 'right' });
+        } else T(ctx, kmTxt, 0, fh / 2 - bottom / 2 + 12 * u, { size: 30, weight: 600, color: ink, align: 'center' });
+        ctx.restore();
+      }
+
+      // вехи (не поверх фото)
       for (const e of events) {
+        if (phActive) break;
         const dt = t - e.t;
         if (dt < 0 || dt > 2.0) continue;
         const a = smooth(clamp(dt / 0.25, 0, 1)) * (1 - smooth(clamp((dt - 1.5) / 0.5, 0, 1)));
@@ -496,12 +541,13 @@
       if (intro > 0.01) {
         ctx.save(); ctx.globalAlpha = intro;
         const sc = S.scrim.join(',');
-        if (!curTR) { ctx.fillStyle = `rgba(${sc},${S.paper ? 0.55 : 0.5})`; ctx.fillRect(0, 0, W, H); }
+        if (!curTR) { ctx.fillStyle = `rgba(${sc},${S.paper ? 0.72 : 0.7})`; ctx.fillRect(0, 0, W, H); }
         const cy = portrait ? H * 0.42 : H * 0.46;
         const sl = (1 - intro) * -30 * u;
         T(ctx, (o.title || route.name).toUpperCase(), W / 2, cy + sl, { size: portrait ? 118 : 120, fam: S.fHead, weight: S.headW, align: 'center', ls: 4, max: (W / u) - 140, shadow: sh });
         if (o.subtitle) T(ctx, o.subtitle.toUpperCase(), W / 2, cy + 72 * u + sl, { size: 36, weight: 600, color: S.accent, align: 'center', ls: 8, max: (W / u) - 160, shadow: sh });
         T(ctx, fmt(total / 1000, total < 1e5 ? 1 : 0, L.locale) + ' ' + L.km.toUpperCase() + (route.days ? '  ·  ' + route.days + ' ' + L.dayWord(route.days).toUpperCase() : ''), W / 2, cy + 150 * u + sl, { size: 40, weight: 600, align: 'center', ls: 6, shadow: sh });
+        if (o.note) wrapText(ctx, '«' + o.note + '»', W - 220 * u, `italic 500 ${38 * u}px ${S.fBody}`, 3).forEach((ln, k) => T(ctx, ln, W / 2, cy + 236 * u + k * 50 * u + sl, { size: 38, weight: 'italic 500', align: 'center', shadow: sh, fam: S.fBody }));
         ctx.restore();
       }
 
@@ -604,7 +650,7 @@
       if (intro > 0.01) {
         ctx.save(); ctx.globalAlpha = intro;
         const sc = S.scrim.join(',');
-        if (!curTR) { ctx.fillStyle = `rgba(${sc},${S.paper ? 0.55 : 0.5})`; ctx.fillRect(0, 0, W, H); }
+        if (!curTR) { ctx.fillStyle = `rgba(${sc},${S.paper ? 0.72 : 0.7})`; ctx.fillRect(0, 0, W, H); }
         const cy = portrait ? H * 0.42 : H * 0.46, sl = (1 - intro) * -30 * u;
         T(ctx, (o.title || route.name).toUpperCase(), W / 2, cy + sl, { size: portrait ? 118 : 120, fam: S.fHead, weight: S.headW, align: 'center', ls: 4, max: (W / u) - 140, shadow: sh });
         if (o.subtitle) T(ctx, o.subtitle.toUpperCase(), W / 2, cy + 72 * u + sl, { size: 36, weight: 600, color: S.accent, align: 'center', ls: 8, max: (W / u) - 160, shadow: sh });
@@ -649,7 +695,7 @@
       ctx.restore();
     }
 
-    return { draw, tilesAt, cam, W, H, duration: D, events, style: S, assetsReady };
+    return { draw, tilesAt, cam, W, H, duration: D, events, style: S, assetsReady, photos: PH };
   }
 
   window.RS = { createScene, STYLES, I18N, getTile, setOnTile: (f) => { onTile = f; } };
