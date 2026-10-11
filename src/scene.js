@@ -348,7 +348,7 @@
       }
 
       overlay(ctx, t, p, head);
-      if (J && J.note) T(ctx, J.note, W / 2, H - (S.paper ? 54 : 26) * u - 30 * u, { size: 19, weight: 600, color: S.ink, align: 'center', alpha: 0.85, max: W / u - 120 });
+      if (J && J.note) T(ctx, J.note, (portrait ? 64 : 100) * u, (portrait ? 268 : 238) * u, { size: 26, weight: 700, color: S.accent, ls: 2, max: W / u - (portrait ? 128 : 200), shadow: S.paper ? null : 'rgba(0,0,0,.5)' });
       T(ctx, S.credit, W / 2, H - (S.paper ? 54 : 26) * u, { size: 17, weight: 500, color: S.dim, align: 'center', alpha: 0.75 });
       ctx.restore();
     }
@@ -544,12 +544,8 @@
         T(ctx, cl.v, x, py0 + 118 * u, { size: cl.small ? 40 : 66, fam: S.fHead, weight: S.headW, max: colW / u - 40 });
         if (cl.u) { ctx.font = `${S.headW} ${66 * u}px ${S.fHead}`; const vw = ctx.measureText(cl.v).width; T(ctx, cl.u, x + vw + 12 * u, py0 + 118 * u, { size: 30, weight: 500, color: S.accent }); }
       });
-      const bx0 = mx + 40 * u, bx1 = mx + pw - 40 * u, by = py0 + ph - 46 * u;
-      ctx.lineCap = 'round'; ctx.lineWidth = 6 * u; ctx.strokeStyle = S.panelLine;
-      ctx.beginPath(); ctx.moveTo(bx0, by); ctx.lineTo(bx1, by); ctx.stroke();
-      const f = clamp((g.i + (g.leg ? g.u : 0)) / Math.max(1, n - 1), 0, 1);
-      ctx.strokeStyle = S.accent; ctx.beginPath(); ctx.moveTo(bx0, by); ctx.lineTo(lerp(bx0, bx1, f), by); ctx.stroke();
-      st.forEach((q, k) => { ctx.beginPath(); ctx.arc(lerp(bx0, bx1, k / Math.max(1, n - 1)), by, 8 * u, 0, 6.2832); ctx.fillStyle = k <= g.i ? S.accent : S.panel; ctx.fill(); ctx.lineWidth = 3 * u; ctx.strokeStyle = k <= g.i ? S.head : S.panelLine; ctx.stroke(); });
+      // номер этапа вместо ленты точек: «где мы» без шкалы прогресса
+      T(ctx, 'ЭТАП ' + (dispI + 1) + ' ИЗ ' + n, mx + pw - 40 * u, py0 + ph - 34 * u, { size: 22, weight: 600, color: S.dim, align: 'right', ls: 4 });
       ctx.restore();
       // заставка
       if (intro > 0.01) {

@@ -66,6 +66,7 @@
       const parsed = parseAny(text, filename);
       const route = prepare(parsed, filename.replace(/\.[^.]+$/, ''));
       state.route = route;
+      state.routeIsDemo = /samarkand-bukhara/.test(filename);
       const km = route.total / 1000;
       $('info').hidden = false;
       $('info').innerHTML =
@@ -181,6 +182,8 @@
 
   async function loadJourney(data, label) {
     state.journeyData = data;
+    // демо-трек не относится к истории героя: не подмешиваем его в «Путь + трек дня»
+    if (state.routeIsDemo) { state.route = null; state.routeIsDemo = false; }
     $('info').hidden = false;
     $('info').innerHTML = `<span><b>${data.title}</b></span><span>Остановок: <b>${data.stops.length}</b> · пунктир — схема по постам, не GPS</span>`;
     refreshModes();
