@@ -102,91 +102,91 @@
   /* ================= Shot Recipes (решения; отрисовка — отдельно, в episode.js) ================= */
   // каждая функция base(ctx) возвращает компоненты полезности 0..1
   const RECIPES = [
-    { id: 'day-card', beats: ['hook'], min: 1.4, max: 2.6, flex: true,
+    { id: 'day-card', beats: ['hook'], min: 2.6, max: 3.6, flex: true,
       eligible: () => true,
       base: (c) => ({ relevance: 1, novelty: c.type === 'returning-viewer' ? 0.9 : 0.6, emotion: 0.2, visual: 0.4, milestone: c.dayMilestone ? 1 : 0 }),
-      pref: (c) => (c.type === 'returning-viewer' ? 1.8 : 2.2),
+      pref: (c) => 3,
       params: (c) => ({ day: c.day, date: c.date, title: c.title, traveler: c.traveler, totalKm: c.prevTotalKm }) },
-    { id: 'progress-overview', beats: ['hook', 'context'], min: 1.8, max: 3.2, flex: true,
+    { id: 'progress-overview', beats: ['hook', 'context'], min: 3.5, max: 5.5, flex: true,
       eligible: (c) => c.daysCount >= 2 && c.type !== 'story-so-far',
       base: (c, beat) => ({ relevance: beat === 'context' ? 0.9 : 0.7, novelty: c.type === 'new-viewer' ? 0.8 : 0.2, emotion: 0.3, visual: 0.8, milestone: c.milestoneKm ? 0.6 : 0 }),
-      pref: () => 2.6,
+      pref: () => 4.5,
       params: (c) => ({ totalKm: c.prevTotalKm, days: c.day - 1, history: c.history }) },
-    { id: 'overview-to-detail', beats: ['context'], min: 1.6, max: 3, flex: true,
+    { id: 'overview-to-detail', beats: ['context'], min: 3.4, max: 5, flex: true,
       eligible: (c) => c.daysCount >= 2 && c.type !== 'story-so-far',
       base: (c) => ({ relevance: 0.85, novelty: 0.6, emotion: 0.2, visual: 0.7, milestone: 0 }),
-      pref: () => 2.3,
+      pref: () => 4.2,
       params: () => ({ from: 'journey', to: 'segment' }) },
-    { id: 'route-reveal', beats: ['new-leg'], min: 3.2, max: 6.5, flex: true, hero: true, signature: true,
+    { id: 'route-reveal', beats: ['new-leg'], min: 5, max: 8, flex: true, hero: true, signature: true,
       eligible: (c) => c.type !== 'story-so-far',
       base: (c) => ({ relevance: 1, novelty: 1, emotion: 0.4, visual: c.sinuosity > 1.25 ? 0.7 : 0.5, milestone: 0 }),
-      pref: (c) => clamp(3.6 + Math.log10(Math.max(1, c.newKm)) * 0.9, 3.6, 6),
+      pref: (c) => clamp(5.5 + Math.log10(Math.max(1, c.newKm)) * 0.6, 5.5, 7.5),
       params: (c) => ({ day: c.day, km: c.newKm }) },
     { id: 'camera-follow', beats: ['new-leg'], min: 3.6, max: 6.5, flex: true, hero: true,
-      eligible: (c) => c.type !== 'story-so-far' && c.newKm >= 25 && (c.sinuosity > 1.3 || c.gain >= 300 || c.isLong),
+      eligible: () => false,   // отключено: слежение за точкой дёргает камеру (правила кадра)
       base: (c) => ({ relevance: 1, novelty: 1, emotion: 0.5, visual: clamp(0.5 + (c.sinuosity - 1) + c.gain / 2000, 0, 1), milestone: 0 }),
       pref: () => 5,
       params: (c) => ({ day: c.day, km: c.newKm }) },
-    { id: 'checkpoint-arrival', types: ['new-viewer', 'returning-viewer'], beats: ['achievement', 'moment'], min: 1.8, max: 3.2, flex: true,
+    { id: 'checkpoint-arrival', types: ['new-viewer', 'returning-viewer'], beats: ['achievement', 'moment'], min: 3, max: 4.2, flex: true,
       eligible: (c) => !!(c.arrival || c.milestoneKm || c.dayMilestone),
       base: (c, beat) => ({ relevance: beat === 'achievement' ? 1 : 0.5, novelty: 0.8, emotion: 0.5, visual: 0.6, milestone: c.milestoneKm || c.dayMilestone || (c.arrival && c.arrival.kind === 'country') ? 1 : 0.4 }),
-      pref: () => 2.6,
+      pref: () => 3.6,
       params: (c) => ({ label: c.arrival ? c.arrival.label : c.milestoneKm ? `${c.milestoneKm.toLocaleString('ru-RU')} км` : `День ${c.day}`, kind: c.arrival ? c.arrival.kind : 'milestone', milestoneKm: c.milestoneKm, dayMilestone: c.dayMilestone }) },
-    { id: 'photo-reveal', types: ['new-viewer', 'returning-viewer'], beats: ['moment'], min: 2.8, max: 6, flex: true, hero: true,
+    { id: 'photo-reveal', types: ['new-viewer', 'returning-viewer'], beats: ['moment'], min: 4, max: 11.5, flex: true, hero: true,
       eligible: (c) => c.photos.length > 0,
       base: (c) => ({ relevance: 1, novelty: 0.9, emotion: 1, visual: 0.8, milestone: 0, mediaQ: 0.8 }),
-      pref: (c) => 3.2 + 0.9 * (Math.min(c.photos.length, 3) - 1),
-      params: (c) => ({ mediaIds: c.photos.slice(0, 3).map((m) => m.id), note: c.note && c.noteWords <= 12 ? c.note.text : null }) },
-    { id: 'note-card', types: ['new-viewer', 'returning-viewer'], beats: ['moment'], min: 2, max: 4, flex: true,
+      pref: (c) => 4.2 + 3.6 * (Math.min(c.photos.length, 3) - 1),
+      params: (c) => ({ mediaIds: c.photos.slice(0, 3).map((m) => m.id) }) },
+    { id: 'note-card', types: ['new-viewer', 'returning-viewer'], beats: ['moment', 'reflection'], min: 3.5, max: 6, flex: true,
       eligible: (c) => !!c.note,
       base: (c) => ({ relevance: 0.9, novelty: 0.8, emotion: 0.85, visual: 0.4, milestone: 0 }),
-      pref: (c) => clamp(2 + c.noteWords * 0.14, 2.2, 4),
+      pref: (c) => clamp(3 + c.noteWords * 0.3, 3.8, 6),
       params: (c) => ({ text: shortNote(c.note.text) }) },
-    { id: 'location-card', types: ['new-viewer', 'returning-viewer'], beats: ['moment'], min: 1.8, max: 3, flex: true,
+    { id: 'location-card', types: ['new-viewer', 'returning-viewer'], beats: ['moment'], min: 3, max: 4, flex: true,
       eligible: (c) => !!c.position,
       base: (c) => ({ relevance: 0.55, novelty: 0.5, emotion: 0.25, visual: 0.5, milestone: 0 }),
-      pref: () => 2.4,
+      pref: () => 3.5,
       params: (c) => ({ label: c.seg.to || null, lon: r2(c.position[0]), lat: r2(c.position[1]) }) },
-    { id: 'distance-counter', beats: ['proof'], min: 1.8, max: 3.4, flex: true,
+    { id: 'distance-counter', beats: ['proof'], min: 3, max: 4.2, flex: true,
       eligible: () => true,
       base: (c) => ({ relevance: 0.8, novelty: 0.6, emotion: 0.3, visual: 0.5, milestone: c.milestoneKm ? 1 : 0 }),
-      pref: () => 2.6,
+      pref: () => 3.6,
       params: (c) => ({ newKm: c.newKm, totalKm: c.totalKm, gain: c.gain || null }) },
-    { id: 'day-barcode', beats: ['proof'], min: 2.2, max: 3.6, flex: true,
+    { id: 'day-barcode', beats: ['proof'], min: 3.5, max: 5, flex: true,
       eligible: (c) => c.daysCount >= 5,
       base: (c) => ({ relevance: 0.75, novelty: 0.5, emotion: 0.3, visual: 0.9, milestone: c.dayMilestone ? 1 : 0 }),
-      pref: () => 3,
+      pref: () => 4.2,
       params: (c) => ({ perDay: c.perDay.map(r1), current: c.day, totalKm: c.totalKm }) },
-    { id: 'elevation-profile', types: ['new-viewer', 'returning-viewer'], beats: ['proof'], min: 2.2, max: 3.6, flex: true,
+    { id: 'elevation-profile', types: ['new-viewer', 'returning-viewer'], beats: ['proof'], min: 3, max: 4.2, flex: true,
       eligible: (c) => c.gain >= 150,
       base: (c) => ({ relevance: 0.75, novelty: 0.8, emotion: 0.4, visual: clamp(c.gain / 1200, 0.4, 1), milestone: 0 }),
-      pref: () => 3,
+      pref: () => 3.6,
       params: (c) => ({ gain: c.gain, day: c.day }) },
-    { id: 'pullback', beats: ['outro'], min: 3.4, max: 6, flex: true, hero: true, signature: true,
+    { id: 'pullback', beats: ['outro'], min: 5.5, max: 8.5, flex: true, hero: true, signature: true,
       eligible: (c) => c.daysCount >= 2,
       base: (c) => ({ relevance: 1, novelty: 0.7, emotion: 0.7, visual: 1, milestone: c.milestoneKm ? 0.6 : 0 }),
-      pref: () => 5,
+      pref: () => 7,
       params: (c) => ({ totalKm: c.totalKm, day: c.day, showFullRoute: true, showCurrentPosition: true }) },
-    { id: 'progress-poster', beats: ['outro'], min: 2.4, max: 4.2, flex: true,
+    { id: 'progress-poster', beats: ['outro'], min: 3.5, max: 5, flex: true,
       eligible: () => true,
       base: (c) => ({ relevance: 0.8, novelty: 0.4, emotion: 0.5, visual: 0.6, milestone: 0 }),
-      pref: () => 3.4,
+      pref: () => 4.2,
       params: (c) => ({ totalKm: c.totalKm, day: c.day }) },
     // story-so-far
-    { id: 'season-card', beats: ['hook'], types: ['story-so-far'], min: 1.6, max: 2.8, flex: true,
+    { id: 'season-card', beats: ['hook'], types: ['story-so-far'], min: 3, max: 4, flex: true,
       eligible: () => true,
       base: () => ({ relevance: 1, novelty: 0.6, emotion: 0.4, visual: 0.5, milestone: 0 }),
-      pref: () => 2.4,
+      pref: () => 3.5,
       params: (c) => ({ title: c.title, traveler: c.traveler, days: c.day, totalKm: c.totalKm }) },
-    { id: 'journey-recap', beats: ['context'], types: ['story-so-far'], min: 6, max: 12, flex: true, hero: true,
+    { id: 'journey-recap', beats: ['context'], types: ['story-so-far'], min: 8, max: 18, flex: true, hero: true,
       eligible: (c) => c.daysCount >= 2,
       base: () => ({ relevance: 1, novelty: 0.7, emotion: 0.6, visual: 1, milestone: 0.6 }),
-      pref: (c) => clamp(5 + compressHistory({ checkpoints: c.checkpoints }, c.day + 1, 6).length * 1.0, 6, 11),
-      params: (c) => ({ history: compressHistory({ checkpoints: c.checkpoints }, c.day + 1, 6) }) },
-    { id: 'highlights-reel', beats: ['moment'], types: ['story-so-far'], min: 3, max: 7, flex: true, hero: true,
+      pref: (c) => clamp(1.5 + compressHistory({ checkpoints: c.checkpoints }, c.day + 1, 5).length * 3.6, 8, 18),
+      params: (c) => ({ history: compressHistory({ checkpoints: c.checkpoints }, c.day + 1, 5) }) },
+    { id: 'highlights-reel', beats: ['moment'], types: ['story-so-far'], min: 7.5, max: 16.5, flex: true, hero: true,
       eligible: (c) => c.allPhotos.length >= 2,
       base: () => ({ relevance: 1, novelty: 0.8, emotion: 1, visual: 0.8, milestone: 0, mediaQ: 0.8 }),
-      pref: (c) => 2.2 + Math.min(4, c.allPhotos.length) * 1.1,
+      pref: (c) => 0.5 + Math.min(4, c.allPhotos.length) * 4,
       params: (c) => ({ mediaIds: spread(c.allPhotos, 4).map((m) => m.id) }) },
   ];
   const BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
@@ -201,11 +201,12 @@
 
   /* ================= Типы эпизода и биты ================= */
   const TYPES = {
-    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['achievement', false], ['moment', false], ['proof', false], ['outro', true]],
-    'returning-viewer': [['hook', true], ['new-leg', true], ['achievement', false], ['moment', false], ['proof', false], ['outro', true]],
+    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['achievement', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
+    'returning-viewer': [['hook', true], ['new-leg', true], ['achievement', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
     'story-so-far': [['hook', true], ['context', true], ['moment', false], ['proof', false], ['outro', true]],
   };
-  const DURATION = { 'new-viewer': [22, 26, 18, 30], 'returning-viewer': [20, 25, 18, 30], 'story-so-far': [30, 40, 24, 45] };
+  // длительность от содержания: лучше дольше, чем мелькание (правила кадра)
+  const DURATION = { 'new-viewer': [30, 42, 24, 50], 'returning-viewer': [26, 38, 20, 46], 'story-so-far': [36, 52, 28, 60] };
 
   /* ================= Скоринг ================= */
   const W = { relevance: 4, novelty: 3, emotion: 3, visual: 2, milestone: 2, mediaQ: 2, repetition: 4, redundancy: 3, durationCost: 1 };
@@ -217,7 +218,7 @@
     const slotUses = ctx.recent.filter((e) => (e.byBeat || {})[beat] === recipe.id).length;
     const anyUses = ctx.recent.filter((e) => (e.recipes || []).includes(recipe.id)).length;
     const repetition = clamp(slotUses / 3 + anyUses / 12, 0, recipe.signature ? 0.35 : 1);   // фирменные кадры повтор не вытесняет
-    const redundancy = chosen.includes(recipe.id) ? 1 : (recipe.id === 'note-card' && chosen.includes('photo-reveal') && ctx.noteWords <= 12) ? 0.8 : 0;
+    const redundancy = chosen.includes(recipe.id) ? 1 : 0;
     const durationCost = clamp((recipe.pref(ctx) - 2) / 6, 0, 1);
     const parts = { relevance: b.relevance || 0, novelty: b.novelty || 0, emotion: b.emotion || 0, visual: b.visual || 0, milestone: b.milestone || 0, mediaQ: b.mediaQ || 0, repetition, redundancy, durationCost };
     const total = W.relevance * parts.relevance + W.novelty * parts.novelty + W.emotion * parts.emotion + W.visual * parts.visual + W.milestone * parts.milestone + W.mediaQ * parts.mediaQ - W.repetition * parts.repetition - W.redundancy * parts.redundancy - W.durationCost * parts.durationCost;
@@ -289,11 +290,11 @@
         notes.push(`добавлен ${r.id}, чтобы не было короче ${hMin} с`);
       }
     }
-    // новый участок — не позже ~8 с: сжимаем кадры перед ним
+    // новый участок — не позже ~10 с: сжимаем кадры перед ним
     const nl = list.findIndex((s) => s.beat === 'new-leg');
     if (nl > 0) {
       let start = list.slice(0, nl).reduce((a, s) => a + s.durationSec, 0);
-      for (let i = 0; i < nl && start > 8; i++) { const cut = Math.min(start - 8, list[i].durationSec - list[i].min); list[i].durationSec = r2(list[i].durationSec - cut); start -= cut; }
+      for (let i = 0; i < nl && start > 10; i++) { const cut = Math.min(start - 10, list[i].durationSec - list[i].min); list[i].durationSec = r2(list[i].durationSec - cut); start -= cut; }
     }
     return { shots: list, note: notes.join('; ') };
   }
@@ -329,7 +330,7 @@
       if (b.recipe === 'photo-reveal' && !(b.params.mediaIds || []).length) errors.push('photo-reveal без фото');
       if (b.params.text && b.params.text.split(/\s+/).length > 12) warnings.push(`${b.recipe}: текст длиннее 12 слов`);
       if (i > 0 && plan.beats[i - 1].recipe === b.recipe) errors.push(`${b.recipe} два раза подряд`);
-      if (b.recipe === 'route-reveal' || b.recipe === 'camera-follow') { if (!J.days.some((d) => d.day === b.params.day)) errors.push('нет сегмента дня ' + b.params.day); if (b.startSec > 8.01) warnings.push(`новый участок начинается на ${b.startSec} с (> 8 с)`); }
+      if (b.recipe === 'route-reveal' || b.recipe === 'camera-follow') { if (!J.days.some((d) => d.day === b.params.day)) errors.push('нет сегмента дня ' + b.params.day); if (b.startSec > 10.01) warnings.push(`новый участок начинается на ${b.startSec} с (> 10 с)`); }
     });
     if (plan.beats.length > 8) warnings.push(`кадров ${plan.beats.length} (> 8)`);
     return { ok: errors.length === 0, errors, warnings };
