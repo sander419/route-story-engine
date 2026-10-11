@@ -64,7 +64,7 @@
     const placed = photoFiles.map((p, i) => { const pl = window.Exif.placeOnRoute(r, p.meta, i, photoFiles.length); p.how = pl.how; p.s = pl.s; return p; });
     const ev = placed.filter((p) => p.how === 'even');
     ev.forEach((p, k) => { p.s = (r.total * (k + 1)) / (ev.length + 1); });
-    state.o.photos = placed.map((p) => ({ url: p.url, s: p.s, caption: p.caption }));
+    state.o.photos = placed.map((p) => ({ url: p.url, s: p.s, caption: p.caption, credit: p.credit || '' }));
     renderPhotos(); rebuild(true);
   }
   function renderPhotos() {
@@ -200,7 +200,7 @@
       line.push([r.lon[r.n - 1], r.lat[r.n - 1]]);
       const date = r.t ? new Date(r.t[0] + (r.lon[0] / 15) * 3600e3).toISOString().slice(0, 10) : null;
       const seg = { km: Math.round(r.total / 100) / 10, line, date, to: state.o.endName || null, gain: r.ele ? Math.round(r.stats.gain) : 0 };
-      const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '' }));
+      const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
       const notes = state.o.note ? [{ text: state.o.note }] : [];
       ({ journey: J, change } = window.Director.addDay(J, seg, media, notes));
     }
@@ -236,7 +236,11 @@
   }
   $('series').onclick = loadSeries;
   $('day47').onclick = async () => {
-    try { const tx = await (await fetch('samples/day47.gpx')).text(); loadText(tx, 'day47.gpx'); if (!touched.endName) { touched.endName = true; state.o.endName = 'Байкал'; $('endName').value = 'Байкал'; rebuild(true); } }
+    try { const tx = await (await fetch('samples/day47.gpx')).text(); loadText(tx, 'day47.gpx'); if (!touched.endName) { touched.endName = true; state.o.endName = 'Байкал'; $('endName').value = 'Байкал'; }
+      // демо-фото (Wikimedia Commons, CC BY-SA 4.0) и заметка — чтобы показать серию в один клик; свои можно заменить
+      if (!photoFiles.length) { const cr = 'Фото: Thomas D. Fischer · CC BY-SA 4.0 · Wikimedia Commons'; photoFiles = [{ name: 'baikal-1.jpg', url: 'media/demo/baikal-1.jpg', meta: {}, caption: 'Первый вид на Байкал', credit: cr }, { name: 'baikal-2.jpg', url: 'media/demo/baikal-2.jpg', meta: {}, caption: 'Берег у Листвянки', credit: cr }]; }
+      if (!state.o.note) { state.o.note = 'Изнурительно, но весело'; $('note').value = state.o.note; }
+      placePhotos(); }
     catch (e) { showErr('Не удалось загрузить день 47: ' + e.message); }
   };
   $('etype').onchange = () => { state.etype = $('etype').value; t = 0; rebuild(); };

@@ -298,7 +298,8 @@
             ctx.drawImage(im, -fw / 2 + pad + (pw - im.width * scl) / 2, -fh / 2 + pad + (ph - im.height * scl) / 2, im.width * scl, im.height * scl);
             ctx.restore();
             const cap = s.recipe === 'highlights-reel' ? `День ${m.day}` : (m.caption || `День ${plan.episodeNumber}`);
-            T(ctx, cap, 0, fh / 2 - bottom / 2 + 12 * u, { size: 30, weight: 600, color: S.paper ? '#3b2412' : '#1b1b1b', align: 'center', fam: HAND, shadow: false, max: pw / u });
+            T(ctx, cap, 0, fh / 2 - bottom / 2 + (m.credit ? 4 : 12) * u, { size: 30, weight: 600, color: S.paper ? '#3b2412' : '#1b1b1b', align: 'center', fam: HAND, shadow: false, max: pw / u });
+            if (m.credit) T(ctx, m.credit, 0, fh / 2 - 12 * u, { size: 13, weight: 500, color: '#8a8a8a', align: 'center', shadow: false, max: pw / u });
             ctx.restore();
           });
           if (p.note) { const a = smooth(clamp((lt - dur * 0.35) / 0.5, 0, 1)) * (1 - smooth(clamp((lt - dur + 0.35) / 0.35, 0, 1))); handNote(ctx, p.note, portrait ? H * 0.78 : H * 0.84, a, clamp((lt - dur * 0.35) / (dur * 0.45), 0, 1)); }
