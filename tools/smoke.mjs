@@ -4,7 +4,7 @@ const require = createRequire('C:/Users/glina/route-story-spike/package.json');
 const { chromium } = require('playwright');
 const b = await chromium.launch({ channel: 'msedge', headless: true });
 const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
-const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => m.type() === 'error' && !/404|favicon/.test(m.text()) && errs.push('console: ' + m.text().slice(0, 150)));
+p.on('response', (r) => { if (r.status() >= 500) console.log('     HTTP', r.status(), r.url().slice(0, 90)); }); const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => m.type() === 'error' && !/404|favicon/.test(m.text()) && errs.push('console: ' + m.text().slice(0, 150)));
 const step = async (name, fn) => { const n = errs.length; try { const r = await fn(); console.log(`${errs.length > n ? 'ERR' : 'ok '} ${name}${r ? ' — ' + r : ''}`); } catch (e) { console.log('FAIL', name, '—', e.message.split('\n')[0]); } errs.slice(n).forEach((e) => console.log('     ', e)); };
 const st = () => p.evaluate(() => { const a = window.__app, s = a.state; return { mode: s.mode, etype: s.etype, dur: a.scene && a.scene.duration, plan: s.lastEp && s.lastEp.res.plan.beats.map((x) => x.recipe).join(','), change: document.getElementById('change').textContent.slice(0, 60), route: !!s.route }; });
 const click = (id) => p.evaluate((id) => document.getElementById(id).click(), id);
