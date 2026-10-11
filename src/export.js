@@ -9,7 +9,7 @@
     const frames = Math.ceil(duration * fps);
     for (let i = 0; i <= frames; i += 2) {
       for (const q of scene.tilesAt(Math.min(duration, i / fps))) {
-        const key = q.layer.id + '/' + q.z + '/' + q.x + '/' + q.y;
+        const key = (q.vec ? 'vec' : q.layer.id) + '/' + q.z + '/' + q.x + '/' + q.y;
         if (!want.has(key)) want.set(key, q);
       }
     }
@@ -19,7 +19,7 @@
       while (idx < list.length) {
         if (signal && signal.aborted) throw new Error('Отменено');
         const q = list[idx++];
-        const e = window.RS.getTile(q.layer, q.z, q.x, q.y, true);
+        const e = q.vec ? window.VMap.getTile(q.z, q.x, q.y) : window.RS.getTile(q.layer, q.z, q.x, q.y, true);
         await e.p; done++;
         if (done % 8 === 0 || done === list.length) onProgress(done / list.length);
       }

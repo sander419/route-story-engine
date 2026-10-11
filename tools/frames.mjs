@@ -16,7 +16,7 @@ for (const t of (times.length?times:['0.5','6','12','19'])) {
   // загрузить все тайлы кадра, потом снять
   const png = await p.evaluate(async (t) => {
     const sc = window.__app.scene; const cv = document.getElementById('cv'); const c = cv.getContext('2d');
-    for (let k=0;k<3;k++){ for (const q of sc.tilesAt(+t)) await window.RS.getTile(q.layer,q.z,q.x,q.y,true).p; }
+    for (let k=0;k<3;k++){ for (const q of sc.tilesAt(+t)) await (q.vec ? window.VMap.getTile(q.z,q.x,q.y) : window.RS.getTile(q.layer,q.z,q.x,q.y,true)).p; }
     sc.draw(c, +t); return cv.toDataURL('image/png');
   }, t);
   writeFileSync(`out/f-${style}-${fmt}-${t}.png`, Buffer.from(png.split(',')[1], 'base64'));

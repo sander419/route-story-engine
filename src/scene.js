@@ -45,8 +45,8 @@
     night: {
       name: 'Ночной неон',
       bg: '#0b0f14',
-      layers: [esri('dark', 'Canvas/World_Dark_Gray_Base', { filter: 'brightness(1.15) contrast(1.2)' }), L_DARK()],
-      tint: { mode: 'overlay', stops: ['#5b2bd6', '#0e86c9', '#0fb5a6'] },
+      bgGrad: ['#241466', '#0a3f73', '#0b6f80'],
+      vec: { water: 'rgba(5,24,52,.78)', waterLine: '#5cc4ff', park: 'rgba(40,110,120,.20)', urban: 'rgba(255,255,255,.07)', road: '#9fc2ff', rail: '#7d96c9', border: '#ff86b4', label: '#f4f8ff', halo: 'rgba(5,10,32,.88)', peak: '#ffd27a' },
       ghost: 'rgba(255,255,255,.34)', ghostW: 7, ghostDash: null,
       line: { stops: ['#22d3ee', '#a78bfa', '#fb7185'], glow: 'rgba(125,211,252,.38)', w: 11 },
       head: '#ffffff', headHalo: 'rgba(125,211,252,.55)',
@@ -58,7 +58,7 @@
     paper: {
       name: 'Бумажная карта',
       bg: '#e9dcc0',
-      layers: [esri('topo', 'World_Topo_Map', { filter: 'sepia(.8) saturate(.8) contrast(.95) brightness(.98)', maxZ: 17 })],
+      vec: { water: '#b7d0cc', waterLine: '#6f9b9b', park: '#dfd5a8', urban: '#e8d5a8', road: '#8f6d42', rail: '#8a7550', border: '#9a3412', label: '#3b2412', halo: 'rgba(239,226,196,.92)', peak: '#7c2d12' },
       ghost: 'rgba(92,58,30,.5)', ghostW: 5, ghostDash: [4, 14],
       line: { stops: ['#9a3412', '#7c2d12'], glow: 'rgba(154,52,18,.18)', w: 9 },
       head: '#fff7e6', headHalo: 'rgba(154,52,18,.35)',
@@ -70,7 +70,8 @@
     sat: {
       name: 'Спутник',
       bg: '#10150f',
-      layers: [esri('imagery', 'World_Imagery', { filter: 'saturate(1.1) contrast(1.05)', maxZ: 17 }), L_DARK()],
+      layers: [esri('imagery', 'World_Imagery', { filter: 'saturate(1.1) contrast(1.05)', maxZ: 17 })],
+      vec: { waterLine: 'rgba(160,220,255,.8)', road: 'rgba(255,255,255,.85)', rail: 'rgba(255,255,255,.55)', border: '#ffd27a', label: '#ffffff', halo: 'rgba(0,0,0,.75)', peak: '#ffe08a' },
       ghost: 'rgba(255,255,255,.35)', ghostW: 6, ghostDash: null,
       line: { stops: ['#fde047', '#fb923c'], glow: 'rgba(253,224,71,.4)', w: 10 },
       head: '#ffffff', headHalo: 'rgba(253,224,71,.5)',
@@ -173,7 +174,8 @@
     /* какие тайлы нужны на кадре (для догрузки перед экспортом и для отрисовки) */
     function tilesAt(t) {
       const c = cam(t), out = [];
-      S.layers.forEach((layer, li) => {
+      if (S.vec) out.push(...window.VMap.tilesAt(c, ax, ay, W, H));
+      (S.layers || []).forEach((layer, li) => {
         const zi = clamp(layer.zi(c.z), 1, layer.maxZ || 19);
         const k = Math.pow(2, c.z), ts = 256 * Math.pow(2, c.z - zi);
         const left = c.cx * k - ax, top = c.cy * k - ay;
@@ -227,7 +229,9 @@
     function gradient(ctx, key, make) { return cache[key] || (cache[key] = make(ctx)); }
 
     /* ---------- рисование ---------- */
-    function draw(ctx, t) {
+    function draw(ctx, t, opts) {
+      const LY = (opts && opts.layers) || { map: true, route: true, hud: true };
+      const TR = !!(opts && opts.transparent);
       const c = cam(t);
       const p = prog(t), s = p * total;
       const head = at(route, s);
@@ -238,10 +242,12 @@
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = S.bg; ctx.fillRect(0, 0, W, H);
+      if (TR) ctx.clearRect(0, 0, W, H);
+      else if (S.bgGrad) { const bg = ctx.createLinearGradient(0, 0, W * 0.5, H); S.bgGrad.forEach((cc, i, a) => bg.addColorStop(i / (a.length - 1), cc)); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H); }
+      else { ctx.fillStyle = S.bg; ctx.fillRect(0, 0, W, H); }
 
-      // карта
-      const need = tilesAt(t);
+      // карта: растр (если есть) + векторные слои
+      const need = (LY.map && S.layers) ? tilesAt(t).filter((q) => !q.vec) : [];
       for (const q of need) {
         const e = getTile(q.layer, q.z, q.x, q.y, true);
         ctx.filter = q.layer.filter || 'none';
@@ -259,13 +265,15 @@
         }
       }
       ctx.filter = 'none';
-      if (S.tint) {
+      if (LY.map && S.vec) window.VMap.draw(ctx, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, { ...S.vec, font: S.fBody }, { fills: !TR && !S.layers, lines: true, labels: true }, o.lang, u);
+      if (S.tint && !TR) {
         const tg = ctx.createLinearGradient(0, 0, W * 0.4, H);
         S.tint.stops.forEach((c, i, a) => tg.addColorStop(i / (a.length - 1), c));
         ctx.globalAlpha = 0.72; ctx.globalCompositeOperation = S.tint.mode; ctx.fillStyle = tg; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
       }
-      if (S.paper) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.35)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
+      if (S.paper && !TR && S.layers) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.35)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
 
+      if (LY.route) {
       // линия маршрута
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       const path = (to) => {
@@ -333,8 +341,10 @@
       ctx.fillStyle = S.headHalo; ctx.globalAlpha = 0.9 * (1 - pulse); ctx.fill(); ctx.globalAlpha = 1;
       ctx.beginPath(); ctx.arc(hx, hy, 15 * u, 0, 6.2832);
       ctx.fillStyle = S.head; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = S.line.stops[S.line.stops.length - 1]; ctx.stroke();
+      }
 
-      // затемнение по краям
+      // затемнение по краям (только в обычном видео, не в слоях для монтажа)
+      if (!TR) {
       const sc = S.scrim.join(',');
       let g = ctx.createLinearGradient(0, 0, 0, H * 0.32); g.addColorStop(0, `rgba(${sc},${S.paper ? 0.85 : 0.82})`); g.addColorStop(1, `rgba(${sc},0)`);
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.32);
@@ -346,10 +356,13 @@
         ctx.strokeStyle = S.ink; ctx.lineWidth = 3 * u; ctx.strokeRect(30 * u, 30 * u, W - 60 * u, H - 60 * u);
         ctx.lineWidth = 1.2 * u; ctx.strokeRect(40 * u, 40 * u, W - 80 * u, H - 80 * u);
       }
+      }
 
+      if (LY.hud) {
       overlay(ctx, t, p, head);
       if (J && J.note) T(ctx, J.note, (portrait ? 64 : 100) * u, (portrait ? 268 : 238) * u, { size: 26, weight: 700, color: S.accent, ls: 2, max: W / u - (portrait ? 128 : 200), shadow: S.paper ? null : 'rgba(0,0,0,.5)' });
       T(ctx, S.credit, W / 2, H - (S.paper ? 54 : 26) * u, { size: 17, weight: 500, color: S.dim, align: 'center', alpha: 0.75 });
+      }
       ctx.restore();
     }
 

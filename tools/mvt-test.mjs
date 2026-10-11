@@ -1,0 +1,23 @@
+import { createRequire } from 'node:module';
+import { writeFileSync } from 'node:fs';
+const require = createRequire('C:/Users/glina/route-story-spike/package.json');
+const { chromium } = require('playwright');
+const b = await chromium.launch({ channel: 'msedge', headless: true });
+const p = await b.newPage({ viewport: { width: 540, height: 960 } });
+p.on('pageerror', e => console.log('pageerror:', e.message));
+p.on('console', m => m.type()==='error' && !/404/.test(m.text()) && console.log('console:', m.text().slice(0,200)));
+const t0 = Date.now();
+await p.goto('http://localhost:4180/out/mvt.html');
+await p.waitForFunction(() => window.__done, null, { timeout: 60000 });
+console.log('info', JSON.stringify(await p.evaluate(() => window.__info)), (Date.now() - t0) + 'ms');
+const data = await p.evaluate(() => {
+  const src = document.getElementById('c'); const o = document.getElementById('c2'); const c2 = o.getContext('2d');
+  const g = c2.createLinearGradient(0, 0, 540, 960); g.addColorStop(0, '#3b2a1a'); g.addColorStop(0.5, '#2c5a3a'); g.addColorStop(1, '#a86a3c');
+  c2.fillStyle = g; c2.fillRect(0, 0, 540, 960); c2.drawImage(src, 0, 0);
+  const a = src.getContext('2d').getImageData(0, 0, 540, 960).data; let tr = 0; for (let i = 3; i < a.length; i += 4) if (a[i] === 0) tr++;
+  return { alpha: src.toDataURL('image/png'), over: o.toDataURL('image/png'), transparentPct: Math.round(100 * tr / (a.length / 4)) };
+});
+console.log('transparent pixels %:', data.transparentPct);
+writeFileSync('out/mvt-alpha.png', Buffer.from(data.alpha.split(',')[1], 'base64'));
+writeFileSync('out/mvt-over.png', Buffer.from(data.over.split(',')[1], 'base64'));
+await b.close();

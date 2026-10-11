@@ -207,6 +207,7 @@
     });
   }
   window.RS.setOnTile(() => { dirty = true; });
+  window.VMap.setOnTile(() => { dirty = true; });
 
   function play(on) { playing = on; $('play').textContent = on ? '❚❚' : '▶'; last = performance.now(); }
   $('play').onclick = () => { if (!playing && scene && t >= scene.duration) t = 0; play(!playing); };
