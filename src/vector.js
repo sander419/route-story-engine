@@ -166,7 +166,7 @@
           ctx.restore();
         };
         const z = cam.z;
-        if (theme.waterLine) { stroke(data.water, theme.waterLine, 1.4, (F) => F.type === 3, 0.9); stroke(data.waterway, theme.waterLine, z > 7 ? 1.2 : 0.7, (F) => z > 5.5, 0.8); }
+        if (theme.waterLine) { stroke(data.water, theme.waterLine, 1.4, (F) => F.type === 3, 0.9); if (!theme.noWaterways) stroke(data.waterway, theme.waterLine, z > 7 ? 1.2 : 0.7, (F) => z > 5.5, 0.8); }
         if (theme.road) {
           for (const cls of ['minor', 'service', 'tertiary', 'secondary', 'primary', 'trunk', 'motorway']) {
             if (z < ROAD_FROM[cls]) continue;

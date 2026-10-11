@@ -8,14 +8,18 @@ const b = await chromium.launch({ channel: 'msedge', headless: true });
 const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
 p.on('pageerror', (e) => console.log('pageerror:', e.message));
 await p.goto(process.env.URL || 'http://localhost:4180/');
-await p.click('#series');
-await p.waitForFunction(() => window.__app.scene);
-await p.click('#day47');
-await p.waitForFunction(() => /День 47/.test(document.getElementById('change').textContent) && window.__app.state.o.photos.length === 2);
+await p.waitForFunction(() => window.__app && window.__app.scene && window.__app.state.lastEp);
+if (etype === 'hero') {
+  await p.waitForFunction(() => window.__app.state.lastEp);
+  await p.evaluate(() => document.getElementById('wj').click());
+  await p.waitForFunction(() => window.__app.state.lastEp && window.__app.state.lastEp.J.schematic);
+} else {
+  await p.waitForFunction(() => /День 47/.test(document.getElementById('change').textContent) && window.__app.state.o.photos.length === 2);
+}
 await p.evaluate((s) => [...document.querySelectorAll('#styles button')].find((x) => x.dataset.id === s).click(), style);
-await p.click(`#fmt button[data-v="${fmt}"]`);
-await p.selectOption('#etype', etype);
-await p.selectOption('#res', res);
+await p.evaluate((f) => document.querySelector(`#fmt button[data-v="${f}"]`).click(), fmt);
+if (etype !== 'hero') await p.selectOption('#etype', etype);
+await p.evaluate((r) => { const e = document.getElementById('res'); e.value = r; e.dispatchEvent(new Event('change')); }, res);
 await p.waitForTimeout(500);
 const plan = await p.evaluate(() => window.__app.state.lastEp.res.plan.beats.map((x) => x.recipe).join(' → '));
 const t0 = Date.now();

@@ -60,7 +60,10 @@
     if (!cps.length) return [];
     const origin = cps.find((c) => c.kind === 'origin') || cps[0];
     const recent = cps[cps.length - 1];
-    const middle = cps.filter((c) => c !== origin && c !== recent).sort((a, b) => IMPORTANCE[b.kind] - IMPORTANCE[a.kind] || a.day - b.day).slice(0, Math.max(0, max - 2)).sort((a, b) => a.day - b.day);
+    // середина: важные вехи (страна, глава), но равномерно по всему пути — не кучей в начале
+    const k = Math.max(0, max - 2), pool = cps.filter((c) => c !== origin && c !== recent);
+    const strong = pool.filter((c) => IMPORTANCE[c.kind] >= 3), base = strong.length >= k ? strong : pool;
+    const middle = k === 0 || !base.length ? [] : [...new Set(Array.from({ length: Math.min(k, base.length) }, (_, i) => base[Math.round(((i + 0.5) * base.length) / Math.min(k, base.length) - 0.5)]))];
     const out = [origin, ...middle]; if (recent !== origin) out.push(recent);
     return out.map((c) => ({ day: c.day, kind: c.kind, label: c.label }));
   }
@@ -96,6 +99,7 @@
       history: compressHistory(J, seg.day),
       checkpoints: (J.checkpoints || []).slice(),
       recent: (J.episodes || []).slice(-(opts.memory || 4)),
+      schematic: !!J.schematic, seasonLine: J.seasonLine || null,
     };
   }
 
@@ -148,12 +152,12 @@
       pref: () => 3.5,
       params: (c) => ({ label: c.seg.to || null, lon: r2(c.position[0]), lat: r2(c.position[1]) }) },
     { id: 'distance-counter', beats: ['proof'], min: 3, max: 4.2, flex: true,
-      eligible: () => true,
+      eligible: (c) => !c.schematic,
       base: (c) => ({ relevance: 0.8, novelty: 0.6, emotion: 0.3, visual: 0.5, milestone: c.milestoneKm ? 1 : 0 }),
       pref: () => 3.6,
       params: (c) => ({ newKm: c.newKm, totalKm: c.totalKm, gain: c.gain || null }) },
     { id: 'day-barcode', beats: ['proof'], min: 3.5, max: 5, flex: true,
-      eligible: (c) => c.daysCount >= 5,
+      eligible: (c) => c.daysCount >= 5 && !c.schematic,
       base: (c) => ({ relevance: 0.75, novelty: 0.5, emotion: 0.3, visual: 0.9, milestone: c.dayMilestone ? 1 : 0 }),
       pref: () => 4.2,
       params: (c) => ({ perDay: c.perDay.map(r1), current: c.day, totalKm: c.totalKm }) },
@@ -177,11 +181,11 @@
       eligible: () => true,
       base: () => ({ relevance: 1, novelty: 0.6, emotion: 0.4, visual: 0.5, milestone: 0 }),
       pref: () => 3.5,
-      params: (c) => ({ title: c.title, traveler: c.traveler, days: c.day, totalKm: c.totalKm }) },
-    { id: 'journey-recap', beats: ['context'], types: ['story-so-far'], min: 8, max: 18, flex: true, hero: true,
+      params: (c) => ({ title: c.title, traveler: c.traveler, days: c.day, totalKm: c.totalKm, line: c.seasonLine || null }) },
+    { id: 'journey-recap', beats: ['context'], types: ['story-so-far'], min: 8, max: 27, flex: true, hero: true,
       eligible: (c) => c.daysCount >= 2,
       base: () => ({ relevance: 1, novelty: 0.7, emotion: 0.6, visual: 1, milestone: 0.6 }),
-      pref: (c) => clamp(1.5 + compressHistory({ checkpoints: c.checkpoints }, c.day + 1, 5).length * 3.6, 8, 18),
+      pref: (c) => clamp(1 + compressHistory({ checkpoints: c.checkpoints }, c.day + 1, 5).length * 5, 8, 27),
       params: (c) => ({ history: compressHistory({ checkpoints: c.checkpoints }, c.day + 1, 5) }) },
     { id: 'highlights-reel', beats: ['moment'], types: ['story-so-far'], min: 7.5, max: 16.5, flex: true, hero: true,
       eligible: (c) => c.allPhotos.length >= 2,
@@ -206,7 +210,7 @@
     'story-so-far': [['hook', true], ['context', true], ['moment', false], ['proof', false], ['outro', true]],
   };
   // длительность от содержания: лучше дольше, чем мелькание (правила кадра)
-  const DURATION = { 'new-viewer': [30, 42, 24, 50], 'returning-viewer': [26, 38, 20, 46], 'story-so-far': [36, 52, 28, 60] };
+  const DURATION = { 'new-viewer': [30, 42, 24, 50], 'returning-viewer': [26, 38, 20, 46], 'story-so-far': [40, 58, 30, 66] };
 
   /* ================= Скоринг ================= */
   const W = { relevance: 4, novelty: 3, emotion: 3, visual: 2, milestone: 2, mediaQ: 2, repetition: 4, redundancy: 3, durationCost: 1 };

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Route Story — трек в ролик</title>
-<meta name="description" content="Загрузите GPX-трек, выберите стиль и получите готовый MP4 для Reels и YouTube.">
+<title>Route Story — путешествие как сериал</title>
+<meta name="description" content="Добавьте новый день путешествия — Route Story сам смонтирует следующую серию для Reels и YouTube.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&family=Oswald:wght@500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -13,129 +13,136 @@
 <body>
 <header class="top">
   <div class="brand"><span class="dot"></span>Route Story</div>
-  <div class="tag">трек → стиль → ролик</div>
+  <div class="tag">Добавьте день путешествия — получите следующую серию</div>
 </header>
 
 <main class="app">
-  <aside class="side">
-    <section class="step" id="s1">
-      <h2><i>1</i>Маршрут</h2>
-      <label class="drop" id="drop">
-        <input type="file" id="file" accept=".gpx,.tcx,.kml,.geojson,.json,.csv,.txt,.tsv">
-        <b>Перетащите файл сюда</b>
-        <span>GPX · TCX · KML · GeoJSON · CSV</span>
-      </label>
-      <button class="ghost" id="demo">Попробовать на демо-треке</button>
-      <button class="go" id="series">Серия: путешествие на 46 дней + новый день</button>
-      <button class="ghost" id="wj">Весь путь: кругосветка @wahrider</button>
-      <div class="seg" id="mode" hidden>
-        <button data-v="series">Серия</button>
-        <button data-v="track" class="on">Трек дня</button>
-        <button data-v="journey">Весь путь</button>
-        <button data-v="both">Путь + трек дня</button>
-      </div>
-      <div class="info" id="info" hidden></div>
-      <div class="err" id="err" hidden></div>
-    </section>
-
-    <section class="step off" id="s2">
-      <h2><i>2</i>Стиль</h2>
-      <div class="styles" id="styles"></div>
-    </section>
-
-    <section class="step off" id="s3">
-      <h2><i>3</i>История</h2>
-      <div id="seriesBox" class="lbox" hidden>
-        <div id="change" class="change"></div>
-        <button class="ghost" id="day47">Взять демо-день 47 (Иркутск → Байкал)</button>
-        <label class="f">Для кого серия
-          <select id="etype">
-            <option value="returning-viewer" selected>Постоянный зритель — сразу новое</option>
-            <option value="new-viewer">Новый зритель — сначала масштаб пути</option>
-            <option value="story-so-far">История целиком — трейлер сезона</option>
-          </select>
-        </label>
-        <details id="planBox"><summary>Как режиссёр собрал серию</summary><div id="plan"></div></details>
-        <button class="ghost" id="remember">Запомнить серию — следующая будет разнообразнее</button>
-        <small class="hint">Демо-путешествие: вымышленный путешественник на реальных дорогах OpenStreetMap. Загрузите свой GPX — он станет следующим днём.</small>
-      </div>
-      <label class="f">Название<input id="title" maxlength="60"></label>
-      <label class="f">Подзаголовок (страна, этап)<input id="subtitle" maxlength="70"></label>
-      <div class="two">
-        <label class="f">Старт<input id="startName" maxlength="32"></label>
-        <label class="f">Финиш<input id="endName" maxlength="32"></label>
-      </div>
-      <label class="f" id="jdurBox" hidden>Длина предыстории
-        <select id="jdur"><option value="6">Коротко — 6 мест (~20 сек)</option><option value="10">10 мест (~30 сек)</option><option value="99" selected>Все места (~40 сек)</option></select>
-      </label>
-      <div class="two">
-        <label class="f">Длина ролика
-          <select id="duration"><option value="12">12 сек</option><option value="20" selected>20 сек</option><option value="30">30 сек</option><option value="45">45 сек</option></select>
-        </label>
-        <label class="f">Язык надписей
-          <select id="lang"><option value="ru">Русский</option><option value="en">English</option></select>
-        </label>
-      </div>
-      <div class="f">Подписи мест по пути<div id="places"></div><small id="placesHint">Подбираются автоматически по карте (нужен интернет) — можно поправить или убрать</small></div>
-      <label class="f">Главное об этом дне — покажем в начале ролика
-        <textarea id="note" maxlength="140" rows="2" placeholder="Например: 62 км против ветра, но доехал"></textarea>
-      </label>
-      <div class="f">Фото дня (до 4) — встанут на маршрут по времени съёмки или GPS из файла
-        <input type="file" id="photos" accept="image/jpeg,image/png,image/webp" multiple>
-        <div id="photoList"></div>
-        <small class="hint">Фото не загружаются на сервер — всё остаётся в вашем браузере.</small>
-      </div>
-      <label class="c"><input type="checkbox" id="showSpeed" checked>Показывать скорость <small id="noSpeed"></small></label>
-      <label class="c"><input type="checkbox" id="showEle" checked>Показывать высоту и профиль <small id="noEle"></small></label>
-    </section>
-
-    <section class="step off" id="s4">
-      <h2><i>4</i>Экспорт</h2>
-      <div class="seg" id="xmode">
-        <button data-v="video" class="on">Готовое видео</button>
-        <button data-v="layers">Слои для монтажа</button>
-      </div>
-      <div id="layersBox" class="lbox" hidden>
-        <small class="hint">Фон прозрачный: кладёте слои поверх своих фото и видео в любом редакторе.</small>
-        <label class="c"><input type="checkbox" id="lyMap" checked>Карта (линии и подписи)</label>
-        <label class="c"><input type="checkbox" id="lyRoute" checked>Маршрут и маркеры</label>
-        <label class="c"><input type="checkbox" id="lyHud" checked>Плашки и текст</label>
-        <label class="c"><input type="checkbox" id="lySplit">Каждый слой отдельным файлом</label>
-        <label class="f">Кадров в секунду
-          <select id="lyFps"><option value="30" selected>30 — как в видео</option><option value="24">24 — кино, архив легче</option><option value="15">15 — самый лёгкий архив</option></select>
-        </label>
-        <label class="f">Формат
-          <select id="lyFmt">
-            <option value="png">PNG-кадры в архиве — подходит любому редактору</option>
-            <option value="webm">WebM с прозрачностью — один файл (Chrome / Edge)</option>
-          </select>
-        </label>
-      </div>
-      <div class="seg" id="fmt">
-        <button data-v="v" class="on">9:16 · Reels / Shorts</button>
-        <button data-v="h">16:9 · YouTube</button>
-      </div>
-      <label class="f">Качество
-        <select id="res"><option value="hd" selected>Full HD (1080)</option><option value="sd">HD (720) — быстрее</option></select>
-      </label>
-      <button class="go" id="export">Экспортировать видео</button>
-      <div class="prog" id="prog" hidden><div id="bar"></div><span id="stage"></span></div>
-      <div class="result" id="result" hidden></div>
-    </section>
-  </aside>
-
   <section class="stage">
     <div class="screen" id="screen">
       <canvas id="cv"></canvas>
-      <div class="empty" id="empty">Загрузите трек — здесь появится превью</div>
+      <div class="empty" id="empty">Загружаю демо-серию…</div>
     </div>
     <div class="ctrl">
       <button id="play" aria-label="Играть">▶</button>
       <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Время">
       <span id="time">0:00</span>
-      <button id="export2" class="go mini" disabled>Экспорт</button>
+      <button id="export2" class="go mini" disabled>Скачать видео</button>
     </div>
   </section>
+
+  <aside class="side">
+    <!-- главное: новый день -->
+    <section class="step card-main" id="s1">
+      <div id="seriesBox" hidden>
+        <div id="change" class="change"></div>
+      </div>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".gpx,.tcx,.kml,.geojson,.json,.csv,.txt,.tsv">
+        <b>Перетащите GPX нового дня</b>
+        <span>или нажмите, чтобы выбрать файл · GPX, TCX, KML, GeoJSON, CSV</span>
+      </label>
+      <button class="ghost" id="day47">Нет своего трека? Взять демо-день 47</button>
+      <div class="f">Фото дня
+        <input type="file" id="photos" accept="image/jpeg,image/png,image/webp" multiple>
+        <div id="photoList"></div>
+      </div>
+      <label class="f">Одна фраза о дне
+        <textarea id="note" maxlength="80" rows="2" placeholder="Например: Изнурительно, но весело"></textarea>
+      </label>
+      <label class="f">Для кого серия
+        <select id="etype">
+          <option value="returning-viewer" selected>Для подписчиков — сразу новое</option>
+          <option value="new-viewer">Для новых зрителей — сначала весь путь</option>
+          <option value="story-so-far">Трейлер всего путешествия</option>
+        </select>
+      </label>
+      <div class="err" id="err" hidden></div>
+    </section>
+
+    <section class="step" id="s4">
+      <div class="seg" id="fmt">
+        <button data-v="v" class="on">9:16 · Reels</button>
+        <button data-v="h">16:9 · YouTube</button>
+      </div>
+      <button class="go" id="export">Скачать видео</button>
+      <div class="prog" id="prog" hidden><div id="bar"></div><span id="stage"></span></div>
+      <div class="result" id="result" hidden></div>
+    </section>
+
+    <details class="more" id="more">
+      <summary>Ещё: стиль, другие режимы, слои для монтажа</summary>
+
+      <section class="step" id="s2">
+        <h3>Стиль</h3>
+        <div class="styles" id="styles"></div>
+      </section>
+
+      <section class="step">
+        <h3>Что показывать</h3>
+        <div class="seg" id="mode" hidden>
+          <button data-v="series">Серия</button>
+          <button data-v="track" class="on">Один трек</button>
+          <button data-v="journey">Весь путь</button>
+          <button data-v="both">Путь + трек</button>
+        </div>
+        <button class="ghost" id="series">Демо: путешествие на 46 дней</button>
+        <button class="ghost" id="wj">Весь путь героя: кругосветка @wahrider</button>
+        <button class="ghost" id="demo">Один демо-трек (Самарканд — Бухара)</button>
+        <div class="info" id="info" hidden></div>
+        <details id="planBox"><summary>Как режиссёр собрал серию</summary><div id="plan"></div></details>
+        <button class="ghost" id="remember">Запомнить серию — следующая будет разнообразнее</button>
+        <small class="hint">Демо-путешествие — вымышленный путешественник на реальных дорогах OpenStreetMap.</small>
+      </section>
+
+      <section class="step" id="s3">
+        <h3>Подписи и длина</h3>
+        <label class="f">Название<input id="title" maxlength="60"></label>
+        <label class="f">Подзаголовок<input id="subtitle" maxlength="70"></label>
+        <div class="two">
+          <label class="f">Откуда<input id="startName" maxlength="32"></label>
+          <label class="f">Куда<input id="endName" maxlength="32"></label>
+        </div>
+        <label class="f" id="jdurBox" hidden>Длина предыстории
+          <select id="jdur"><option value="6">Коротко — 6 мест</option><option value="10">10 мест</option><option value="99" selected>Все места</option></select>
+        </label>
+        <div class="two">
+          <label class="f">Длина (один трек)
+            <select id="duration"><option value="12">12 сек</option><option value="20" selected>20 сек</option><option value="30">30 сек</option><option value="45">45 сек</option></select>
+          </label>
+          <label class="f">Язык
+            <select id="lang"><option value="ru">Русский</option><option value="en">English</option></select>
+          </label>
+        </div>
+        <div class="f">Подписи мест (один трек)<div id="places"></div><small id="placesHint">Подбираются автоматически по карте</small></div>
+        <label class="c"><input type="checkbox" id="showSpeed" checked>Скорость <small id="noSpeed"></small></label>
+        <label class="c"><input type="checkbox" id="showEle" checked>Высота <small id="noEle"></small></label>
+      </section>
+
+      <section class="step">
+        <h3>Экспорт</h3>
+        <div class="seg" id="xmode">
+          <button data-v="video" class="on">Готовое видео</button>
+          <button data-v="layers">Слои для монтажа</button>
+        </div>
+        <div id="layersBox" class="lbox" hidden>
+          <small class="hint">Фон прозрачный: кладёте слои поверх своих видео в любом редакторе.</small>
+          <label class="c"><input type="checkbox" id="lyMap" checked>Карта</label>
+          <label class="c"><input type="checkbox" id="lyRoute" checked>Маршрут</label>
+          <label class="c"><input type="checkbox" id="lyHud" checked>Титры и фото</label>
+          <label class="c"><input type="checkbox" id="lySplit">Каждый слой отдельным файлом</label>
+          <label class="f">Кадров в секунду
+            <select id="lyFps"><option value="30" selected>30</option><option value="24">24</option><option value="15">15 — архив легче</option></select>
+          </label>
+          <label class="f">Формат
+            <select id="lyFmt"><option value="png">PNG-кадры в архиве — любой редактор</option><option value="webm">WebM с прозрачностью (Chrome / Edge)</option></select>
+          </label>
+        </div>
+        <label class="f">Качество
+          <select id="res"><option value="hd" selected>Full HD (1080)</option><option value="sd">HD (720) — быстрее</option></select>
+        </label>
+      </section>
+    </details>
+  </aside>
 </main>
 
 <script src="vendor/mp4-muxer.min.js"></script>

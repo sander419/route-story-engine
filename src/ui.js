@@ -216,7 +216,7 @@
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {
     const S = window.Director.summarize(J), fmt = (v) => Math.round(v).toLocaleString('ru-RU');
-    $('change').innerHTML = change
+    $('change').innerHTML = J.schematic ? `<b>Кругосветка @wahrider</b>${J.days.length} мест по постам · 7 260 км по словам автора` : change
       ? `<b>+${fmt(change.km)} км · День ${change.day}</b><br>${change.media ? change.media + ' фото · ' : ''}${change.notes ? 'заметка · ' : ''}всего ${fmt(change.totalAfter)} км${change.arrival ? ' · прибытие: ' + change.arrival : ''}${change.milestones.length ? ' · веха: ' + change.milestones.map(fmt).join(', ') + ' км' : ''}`
       : `<b>${J.title}</b><br>${S.daysCount} дней · ${fmt(S.totalKm)} км. Добавьте новый день: свой GPX или демо-день 47.`;
     const v = window.Director.validate(res.plan, J);
@@ -293,8 +293,30 @@
     state.mode = state.route ? 'both' : 'journey';
     setMode(state.mode); play(true);
   }
+  /* кругосветка героя → путешествие для режиссёра: остановки как «дни» схемы, даты вместо номеров дней */
+  function heroJourney(d) {
+    const days = [], checkpoints = [], media = [], dayLabels = {}, dayNotes = {}; let prev = null; const seen = new Set();
+    d.stops.forEach((st, i) => {
+      const day = i + 1, p = [st.lon, st.lat];
+      const line = prev ? Array.from({ length: 24 }, (_, k) => [lerpN(prev[0], p[0], k / 23), lerpN(prev[1], p[1], k / 23)]) : [p, p];
+      days.push({ day, km: prev ? window.RouteLib.hav({ lat: prev[1], lon: prev[0] }, { lat: p[1], lon: p[0] }) / 1000 : 0, line, to: st.name });
+      checkpoints.push({ day, kind: i === 0 ? 'origin' : !seen.has(st.country) ? 'country' : 'city', label: st.name + (st.precision === 'region' ? ' ≈' : '') });
+      seen.add(st.country); dayLabels[day] = st.dateLabel; dayNotes[day] = st.country;
+      if (st.photo) media.push({ id: 'h' + day, day, kind: 'photo', url: st.photo, caption: st.name, credit: 'Фото: @wahrider · пост ' + st.photoPost });
+      prev = p;
+    });
+    return { id: 'wahrider', title: 'Кругосветка на уницикле', traveler: '@wahrider', schematic: true, days, checkpoints, media, notes: [], episodes: [],
+      dayLabels, dayNotes, totalKmLabel: '7 260 км', totalKmNote: 'по словам автора, сентябрь 2026', seasonLine: '8 стран · 7 260 км по словам автора' };
+  }
+  const lerpN = (a, b, t) => a + (b - a) * t;
   $('wj').onclick = async () => {
-    try { loadJourney(await (await fetch('data/journey-wahrider.json')).json()); }
+    try {
+      const d = await (await fetch('data/journey-wahrider.json')).json();
+      state.seriesBase = heroJourney(d); state.route = null; state.routeIsDemo = false;
+      state.etype = 'story-so-far'; $('etype').value = 'story-so-far';
+      $('info').hidden = false; $('info').innerHTML = '<span><b>Кругосветка @wahrider</b> — трейлер по постам канала</span>';
+      refreshModes(); setMode('series'); play(true);
+    }
     catch (e) { showErr('Не удалось загрузить путь: ' + e.message); }
   };
 
@@ -338,7 +360,7 @@
 
   /* ---- экспорт ---- */
   state.xmode = 'video';
-  const exportLabel = () => (state.xmode === 'layers' ? 'Экспортировать слои' : 'Экспортировать видео');
+  const exportLabel = () => (state.xmode === 'layers' ? 'Скачать слои' : 'Скачать видео');
   [...$('xmode').children].forEach((b) => (b.onclick = () => {
     state.xmode = b.dataset.v;
     [...$('xmode').children].forEach((x) => x.classList.toggle('on', x === b));
@@ -399,9 +421,12 @@
     } catch (e) {
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));
     } finally {
-      abort = null; btn.textContent = exportLabel(); $('export2').textContent = 'Экспорт'; $('prog').hidden = true;
+      abort = null; btn.textContent = exportLabel(); $('export2').textContent = 'Скачать видео'; $('prog').hidden = true;
     }
   };
+
+  // открыли страницу — сразу играет демо-серия «День 47» (своим GPX её можно заменить)
+  (async () => { await loadSeries(); $('day47').click(); })();
 
   window.__app = { loadSeries, state, loadText, loadJourney, setMode, rebuild, buildScene, SIZES, get scene() { return scene; } };
 })();

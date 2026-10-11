@@ -92,3 +92,20 @@ button:hover{border-color:var(--acc)}
 
 .go.mini{width:auto;height:44px;border-radius:12px;padding:0 18px;font-size:15px;flex:none}
 .ctrl .go.mini{width:auto}
+
+/* упрощённый экран: видео + одна карточка «Новый день» */
+.app{grid-template-columns:1fr 400px}
+.card-main{gap:14px}
+.card-main .change{padding:4px 2px 2px}
+.card-main .change b{font-size:22px;display:block;margin-bottom:2px}
+.more{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.more>summary{cursor:pointer;color:var(--dim);font-size:14px}
+.more[open]>summary{margin-bottom:10px}
+.more .step{border:0;padding:8px 0;background:transparent}
+.more h3{margin:4px 0 2px;font:600 14px Inter}
+#export{font-size:17px;padding:15px}
+@media (max-width:900px){.app{grid-template-columns:1fr}}
+
+.ctrl button#play{flex:none}
+@media (max-width:600px){.top{flex-wrap:wrap;gap:4px 12px}.top .tag{font-size:12px;flex-basis:100%}}
+#mode button[data-v="journey"],#mode button[data-v="both"]{display:none}

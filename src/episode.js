@@ -41,6 +41,8 @@
     const origin = cps.find((c) => c.kind === 'origin');
     const prevStop = [...cps].filter((c) => c.day < today.day && (c.kind === 'city' || c.kind === 'origin' || c.kind === 'country')).pop();
     const fromLabel = today.from || (prevStop ? prevStop.label : null), toLabel = today.to || null;
+    const DL = (day) => (journey.dayLabels && journey.dayLabels[day]) || 'день ' + day;   // для схемы по постам — даты, а не «день N»
+    const kmText = (v) => (journey.totalKmLabel ? journey.totalKmLabel : fmtN(v) + ' км');
     const dayEnd = (day) => { const d = days.find((x) => x.day === day); if (!d) return null; const q = d.line[d.line.length - 1]; return [px(q[0]), py(q[1])]; };
 
     /* ---- камера ---- */
@@ -91,7 +93,7 @@
         const r = recapState(s, uu), endAt = r.seg * s.stops.length;
         if (uu > endAt) return glide(s.stops[s.stops.length - 1].cam, CAM.journey, sine((uu - endAt) / (1 - endAt)));
         const from = r.k === 0 ? s.camFrom : s.stops[r.k - 1].cam;
-        return glide(from, s.stops[r.k].cam, sine(r.f / 0.45));
+        return glide(from, s.stops[r.k].cam, sine(r.f / 0.32));
       }
       const c = glide(s.camFrom, s.camTo, sine(uu / s.move));
       return { ...c, z: c.z + 0.08 * smooth((uu - s.move) / (1 - s.move)) };   // мягкий дрейф после движения
@@ -176,7 +178,9 @@
       else if (S.bgGrad) { const g = ctx.createLinearGradient(0, 0, W * 0.5, H); S.bgGrad.forEach((cc, i, a) => g.addColorStop(i / (a.length - 1), cc)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
       else { ctx.fillStyle = S.bg; ctx.fillRect(0, 0, W, H); }
       // карта — спокойный фон: без подписей и мелочи
-      if (LY.map && S.vec) window.VMap.draw(ctx, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, { ...S.vec, font: S.fBody }, { fills: !TR, lines: true, labels: false }, lang, u);
+      // на общих планах — только суша, вода и границы; дороги и мелкие реки появляются лишь вблизи
+      const close = c.z >= 8.5;
+      if (LY.map && S.vec) window.VMap.draw(ctx, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, { ...S.vec, font: S.fBody, road: close ? S.vec.road : null, rail: close ? S.vec.rail : null, noWaterways: c.z < 7.5 }, { fills: !TR, lines: true, labels: false }, lang, u);
       if (!TR && S.paper) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.25)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
       if (!TR) { // мягкая виньетка вместо полос
         const g = ctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.75);
@@ -191,7 +195,7 @@
         let pr = pastReveal(t), upto = null;
         if (pr === -1) {   // пересказ: путь дорисовывается до вехи, у которой сейчас камера
           const r = recapState(s, su); const tgtDay = s.stops && s.stops[r.k] ? s.stops[r.k].h.day : today.day;
-          const prevDay = r.k > 0 ? s.stops[r.k - 1].h.day : 0; const f = sine(r.f / 0.45);
+          const prevDay = r.k > 0 ? s.stops[r.k - 1].h.day : 0; const f = sine(r.f / 0.32);
           const lim = su > r.seg * (s.stops ? s.stops.length : 0) ? today.day : lerp(prevDay, tgtDay, f);
           upto = -1; for (let i = 0; i < pastDayAt.length; i++) if (pastDayAt[i] <= lim) upto = i;
           pr = 1;
@@ -199,8 +203,9 @@
         if (pastFlat.length > 1 && pr > 0 && (upto == null || upto > 0)) {
           const glow = s.recipe === 'pullback' ? smooth((su - 0.3) / 0.5) : 0;
           poly(pastFlat, upto);
+          if (journey.schematic) ctx.setLineDash([16 * u, 12 * u]);
           ctx.strokeStyle = S.line.glow; ctx.globalAlpha = 0.25 + 0.55 * glow; ctx.lineWidth = S.line.w * 2.2 * u; ctx.stroke();
-          ctx.globalAlpha = 0.85; ctx.strokeStyle = S.paper ? 'rgba(124,45,18,.8)' : 'rgba(225,235,255,.85)'; ctx.lineWidth = 4.5 * u; ctx.stroke(); ctx.globalAlpha = 1;
+          ctx.globalAlpha = 0.85; ctx.strokeStyle = S.paper ? 'rgba(124,45,18,.8)' : 'rgba(225,235,255,.85)'; ctx.lineWidth = 4.5 * u; ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]);
           const o = pastFlat[0]; ctx.beginPath(); ctx.arc(X(o), Y(o), 9 * u, 0, 6.2832); ctx.fillStyle = S.paper ? '#7c2d12' : '#e8f0ff'; ctx.fill();
         }
         // сегодня
@@ -221,6 +226,7 @@
       }
 
       if (LY.hud) hud(ctx, t, s, su, lt, TR);
+      if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: S.dim, align: 'center', alpha: 0.75, shadow: false });
       T(ctx, S.credit, W / 2, H - (S.paper ? 46 : 22) * u, { size: 15, weight: 500, color: S.dim, align: 'center', alpha: 0.55, shadow: false });
       ctx.restore();
     }
@@ -235,7 +241,7 @@
           break;
         case 'season-card':
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
-          centerTitle(ctx, a, dy, p.traveler || 'история путешествия', p.title || '', `${p.days} ${daysWord(p.days)} · ${fmtN(p.totalKm)} км`, 130);
+          centerTitle(ctx, a, dy, p.traveler || 'история путешествия', p.title || '', p.line || `${p.days} ${daysWord(p.days)} · ${fmtN(p.totalKm)} км`, 130);
           break;
         case 'progress-overview':
           lowerThird(ctx, vis(lt, dur, 0.6), rise(lt, 0.6), 'путь до сегодня', fmtN(p.totalKm) + ' км', `${p.days} ${daysWord(p.days)}${origin ? ' · от ' + origin.label : ''}`);
@@ -245,7 +251,8 @@
           break;
         case 'route-reveal': case 'camera-follow': {
           const km = p.km * todayReveal(t);
-          lowerThird(ctx, vis(lt, dur, 0.9), rise(lt, 0.9), 'день ' + today.day, '+' + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
+          const d0 = s.move * dur * 0.85;   // титр — когда маршрут начинает рисоваться
+          lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), 'день ' + today.day, '+' + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
           break;
         }
         case 'checkpoint-arrival':
@@ -260,7 +267,7 @@
             const aIn = smooth(l2 / (i === 0 ? 0.8 : 0.7)), aOut = i === n - 1 ? 1 - smooth((lt - (dur - 0.8)) / 0.8) : 1;
             fullPhoto(ctx, m, aIn * aOut, clamp(l2 / (slot + 0.7), 0, 1));
             const capA = smooth((l2 - 0.5) / FADE) * (1 - smooth((l2 - (slot - FADE - 0.1)) / FADE)) * aOut;
-            lowerThird(ctx, capA, rise(l2, 0.5), 'день ' + (s.recipe === 'highlights-reel' ? m.day : today.day), m.caption || toLabel || '', '', true);
+            lowerThird(ctx, capA, rise(l2, 0.5), DL(s.recipe === 'highlights-reel' ? m.day : today.day), m.caption || toLabel || '', '', true);
           });
           break;
         }
@@ -304,13 +311,13 @@
         }
         case 'pullback': case 'progress-poster': {
           const pa = s.recipe === 'pullback' ? smooth((su - 0.62) / 0.18) * (1 - smooth((lt - (dur - 0.4)) / 0.4)) : a;
-          lowerThird(ctx, pa, s.recipe === 'pullback' ? (1 - smooth((su - 0.62) / 0.25)) * 26 * u : dy, 'день ' + p.day, fmtN(p.totalKm) + ' км', 'путешествие продолжается →');
+          lowerThird(ctx, pa, s.recipe === 'pullback' ? (1 - smooth((su - 0.62) / 0.25)) * 26 * u : dy, journey.schematic ? 'и путь продолжается' : 'день ' + p.day, kmText(p.totalKm), journey.schematic ? (journey.totalKmNote || '') : 'путешествие продолжается →');
           break;
         }
         case 'journey-recap': {
           const r = recapState(s, su); const st = s.stops[r.k]; if (!st) break;
-          const ca = smooth((r.f - 0.42) / 0.12) * (1 - smooth((r.f - 0.88) / 0.12));
-          lowerThird(ctx, ca, (1 - smooth((r.f - 0.42) / 0.2)) * 26 * u, 'день ' + st.h.day, st.h.label, '');
+          const ca = smooth((r.f - 0.3) / 0.12) * (1 - smooth((r.f - 0.88) / 0.1));   // ~3 с титра на каждую веху
+          lowerThird(ctx, ca, (1 - smooth((r.f - 0.3) / 0.2)) * 26 * u, DL(st.h.day), st.h.label, (journey.dayNotes && journey.dayNotes[st.h.day]) || '');
           break;
         }
         default: break;
