@@ -157,7 +157,7 @@
       base: (c) => ({ relevance: 0.75, novelty: 0.5, emotion: 0.3, visual: 0.9, milestone: c.dayMilestone ? 1 : 0 }),
       pref: () => 3,
       params: (c) => ({ perDay: c.perDay.map(r1), current: c.day, totalKm: c.totalKm }) },
-    { id: 'elevation-profile', beats: ['proof'], min: 2.2, max: 3.6, flex: true,
+    { id: 'elevation-profile', types: ['new-viewer', 'returning-viewer'], beats: ['proof'], min: 2.2, max: 3.6, flex: true,
       eligible: (c) => c.gain >= 150,
       base: (c) => ({ relevance: 0.75, novelty: 0.8, emotion: 0.4, visual: clamp(c.gain / 1200, 0.4, 1), milestone: 0 }),
       pref: () => 3,

@@ -5,7 +5,7 @@
   const { createScene, STYLES } = window.RS;
 
   const state = {
-    route: null, journeyData: null, mode: 'track', styleId: 'night', fmt: 'v', jcount: 99,
+    route: null, journeyData: null, seriesBase: null, etype: 'returning-viewer', mode: 'track', styleId: 'night', fmt: 'v', jcount: 99,
     o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru', places: [], note: '', photos: [] },
   };
   const touched = {};
@@ -17,7 +17,7 @@
 
   /* ---- шрифты ---- */
   const fontsReady = Promise.all(
-    ['700 40px Oswald', '600 40px Oswald', '600 30px Inter', '500 30px Inter', '800 40px "Playfair Display"', '600 30px Lora', '500 30px Lora']
+    ['700 40px Caveat', '700 40px Oswald', '600 40px Oswald', '600 30px Inter', '500 30px Inter', '800 40px "Playfair Display"', '600 30px Lora', '500 30px Lora']
       .map((f) => document.fonts.load(f, 'АаЯя Aa 0123').catch(() => {}))
   ).then(() => document.fonts.ready).catch(() => {});
 
@@ -123,7 +123,7 @@
       state.o.showSpeed = !!route.speed && $('showSpeed').checked; state.o.showEle = !!route.ele && $('showEle').checked;
       refreshModes();
       if (state.mode === 'journey') state.mode = 'both';
-      setMode(state.journeyData ? state.mode : 'track'); play(true);
+      setMode(state.mode === 'series' && state.seriesBase ? 'series' : state.journeyData && state.mode !== 'series' ? state.mode : 'track'); play(true);
       state.o.places = []; renderPlaces();
       placePhotos();
       geocode(route);
@@ -191,7 +191,63 @@
   }
 
   /* ---- сборка сцены: трек дня / весь путь / оба подряд ---- */
+  /* ---- серия: путешествие по дням + новый день → план режиссёра → эпизод ---- */
+  function seriesInput() {
+    let J = state.seriesBase, change = null;
+    if (state.route) {
+      const r = state.route, step = Math.max(1, Math.floor(r.n / 250)), line = [];
+      for (let i = 0; i < r.n; i += step) line.push([r.lon[i], r.lat[i]]);
+      line.push([r.lon[r.n - 1], r.lat[r.n - 1]]);
+      const date = r.t ? new Date(r.t[0] + (r.lon[0] / 15) * 3600e3).toISOString().slice(0, 10) : null;
+      const seg = { km: Math.round(r.total / 100) / 10, line, date, to: state.o.endName || null, gain: r.ele ? Math.round(r.stats.gain) : 0 };
+      const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '' }));
+      const notes = state.o.note ? [{ text: state.o.note }] : [];
+      ({ journey: J, change } = window.Director.addDay(J, seg, media, notes));
+    }
+    return { J, change };
+  }
+  function buildEpisode(w, h) {
+    const { J, change } = seriesInput();
+    const res = window.Director.direct(J, state.etype, { aspect: state.fmt === 'v' ? '9:16' : '16:9' });
+    state.lastEp = { res, change, J };
+    renderSeriesPanel(res, change, J);
+    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang }, w, h);
+  }
+  const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
+  function renderSeriesPanel(res, change, J) {
+    const S = window.Director.summarize(J), fmt = (v) => Math.round(v).toLocaleString('ru-RU');
+    $('change').innerHTML = change
+      ? `<b>+${fmt(change.km)} км · День ${change.day}</b><br>${change.media ? change.media + ' фото · ' : ''}${change.notes ? 'заметка · ' : ''}всего ${fmt(change.totalAfter)} км${change.arrival ? ' · прибытие: ' + change.arrival : ''}${change.milestones.length ? ' · веха: ' + change.milestones.map(fmt).join(', ') + ' км' : ''}`
+      : `<b>${J.title}</b><br>${S.daysCount} дней · ${fmt(S.totalKm)} км. Добавьте новый день: свой GPX или демо-день 47.`;
+    const v = window.Director.validate(res.plan, J);
+    $('plan').innerHTML = `<div>${res.plan.episodeType} · ${res.plan.durationSec} с · зерно ${res.plan.seed}${res.plan.fallback ? ' · запасной план: ' + res.plan.fallback : ''}${v.ok ? ' · проверка пройдена' : ' · ошибки: ' + v.errors.join('; ')}</div>` +
+      res.log.map((l) => `<div class="beat"><b>${NAMES[l.beat] || l.beat}</b>: ${l.selected || '—'}<div class="cand">${l.candidates.map((c) => `<span class="${c.id === l.selected ? 'sel' : ''}">${c.id} ${c.eligible ? c.total : '✕'}</span>`).join(' · ')}</div><div class="cand">${l.reason}</div></div>`).join('') +
+      (res.plan.fitting ? `<div class="cand">длительность: ${res.plan.fitting}</div>` : '') +
+      `<div class="cand">в памяти серий: ${(J.episodes || []).length}</div>`;
+  }
+  async function loadSeries() {
+    try {
+      state.seriesBase = await (await fetch('data/demo-journey.json')).json();
+      if (state.routeIsDemo) { state.route = null; state.routeIsDemo = false; }
+      $('info').hidden = false;
+      $('info').innerHTML = `<span><b>${state.seriesBase.title}</b> — демо-путешествие</span><span>46 дней · вымышленный путешественник на реальных дорогах</span>`;
+      refreshModes(); setMode('series'); play(true);
+    } catch (e) { showErr('Не удалось загрузить демо-путешествие: ' + e.message); }
+  }
+  $('series').onclick = loadSeries;
+  $('day47').onclick = async () => {
+    try { const tx = await (await fetch('samples/day47.gpx')).text(); loadText(tx, 'day47.gpx'); if (!touched.endName) { touched.endName = true; state.o.endName = 'Байкал'; $('endName').value = 'Байкал'; rebuild(true); } }
+    catch (e) { showErr('Не удалось загрузить день 47: ' + e.message); }
+  };
+  $('etype').onchange = () => { state.etype = $('etype').value; t = 0; rebuild(); };
+  $('remember').onclick = () => {
+    if (!state.lastEp) return;
+    state.seriesBase = { ...state.seriesBase, episodes: [...(state.seriesBase.episodes || []), window.Director.summaryOf(state.lastEp.res.plan)] };
+    t = 0; rebuild();
+  };
+
   function buildScene(w, h) {
+    if (state.mode === 'series') return buildEpisode(w, h);
     const o = { ...state.o };
     const parts = [];
     if (state.mode !== 'track' && state.journeyData) {
@@ -202,19 +258,20 @@
     if (state.mode !== 'journey' && state.route) parts.push(createScene(state.route, state.styleId, o, w, h));
     return parts.length > 1 ? window.Journey.composite(parts, w, h) : parts[0];
   }
-  function ready() { return state.mode === 'journey' ? !!state.journeyData : state.mode === 'both' ? !!(state.journeyData && state.route) : !!state.route; }
+  function ready() { if (state.mode === 'series') return !!state.seriesBase; return state.mode === 'journey' ? !!state.journeyData : state.mode === 'both' ? !!(state.journeyData && state.route) : !!state.route; }
 
   function setMode(m) {
     state.mode = m;
     [...$('mode').children].forEach((b) => b.classList.toggle('on', b.dataset.v === m));
-    $('jdurBox').hidden = m === 'track';
+    $('jdurBox').hidden = m === 'track' || m === 'series';
+    $('seriesBox').hidden = m !== 'series';
     t = 0; rebuild();
   }
   $('export2').onclick = () => $('export').click();
   function refreshModes() {
     const hasR = !!state.route, hasJ = !!state.journeyData;
-    $('mode').hidden = !(hasJ);
-    [...$('mode').children].forEach((b) => { b.disabled = (b.dataset.v === 'track' && !hasR) || (b.dataset.v === 'both' && !(hasR && hasJ)); });
+    $('mode').hidden = !(hasJ || state.seriesBase);
+    [...$('mode').children].forEach((b) => { b.disabled = (b.dataset.v === 'track' && !hasR) || (b.dataset.v === 'both' && !(hasR && hasJ)) || (b.dataset.v === 'journey' && !hasJ) || (b.dataset.v === 'series' && !state.seriesBase); });
     ['s2', 's3', 's4'].forEach((id) => $(id).classList.remove('off'));
     $('export2').disabled = false;
     $('empty').style.display = 'none'; cv.style.display = 'block';
@@ -295,11 +352,11 @@
     $('prog').hidden = false; $('result').hidden = true; showErr('');
     const [W, H] = SIZES[state.fmt][$('res').value];
     const o = { ...state.o };
-    const route = state.route || { name: state.journeyData.title };
+    const route = state.route || { name: (state.journeyData || state.seriesBase || {}).title || 'route-story' };
     const dur = buildScene(W, H).duration;
     try {
       await fontsReady;
-      const slug0 = (state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
+      const slug0 = (state.mode === 'series' && state.lastEp ? `${state.seriesBase.title} день ${state.lastEp.res.plan.episodeNumber} ${state.etype}` : state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
       const sz = state.fmt === 'v' ? '9x16' : '16x9';
       if (state.xmode === 'layers') {
         const Ls = { map: $('lyMap').checked, route: $('lyRoute').checked, hud: $('lyHud').checked };
@@ -330,7 +387,7 @@
       });
       if (objUrl) URL.revokeObjectURL(objUrl);
       objUrl = URL.createObjectURL(res.blob);
-      const slug = (state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
+      const slug = slug0;
       const name = `${slug}-${state.fmt === 'v' ? '9x16' : '16x9'}.${res.ext}`;
       $('result').innerHTML = `<video src="${objUrl}" controls playsinline></video><a href="${objUrl}" download="${name}">Скачать ${name}</a><small>${W}×${H}, ${(res.blob.size / 1048576).toFixed(1)} МБ, ${res.ext.toUpperCase()}</small>`;
       $('result').hidden = false;
@@ -342,5 +399,5 @@
     }
   };
 
-  window.__app = { state, loadText, loadJourney, setMode, rebuild, buildScene, SIZES, get scene() { return scene; } };
+  window.__app = { loadSeries, state, loadText, loadJourney, setMode, rebuild, buildScene, SIZES, get scene() { return scene; } };
 })();

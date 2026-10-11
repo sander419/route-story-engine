@@ -7,7 +7,7 @@
 <meta name="description" content="Загрузите GPX-трек, выберите стиль и получите готовый MP4 для Reels и YouTube.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&family=Oswald:wght@500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&family=Oswald:wght@500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,8 +26,10 @@
         <span>GPX · TCX · KML · GeoJSON · CSV</span>
       </label>
       <button class="ghost" id="demo">Попробовать на демо-треке</button>
+      <button class="go" id="series">Серия: путешествие на 46 дней + новый день</button>
       <button class="ghost" id="wj">Весь путь: кругосветка @wahrider</button>
       <div class="seg" id="mode" hidden>
+        <button data-v="series">Серия</button>
         <button data-v="track" class="on">Трек дня</button>
         <button data-v="journey">Весь путь</button>
         <button data-v="both">Путь + трек дня</button>
@@ -43,6 +45,20 @@
 
     <section class="step off" id="s3">
       <h2><i>3</i>История</h2>
+      <div id="seriesBox" class="lbox" hidden>
+        <div id="change" class="change"></div>
+        <button class="ghost" id="day47">Взять демо-день 47 (Иркутск → Байкал)</button>
+        <label class="f">Для кого серия
+          <select id="etype">
+            <option value="returning-viewer" selected>Постоянный зритель — сразу новое</option>
+            <option value="new-viewer">Новый зритель — сначала масштаб пути</option>
+            <option value="story-so-far">История целиком — трейлер сезона</option>
+          </select>
+        </label>
+        <details id="planBox"><summary>Как режиссёр собрал серию</summary><div id="plan"></div></details>
+        <button class="ghost" id="remember">Запомнить серию — следующая будет разнообразнее</button>
+        <small class="hint">Демо-путешествие: вымышленный путешественник на реальных дорогах OpenStreetMap. Загрузите свой GPX — он станет следующим днём.</small>
+      </div>
       <label class="f">Название<input id="title" maxlength="60"></label>
       <label class="f">Подзаголовок (страна, этап)<input id="subtitle" maxlength="70"></label>
       <div class="two">
@@ -127,6 +143,8 @@
 <script src="src/vector.js"></script>
 <script src="src/scene.js"></script>
 <script src="src/journey.js"></script>
+<script src="src/director.js"></script>
+<script src="src/episode.js"></script>
 <script src="src/exif.js"></script>
 <script src="src/export.js"></script>
 <script src="src/layers-export.js"></script>

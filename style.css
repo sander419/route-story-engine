@@ -78,6 +78,14 @@ button:hover{border-color:var(--acc)}
 .phrow small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
 .phrow input{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%}
 .phrow button{padding:4px 0;line-height:1}
+.change{font-size:14px;line-height:1.5}
+.change b{font-size:18px}
+#plan{font-size:12px;display:grid;gap:6px;margin-top:8px}
+#plan .beat{border-left:3px solid var(--acc);padding:2px 8px}
+#plan .beat b{font-size:13px}
+#plan .cand{color:var(--dim)}
+#plan .cand .sel{color:var(--ink);font-weight:700}
+#planBox summary{cursor:pointer;font-size:13px;color:var(--dim)}
 .prow{display:grid;grid-template-columns:1fr auto 32px;gap:6px;align-items:center;margin-top:6px}
 .prow small{color:var(--dim)}
 .prow button{padding:4px 0;line-height:1}

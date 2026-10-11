@@ -100,7 +100,7 @@
 
   /* ---------- рисование ---------- */
   const RANK = { country: 0, state: 1, city: 2, town: 3, village: 4, suburb: 5, hamlet: 6 };
-  const SHOW_FROM = { country: 0, state: 3.2, city: 2.5, town: 6.2, village: 8.2, suburb: 10.2, hamlet: 10.8 };
+  const SHOW_FROM = { country: 0, state: 4.4, city: 2.5, town: 6.2, village: 8.2, suburb: 10.2, hamlet: 10.8 };
   const ROAD_FROM = { motorway: 4.5, trunk: 5.2, primary: 7, secondary: 8.4, tertiary: 9.6, minor: 10.6, service: 12.5 };
   const ROAD_W = { motorway: 3.4, trunk: 3, primary: 2.5, secondary: 1.9, tertiary: 1.4, minor: 1, service: 0.7 };
 
