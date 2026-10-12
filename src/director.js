@@ -75,6 +75,23 @@
     return path / chord;
   }
 
+  /* Места по пути: самые значимые и не кучей. Чем длиннее день, тем больше мест, но не больше трёх (правила кадра). */
+  const PLACE_RANK = { city: 3, town: 2, village: 1 };
+  function pickWaypoints(list, km, skip = []) {
+    if (!list || !list.length) return [];
+    const max = km < 20 ? 1 : km < 80 ? 2 : 3;
+    const pool = list.filter((w) => w && w.name && w.frac > 0.12 && w.frac < 0.88 && !skip.includes(w.name))
+      .sort((a, b) => (PLACE_RANK[b.kind] || 0) - (PLACE_RANK[a.kind] || 0) || (b.pop || 0) - (a.pop || 0) || a.name.localeCompare(b.name));
+    const out = [];
+    for (const w of pool) {
+      if (out.length >= max) break;
+      if (out.some((o) => Math.abs(o.frac - w.frac) < 0.18 || o.name === w.name)) continue;
+      out.push(w);
+    }
+    return out.sort((a, b) => a.frac - b.frac).map((w) => ({ name: w.name, lon: w.lon, lat: w.lat, frac: r2(w.frac), kind: w.kind || 'town' }));
+  }
+  function hoursText(h) { const m = Math.round(h * 60); return m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч ${String(m % 60).padStart(2, '0')} мин`; }
+
   function buildContext(J, episodeType, opts = {}) {
     const S = summarize(J);
     const days = [...J.days].sort((a, b) => a.day - b.day);
@@ -85,7 +102,7 @@
     const median = [...S.perDay].sort((a, b) => a - b)[Math.floor(S.perDay.length / 2)] || seg.km;
     const prevTotal = r1(S.totalKm - seg.km);
     const crossedK = Math.floor(S.totalKm / 1000) > Math.floor(prevTotal / 1000) ? Math.floor(S.totalKm / 1000) * 1000 : null;
-    const dayMilestone = seg.day === 1 || seg.day % 50 === 0 || seg.day === 100 ? seg.day : null;
+    const dayMilestone = seg.day % 50 === 0 ? seg.day : null;   // «День 1» вехой не считаем: это просто начало
     const arrival = (J.checkpoints || []).find((c) => c.day === seg.day && c.kind !== 'milestone') || null;
     return {
       type: episodeType, aspect: opts.aspect || '9:16',
@@ -94,6 +111,12 @@
       newKm: r1(seg.km), totalKm: S.totalKm, prevTotalKm: prevTotal, daysCount: S.daysCount, perDay: S.perDay, position: S.position,
       photos: media, allPhotos, note, noteWords: note ? note.text.trim().split(/\s+/).length : 0,
       gain: seg.gain || 0, sinuosity: r2(sinuosity(seg.line)),
+      // факты, которые режиссёр достаёт из самого трека (без фото и заметок)
+      from: seg.from || null, to: seg.to || null, name: seg.name || null,
+      waypoints: pickWaypoints(seg.waypoints, seg.km, [seg.from, seg.to]),
+      profile: seg.profile && seg.profile.length >= 8 ? seg.profile : null,
+      maxEle: seg.maxEle != null ? seg.maxEle : null, minEle: seg.minEle != null ? seg.minEle : null, maxAt: seg.maxAt || null, maxKm: seg.maxKm != null ? seg.maxKm : null,
+      movingH: seg.movingH || 0, avgKmh: seg.avgKmh || 0,
       isLong: seg.km > median * 1.8 && seg.km > 60, isShort: seg.km < 15,
       milestoneKm: crossedK, dayMilestone, arrival,
       history: compressHistory(J, seg.day),
@@ -106,8 +129,14 @@
   /* ================= Shot Recipes (решения; отрисовка — отдельно, в episode.js) ================= */
   // каждая функция base(ctx) возвращает компоненты полезности 0..1
   const RECIPES = [
+    // один трек без истории: «День 1» ни о чём не говорит — называем сам маршрут
+    { id: 'trip-title', types: ['new-viewer', 'returning-viewer'], beats: ['hook'], min: 3, max: 4, flex: true,
+      eligible: (c) => c.daysCount === 1,
+      base: () => ({ relevance: 1, novelty: 1, emotion: 0.4, visual: 0.6, milestone: 0 }),
+      pref: () => 3.4,
+      params: (c) => ({ from: c.from, to: c.to, name: c.name, date: c.date, km: c.newKm }) },
     { id: 'day-card', types: ['new-viewer', 'returning-viewer'], beats: ['hook'], min: 2.6, max: 3.6, flex: true,
-      eligible: () => true,
+      eligible: (c) => c.daysCount >= 2,
       base: (c) => ({ relevance: 1, novelty: c.type === 'returning-viewer' ? 0.9 : 0.6, emotion: 0.2, visual: 0.4, milestone: c.dayMilestone ? 1 : 0 }),
       pref: (c) => 3,
       params: (c) => ({ day: c.day, date: c.date, title: c.title, traveler: c.traveler, totalKm: c.prevTotalKm }) },
@@ -121,11 +150,14 @@
       base: (c) => ({ relevance: 0.85, novelty: 0.6, emotion: 0.2, visual: 0.7, milestone: 0 }),
       pref: () => 4.2,
       params: () => ({ from: 'journey', to: 'segment' }) },
-    { id: 'route-reveal', beats: ['new-leg'], min: 5, max: 8, flex: true, hero: true, signature: true,
+    { id: 'route-reveal', beats: ['new-leg'], min: 5, max: 18, flex: true, hero: true, signature: true,
       eligible: (c) => c.type !== 'story-so-far',
-      base: (c) => ({ relevance: 1, novelty: 1, emotion: 0.4, visual: c.sinuosity > 1.25 ? 0.7 : 0.5, milestone: 0 }),
-      pref: (c) => clamp(5.5 + Math.log10(Math.max(1, c.newKm)) * 0.6, 5.5, 7.5),
-      params: (c) => ({ day: c.day, km: c.newKm }) },
+      base: (c) => ({ relevance: 1, novelty: 1, emotion: c.waypoints.length ? 0.6 : 0.4, visual: c.sinuosity > 1.25 || c.waypoints.length ? 0.7 : 0.5, milestone: 0 }),
+      // с местами по пути линия идёт от места к месту: на каждое — не меньше ~3,4 с (ничего не мелькает)
+      pref: (c) => (c.waypoints.length ? 2.4 + (c.waypoints.length + 1) * 3.4 : clamp(5.5 + Math.log10(Math.max(1, c.newKm)) * 0.6, 5.5, 7.5)),
+      minFor: (c) => (c.waypoints.length ? 2 + (c.waypoints.length + 1) * 3.1 : 5),
+      maxFor: (c) => (c.waypoints.length ? 18 : 8),
+      params: (c) => ({ day: c.day, km: c.newKm, waypoints: c.waypoints }) },
     { id: 'camera-follow', beats: ['new-leg'], min: 3.6, max: 6.5, flex: true, hero: true,
       eligible: () => false,   // отключено: слежение за точкой дёргает камеру (правила кадра)
       base: (c) => ({ relevance: 1, novelty: 1, emotion: 0.5, visual: clamp(0.5 + (c.sinuosity - 1) + c.gain / 2000, 0, 1), milestone: 0 }),
@@ -141,6 +173,16 @@
       base: (c) => ({ relevance: 1, novelty: 0.9, emotion: 1, visual: 0.8, milestone: 0, mediaQ: 0.8 }),
       pref: (c) => 4.2 + 3.6 * (Math.min(c.photos.length, 3) - 1),
       params: (c) => ({ mediaIds: c.photos.slice(0, 3).map((m) => m.id) }) },
+    { id: 'high-point', types: ['new-viewer', 'returning-viewer'], beats: ['moment'], min: 3.4, max: 4.6, flex: true,
+      eligible: (c) => !!c.maxAt && c.maxEle != null && c.minEle != null && c.maxEle - c.minEle >= 250,
+      base: (c) => ({ relevance: 0.8, novelty: 0.8, emotion: 0.5, visual: clamp(0.5 + (c.maxEle - c.minEle) / 2000, 0.5, 1), milestone: 0 }),
+      pref: () => 4,
+      params: (c) => ({ ele: Math.round(c.maxEle), at: c.maxAt, km: c.maxKm }) },
+    { id: 'time-on-road', types: ['new-viewer', 'returning-viewer'], beats: ['fact'], min: 3, max: 4.2, flex: true,
+      eligible: (c) => c.movingH >= 0.4 && c.avgKmh > 0,
+      base: (c) => ({ relevance: 0.8, novelty: 0.8, emotion: c.movingH >= 6 ? 0.7 : 0.45, visual: 0.4, milestone: 0 }),
+      pref: () => 3.6,
+      params: (c) => ({ text: hoursText(c.movingH), hours: r2(c.movingH), avgKmh: r1(c.avgKmh) }) },
     { id: 'note-card', types: ['new-viewer', 'returning-viewer'], beats: ['moment', 'reflection'], min: 3.5, max: 6, flex: true,
       eligible: (c) => !!c.note,
       base: (c) => ({ relevance: 0.9, novelty: 0.8, emotion: 0.85, visual: 0.4, milestone: 0 }),
@@ -161,16 +203,22 @@
       base: (c) => ({ relevance: 0.75, novelty: 0.5, emotion: 0.3, visual: 0.9, milestone: c.dayMilestone ? 1 : 0 }),
       pref: () => 4.2,
       params: (c) => ({ perDay: c.perDay.map(r1), current: c.day, totalKm: c.totalKm }) },
-    { id: 'elevation-profile', types: ['new-viewer', 'returning-viewer'], beats: ['proof'], min: 3, max: 4.2, flex: true,
+    { id: 'elevation-profile', types: ['new-viewer', 'returning-viewer'], beats: ['proof'], min: 3.4, max: 5, flex: true,
       eligible: (c) => c.gain >= 150,
-      base: (c) => ({ relevance: 0.75, novelty: 0.8, emotion: 0.4, visual: clamp(c.gain / 1200, 0.4, 1), milestone: 0 }),
-      pref: () => 3.6,
-      params: (c) => ({ gain: c.gain, day: c.day }) },
+      base: (c) => ({ relevance: 0.75, novelty: 0.8, emotion: 0.4, visual: clamp(c.gain / 1200, c.profile ? 0.7 : 0.4, 1), milestone: 0 }),
+      pref: (c) => (c.profile ? 4.4 : 3.6),
+      params: (c) => ({ gain: c.gain, day: c.day, profile: c.profile, maxEle: c.maxEle != null ? Math.round(c.maxEle) : null, minEle: c.minEle != null ? Math.round(c.minEle) : null }) },
     { id: 'pullback', beats: ['outro'], min: 5.5, max: 8.5, flex: true, hero: true, signature: true,
       eligible: (c) => c.daysCount >= 2,
       base: (c) => ({ relevance: 1, novelty: 0.7, emotion: 0.7, visual: 1, milestone: c.milestoneKm ? 0.6 : 0 }),
       pref: () => 7,
       params: (c) => ({ totalKm: c.totalKm, day: c.day, showFullRoute: true, showCurrentPosition: true }) },
+    // один трек: финал — итог дня тремя числами, а не «путешествие продолжается»
+    { id: 'day-summary', types: ['new-viewer', 'returning-viewer'], beats: ['outro'], min: 4, max: 5.5, flex: true,
+      eligible: (c) => c.daysCount === 1,
+      base: () => ({ relevance: 1, novelty: 0.6, emotion: 0.5, visual: 0.7, milestone: 0 }),
+      pref: () => 4.6,
+      params: (c) => ({ km: c.newKm, from: c.from, to: c.to, name: c.name, gain: c.gain || null, time: c.movingH >= 0.4 ? hoursText(c.movingH) : null, date: c.date }) },
     { id: 'progress-poster', beats: ['outro'], min: 3.5, max: 5, flex: true,
       eligible: () => true,
       base: (c) => ({ relevance: 0.8, novelty: 0.4, emotion: 0.5, visual: 0.6, milestone: 0 }),
@@ -205,8 +253,8 @@
 
   /* ================= Типы эпизода и биты ================= */
   const TYPES = {
-    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['achievement', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
-    'returning-viewer': [['hook', true], ['new-leg', true], ['achievement', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
+    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['achievement', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
+    'returning-viewer': [['hook', true], ['new-leg', true], ['achievement', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
     'story-so-far': [['hook', true], ['context', true], ['moment', false], ['proof', false], ['outro', true]],
   };
   // длительность от содержания: лучше дольше, чем мелькание (правила кадра)
@@ -228,6 +276,8 @@
     const total = W.relevance * parts.relevance + W.novelty * parts.novelty + W.emotion * parts.emotion + W.visual * parts.visual + W.milestone * parts.milestone + W.mediaQ * parts.mediaQ - W.repetition * parts.repetition - W.redundancy * parts.redundancy - W.durationCost * parts.durationCost;
     return { total: r2(total), parts: Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, r2(v)])) };
   }
+
+  const mkShot = (rc, ctx, beat, required, sc) => ({ beat, recipe: rc.id, durationSec: r2(rc.pref(ctx)), min: rc.minFor ? r2(rc.minFor(ctx)) : rc.min, max: rc.maxFor ? rc.maxFor(ctx) : rc.max, hero: !!rc.hero, required, score: sc, params: rc.params(ctx) });
 
   /* ================= Сборка плана ================= */
   function direct(J, episodeType, opts = {}) {
@@ -253,7 +303,7 @@
       if (take) {
         const rc = BY_ID[best.id];
         chosen.push(rc.id);
-        shots.push({ beat, recipe: rc.id, durationSec: r2(rc.pref(ctx)), min: rc.min, max: rc.max, hero: !!rc.hero, required, score: best.total, params: rc.params(ctx) });
+        shots.push(mkShot(rc, ctx, beat, required, best.total));
       } else if (required) {
         return finish(fallbackPlan(ctx, J), ctx, log, 'обязательный бит «' + beat + '» не собран');
       }
@@ -290,7 +340,7 @@
         const r = BY_ID[sp.id]; const pos = order.indexOf(sp.beat);
         let at = list.findIndex((s) => order.indexOf(s.beat) > pos); if (at < 0) at = list.length;
         if ((list[at - 1] && list[at - 1].recipe === r.id) || (list[at] && list[at].recipe === r.id) || list.some((s) => s.recipe === r.id)) continue;
-        list.splice(at, 0, { beat: sp.beat, recipe: r.id, durationSec: r2(Math.min(r.max, Math.max(r.pref(ctx), hMin - sum()))), min: r.min, max: r.max, hero: !!r.hero, required: false, score: sp.score, params: r.params(ctx) });
+        list.splice(at, 0, { ...mkShot(r, ctx, sp.beat, false, sp.score), durationSec: r2(Math.min(r.max, Math.max(r.pref(ctx), hMin - sum()))) });
         notes.push(`добавлен ${r.id}, чтобы не было короче ${hMin} с`);
       }
     }
@@ -305,13 +355,13 @@
 
   function fallbackPlan(ctx) {
     const ids = ['day-card', 'route-reveal', 'distance-counter', ctx.daysCount >= 2 ? 'pullback' : 'progress-poster'];
-    return ids.map((id, i) => { const r = BY_ID[id]; return { beat: ['hook', 'new-leg', 'proof', 'outro'][i], recipe: id, durationSec: r2(r.pref(ctx)), min: r.min, max: r.max, hero: !!r.hero, required: true, score: 0, params: r.params(ctx) }; });
+    return ids.map((id, i) => mkShot(BY_ID[id], ctx, ['hook', 'new-leg', 'proof', 'outro'][i], true, 0));
   }
 
   function finish(shots, ctx, log, fallbackReason, fitNote) {
     let t = 0;
     const beats = shots.map((s) => { const b = { beat: s.beat, recipe: s.recipe, startSec: r2(t), durationSec: s.durationSec, params: s.params }; t += s.durationSec; return b; });
-    const seedSrc = JSON.stringify([ctx.journeyId, ctx.day, ctx.type, ctx.aspect, ctx.newKm, ctx.photos.map((m) => m.id), ctx.note && ctx.note.text, ctx.recent.map((e) => e.episodeId)]);
+    const seedSrc = JSON.stringify([ctx.journeyId, ctx.day, ctx.type, ctx.aspect, ctx.newKm, ctx.photos.map((m) => m.id), ctx.note && ctx.note.text, ctx.recent.map((e) => e.episodeId), ctx.from, ctx.to, ctx.waypoints.map((w) => w.name), ctx.movingH, ctx.maxEle]);
     const plan = {
       episodeId: `day-${ctx.day}-${ctx.type}`, journeyId: ctx.journeyId, episodeNumber: ctx.day, episodeType: ctx.type, aspect: ctx.aspect,
       seed: hash(seedSrc), durationSec: r2(t), fallback: fallbackReason || null, fitting: fitNote || '', beats,
@@ -346,6 +396,6 @@
     return { episodeId: plan.episodeId, episodeType: plan.episodeType, recipes: plan.beats.map((b) => b.recipe), byBeat, hookRecipe: byBeat.hook, momentRecipe: byBeat.moment, outroRecipe: byBeat.outro };
   }
 
-  const API = { summarize, addDay, buildContext, direct, validate, summaryOf, compressHistory, RECIPES, TYPES, DURATION, hash };
+  const API = { summarize, addDay, buildContext, direct, validate, summaryOf, compressHistory, pickWaypoints, RECIPES, TYPES, DURATION, hash };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Director = API;
 })(typeof window !== 'undefined' ? window : globalThis);

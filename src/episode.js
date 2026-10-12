@@ -41,6 +41,7 @@
     const origin = cps.find((c) => c.kind === 'origin');
     const prevStop = [...cps].filter((c) => c.day < today.day && (c.kind === 'city' || c.kind === 'origin' || c.kind === 'country')).pop();
     const fromLabel = today.from || (prevStop ? prevStop.label : null), toLabel = today.to || null;
+    const single = days.length === 1;   // один трек без истории: «день 1» в титрах не пишем
     const DL = (day) => (journey.dayLabels && journey.dayLabels[day]) || 'день ' + day;   // для схемы по постам — даты, а не «день N»
     const kmText = (v) => (journey.totalKmLabel ? journey.totalKmLabel : fmtN(v) + ' км');
     const dayEnd = (day) => { const d = days.find((x) => x.day === day); if (!d) return null; const q = d.line[d.line.length - 1]; return [px(q[0]), py(q[1])]; };
@@ -58,7 +59,9 @@
       if (a.z > b.z + 0.25) { const k = (t * s1) / sc; return { cx: a.cx - (a.cx - b.cx) * k, cy: a.cy - (a.cy - b.cy) * k, z }; }
       return { cx: lerp(a.cx, b.cx, t), cy: lerp(a.cy, b.cy, t), z };
     };
+    const dateRu = (iso) => (iso ? new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(' г.', '') : '');
     const TARGET = {
+      'trip-title': 'journey', 'day-summary': 'journey', 'time-on-road': 'segment', 'high-point': 'high',
       'day-card': 'journey', 'season-card': 'journey', 'progress-overview': 'journey', 'overview-to-detail': 'segment', 'route-reveal': 'segment',
       'camera-follow': 'segment', 'checkpoint-arrival': 'end', 'photo-reveal': 'end', 'note-card': 'end', 'location-card': 'end', 'distance-counter': 'segment',
       'day-barcode': null, 'elevation-profile': 'segment', 'pullback': 'journey', 'progress-poster': 'journey', 'journey-recap': 'journey', 'highlights-reel': null,
@@ -70,7 +73,24 @@
     for (const s of shots) {
       s.camFrom = prevEnd;
       const tg = TARGET[s.recipe];
-      s.camTo = tg ? CAM[tg] : prevEnd;
+      if (tg === 'high' && s.params.at) { s.hp = [px(s.params.at[0]), py(s.params.at[1])]; s.camTo = { cx: s.hp[0], cy: s.hp[1], z: Math.min(CAM.segment.z + 1.2, 13) }; }
+      else s.camTo = tg && CAM[tg] ? CAM[tg] : prevEnd;
+      if (s.recipe === 'route-reveal') {
+        // места по пути: линия идёт от места к месту с мягкой остановкой, подпись держится до следующего места
+        const total = todayCum[todayCum.length - 1] || 1;
+        const wps = (s.params.waypoints || []).map((w) => {
+          const q = [px(w.lon), py(w.lat)]; let bi = 0, bd = Infinity;
+          todayPts.forEach((pt, i) => { const d = Math.hypot(pt[0] - q[0], pt[1] - q[1]); if (d < bd) { bd = d; bi = i; } });
+          return { name: w.name, p: todayPts[bi], frac: todayCum[bi] / total };
+        }).filter((w) => w.frac > 0.06 && w.frac < 0.94).sort((a, b) => a.frac - b.frac);
+        if (wps.length) {
+          const fr = [0, ...wps.map((w) => w.frac), 1], share = [];
+          for (let i = 1; i < fr.length; i++) share.push(Math.max(fr[i] - fr[i - 1], 0.6 / (fr.length - 1)));   // короткий отрезок не проскакивает
+          const sum = share.reduce((a, b) => a + b, 0); let acc = 0;
+          s.knots = [{ f: 0, x: 0 }, ...share.map((sh, i) => { acc += sh / sum; return { f: fr[i + 1], x: acc }; })];
+          s.wps = wps;
+        }
+      }
       // время перелёта зависит от его дальности: ~0,45 с на каждый уровень приближения (без рывков)
       const dz = Math.abs(s.camTo.z - s.camFrom.z), far = Math.hypot(s.camTo.cx - s.camFrom.cx, s.camTo.cy - s.camFrom.cy) * Math.pow(2, Math.max(s.camTo.z, s.camFrom.z)) / Math.max(W, H);
       const moveSec = clamp(1 + 0.45 * dz + 0.3 * Math.min(far, 4), 1.2, s.durationSec * (s.recipe === 'pullback' ? 0.78 : s.recipe === 'overview-to-detail' ? 0.88 : 0.62));
@@ -101,8 +121,13 @@
     function todayReveal(t) {
       const s = shots.find((x) => x.recipe === 'route-reveal' || x.recipe === 'camera-follow');
       if (!s) return 1; if (t < s.t0) return 0; if (t >= s.t1) return 1;
-      return sine(clamp(((t - s.t0) / s.durationSec - s.move * 0.85) / (0.95 - s.move * 0.85), 0, 1));   // рисуем, когда камера уже прилетела
+      const x = revealX(s, t);
+      if (!s.knots) return sine(x);   // рисуем, когда камера уже прилетела
+      let i = 1; while (i < s.knots.length - 1 && x > s.knots[i].x) i++;
+      const a = s.knots[i - 1], b = s.knots[i];
+      return lerp(a.f, b.f, sine((x - a.x) / Math.max(1e-6, b.x - a.x)));
     }
+    const revealX = (s, t) => clamp(((t - s.t0) / s.durationSec - s.move * 0.85) / (0.95 - s.move * 0.85), 0, 1);
     function pastReveal(t) {
       const po = shots.find((x) => x.recipe === 'progress-overview');
       if (po) { if (t < po.t0) return 0; return sine(clamp((t - po.t0) / (po.durationSec * 0.8), 0, 1)); }
@@ -221,8 +246,32 @@
           ctx.strokeStyle = g; ctx.lineWidth = S.line.w * 1.25 * u; ctx.stroke();
           const pulse = (t / 2) % 1, X0 = X([hx, hy]), Y0 = Y([hx, hy]);   // спокойный пульс, 2 с
           ctx.beginPath(); ctx.arc(X0, Y0, (18 + 36 * pulse) * u, 0, 6.2832); ctx.fillStyle = S.headHalo; ctx.globalAlpha = 0.7 * (1 - pulse); ctx.fill(); ctx.globalAlpha = 1;
+          // старт дня — кольцо в начале линии (финиш отмечает «голова»)
+          ctx.beginPath(); ctx.arc(X(todayPts[0]), Y(todayPts[0]), 11 * u, 0, 6.2832); ctx.fillStyle = S.paper ? '#fbf3df' : '#0b1220'; ctx.fill(); ctx.lineWidth = 5 * u; ctx.strokeStyle = S.line.stops[0]; ctx.stroke();
           ctx.beginPath(); ctx.arc(X0, Y0, 15 * u, 0, 6.2832); ctx.fillStyle = S.head; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = S.line.stops[S.line.stops.length - 1]; ctx.stroke();
         }
+        // высшая точка дня
+        if (s.recipe === 'high-point' && s.hp) {
+          const a = vis(lt, s.durationSec, s.move * s.durationSec * 0.7), hx = X(s.hp), hy = Y(s.hp), pulse = (t / 2) % 1;
+          ctx.save(); ctx.globalAlpha = a;
+          ctx.beginPath(); ctx.arc(hx, hy, (22 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = S.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha = a * (1 - pulse); ctx.stroke();
+          ctx.globalAlpha = a; ctx.beginPath(); ctx.moveTo(hx, hy - 30 * u); ctx.lineTo(hx + 24 * u, hy + 14 * u); ctx.lineTo(hx - 24 * u, hy + 14 * u); ctx.closePath(); ctx.fillStyle = S.paper ? '#3b2412' : '#ffffff'; ctx.fill(); ctx.lineJoin = 'round'; ctx.lineWidth = 5 * u; ctx.strokeStyle = S.paper ? '#fbf3df' : '#0b1220'; ctx.stroke();
+          ctx.restore();
+        }
+      }
+      // места по пути: появляются, когда линия до них дошла
+      if (LY.hud && s.recipe === 'route-reveal' && s.wps) {
+        const x = revealX(s, t), span = (0.95 - s.move * 0.85) * s.durationSec;
+        s.wps.forEach((w, i) => {
+          const tIn = (x - s.knots[i + 1].x) * span, tOut = (s.knots[i + 2].x - x) * span;   // от прибытия до следующего места
+          const a = smooth((tIn + 0.25) / FADE) * smooth((tOut + 0.1) / FADE);
+          if (a <= 0.01) return;
+          const wx = X(w.p), wy = Y(w.p), right = wx < W * 0.56;
+          ctx.save(); ctx.globalAlpha = a;
+          ctx.beginPath(); ctx.arc(wx, wy, 13 * u, 0, 6.2832); ctx.fillStyle = S.paper ? '#fbf3df' : '#ffffff'; ctx.fill(); ctx.lineWidth = 5 * u; ctx.strokeStyle = S.accent; ctx.stroke();
+          T(ctx, w.name, wx + (right ? 34 : -34) * u, wy + 20 * u, { size: portrait ? 62 : 56, fam: S.fHead, weight: S.headW, align: right ? 'left' : 'right', max: (right ? W - wx : wx) - 60 * u });
+          ctx.restore();
+        });
       }
 
       if (LY.hud) hud(ctx, t, s, su, lt, TR);
@@ -239,6 +288,25 @@
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
           centerTitle(ctx, a, dy, 'день', String(p.day), route2 || journey.title, 240);
           break;
+        case 'trip-title': {
+          dim(ctx, 0.5 * vis(lt, dur, 0), TR);
+          const head = p.from && p.to && p.from !== p.to ? `${p.from} → ${p.to}` : p.to || p.from || p.name || journey.title || 'Маршрут';
+          centerTitle(ctx, a, dy, dateRu(p.date) || 'маршрут', head, fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', portrait ? 124 : 132);
+          break;
+        }
+        case 'day-summary': {
+          dim(ctx, 0.5 * smooth((lt - 0.3) / FADE), TR);
+          const head = p.from && p.to && p.from !== p.to ? `${p.from} → ${p.to}` : p.to || p.from || p.name || 'итог';
+          const sub = [p.time, p.gain ? '+' + fmtN(p.gain) + ' м' : null, p.time || p.gain ? null : dateRu(p.date)].filter(Boolean).join('  ·  ');
+          centerTitle(ctx, smooth((lt - 0.5) / FADE), rise(lt, 0.5), head, fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', sub, 200);
+          break;
+        }
+        case 'time-on-road':
+          lowerThird(ctx, a, dy, 'в пути', p.text, 'средняя скорость ' + fmtN(p.avgKmh, 1) + ' км/ч');
+          break;
+        case 'high-point':
+          lowerThird(ctx, vis(lt, dur, s.move * dur * 0.7), rise(lt, s.move * dur * 0.7), 'высшая точка дня', fmtN(p.ele) + ' м', p.km != null ? `на ${fmtN(p.km)}-м километре` : '');
+          break;
         case 'season-card':
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
           centerTitle(ctx, a, dy, p.traveler || 'история путешествия', p.title || '', p.line || `${p.days} ${daysWord(p.days)} · ${fmtN(p.totalKm)} км`, 130);
@@ -252,11 +320,11 @@
         case 'route-reveal': case 'camera-follow': {
           const km = p.km * todayReveal(t);
           const d0 = s.move * dur * 0.85;   // титр — когда маршрут начинает рисоваться
-          lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), 'день ' + today.day, '+' + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
+          lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), single ? 'пройдено' : 'день ' + today.day, (single ? '' : '+') + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
           break;
         }
         case 'checkpoint-arrival':
-          lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : 'день ' + today.day);
+          lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : single ? (dateRu(today.date) || '') : 'день ' + today.day);
           break;
         case 'photo-reveal': case 'highlights-reel': {
           const ids = (p.mediaIds || []).filter((id) => mediaById[id]), n = ids.length; if (!n) break;
@@ -292,9 +360,32 @@
           lowerThird(ctx, a, dy, 'за день', '+' + fmtN(km, km < 100 ? 1 : 0) + ' км', 'всего ' + fmtN(p.totalKm) + ' км');
           break;
         }
-        case 'elevation-profile':
-          lowerThird(ctx, a, dy, 'набор высоты', '+' + fmtN(p.gain) + ' м', 'за день ' + today.day);
+        case 'elevation-profile': {
+          const pr = p.profile;
+          if (pr && pr.length >= 8) {
+            // профиль дня: график рисуется слева направо, вершина подписана
+            dim(ctx, 0.62 * vis(lt, dur, 0), TR);
+            const x0 = mx, x1 = W - mx, hh = (portrait ? 430 : 300) * u, yb = H * (portrait ? 0.56 : 0.6);
+            const lo = Math.min(...pr), hi = Math.max(...pr), sp = Math.max(1, hi - lo);
+            const PX = (i) => x0 + ((x1 - x0) * i) / (pr.length - 1), PY = (e) => yb - ((e - lo) / sp) * hh;
+            const g = sine(lt / (dur * 0.5)) * (pr.length - 1), gi = Math.floor(g), gf = g - gi;
+            const ex = gi >= pr.length - 1 ? PX(pr.length - 1) : lerp(PX(gi), PX(gi + 1), gf), ey = gi >= pr.length - 1 ? PY(pr[pr.length - 1]) : lerp(PY(pr[gi]), PY(pr[gi + 1]), gf);
+            ctx.save(); ctx.globalAlpha = vis(lt, dur, 0);
+            ctx.beginPath(); ctx.moveTo(x0, PY(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(PX(i), PY(pr[i])); ctx.lineTo(ex, ey);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = S.line.stops[S.line.stops.length - 1]; ctx.lineWidth = 9 * u; ctx.stroke();
+            ctx.lineTo(ex, yb + 24 * u); ctx.lineTo(x0, yb + 24 * u); ctx.closePath();
+            const fg = ctx.createLinearGradient(0, yb - hh, 0, yb + 24 * u); fg.addColorStop(0, S.line.glow); fg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.globalAlpha *= 0.55; ctx.fillStyle = fg; ctx.fill();
+            ctx.restore();
+            const mi = pr.indexOf(hi);
+            if (p.maxEle != null && g >= mi) {
+              const ma = smooth((g - mi) / 3) * vis(lt, dur, 0), tx = clamp(PX(mi), mx + 150 * u, W - mx - 150 * u);
+              ctx.save(); ctx.globalAlpha = ma; ctx.beginPath(); ctx.arc(PX(mi), PY(hi), 12 * u, 0, 6.2832); ctx.fillStyle = S.head; ctx.fill(); ctx.restore();
+              T(ctx, fmtN(p.maxEle) + ' м', tx, PY(hi) - 34 * u, { size: 54, fam: S.fHead, weight: S.headW, align: 'center', alpha: ma });
+            }
+          }
+          lowerThird(ctx, a, dy, 'набор высоты', '+' + fmtN(p.gain) + ' м', pr ? 'рельеф дня' : 'за день ' + today.day);
           break;
+        }
         case 'day-barcode': {
           dim(ctx, 0.6 * vis(lt, dur, 0), TR);
           const n = days.length, bw = W - 2 * mx, h = (portrait ? 520 : 330) * u, by = H * (portrait ? 0.56 : 0.6), step = bw / n, w = Math.max(3 * u, step * 0.64);

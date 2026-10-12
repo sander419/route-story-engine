@@ -152,9 +152,17 @@
         const s = a.country && a.country === b.country ? a.country : [a.country, b.country].filter(Boolean).join(' → ');
         state.o.subtitle = s; $('subtitle').value = s;
       }
-      rebuild(true);
-      // подписи мест по пути нужны только режиму «один трек»: в серии карта без подписей — не дёргаем сервис зря
-      if (state.mode === 'series') return;
+      route.meta = { ...(route.meta || {}), from: state.demoDay ? null : a.place || null };
+      syncDayMeta(route); rebuild(true);
+      // серия: места по пути — одним запросом; режиссёр сам выберет до трёх самых значимых
+      if (state.mode === 'series') {
+        if (state.demoDay) return;
+        const wps = await waypointsFor(route, state.o.lang);
+        if (state.route !== route) return;
+        route.meta = { ...route.meta, waypoints: wps };
+        syncDayMeta(route); rebuild(true);
+        return;
+      }
       // подписи мест по пути: 6 точек между стартом и финишем, не чаще 1 запроса в секунду
       const found = [];
       for (const f of [0.14, 0.28, 0.42, 0.56, 0.7, 0.84]) {
@@ -168,6 +176,15 @@
         await new Promise((r) => setTimeout(r, 1100));
       }
     } catch (e) { /* без сети просто остаются пустые поля */ }
+  }
+  // своё путешествие: найденные «откуда» и места по пути сохраняются в последнем дне
+  function syncDayMeta(route) {
+    if (!isOwn() || state.route !== route || !route.meta) return;
+    const days = [...state.seriesBase.days].sort((x, y) => x.day - y.day), last = days[days.length - 1];
+    if (!last) return;
+    const upd = { ...last, from: route.meta.from || last.from || null, waypoints: route.meta.waypoints || last.waypoints || [] };
+    state.seriesBase = { ...state.seriesBase, days: state.seriesBase.days.map((d) => (d.day === last.day ? upd : d)) };
+    saveOwn();
   }
   /* ближайший настоящий населённый пункт: город ≤30 км, иначе город/посёлок ≤20 км, иначе село ≤10 км (OSM Overpass) */
   async function placeNear(lat, lon, lang) {
@@ -205,7 +222,42 @@
     for (let i = 0; i < r.n; i += step) line.push([+r.lon[i].toFixed(5), +r.lat[i].toFixed(5)]);
     line.push([+r.lon[r.n - 1].toFixed(5), +r.lat[r.n - 1].toFixed(5)]);
     const date = r.t ? new Date(r.t[0] + (r.lon[0] / 15) * 3600e3).toISOString().slice(0, 10) : null;
-    return { km: Math.round(r.total / 100) / 10, line, date, to: to || null, gain: r.ele ? Math.round(r.stats.gain) : 0 };
+    const seg = { km: Math.round(r.total / 100) / 10, line, date, to: to || null, gain: r.ele ? Math.round(r.stats.gain) : 0, name: r.name || null };
+    // факты дня для режиссёра: профиль высоты, высшая точка, время в пути
+    if (r.ele) {
+      const N = 72; seg.profile = Array.from({ length: N }, (_, k) => Math.round(window.RouteLib.at(r, (r.total * k) / (N - 1)).ele));
+      const mi = r.stats.maxI;
+      seg.maxEle = Math.round(r.stats.maxE); seg.minEle = Math.round(r.stats.minE);
+      seg.maxAt = [+r.lon[mi].toFixed(5), +r.lat[mi].toFixed(5)]; seg.maxKm = Math.round(r.D[mi] / 1000);
+    }
+    if (r.t && r.stats.avg) { seg.movingH = Math.round((r.stats.moving / 3.6e6) * 100) / 100; seg.avgKmh = Math.round(r.stats.avg * 10) / 10; }
+    if (r.meta) { seg.from = r.meta.from || null; seg.waypoints = r.meta.waypoints || []; }
+    return seg;
+  }
+  /* места по пути одним запросом: города и посёлки в коридоре вдоль трека (OSM Overpass); запасной путь — Nominatim по трём точкам */
+  async function waypointsFor(route, lang) {
+    const N = Math.min(40, route.n), idx = Array.from({ length: N }, (_, k) => Math.round((k * (route.n - 1)) / (N - 1)));
+    const km = route.total / 1000, rad = km < 30 ? 2500 : km < 150 ? 5000 : 8000;
+    const fracOf = (lat, lon) => { let bi = 0, bd = Infinity; for (let i = 0; i < route.n; i += Math.max(1, Math.floor(route.n / 400))) { const d = window.RouteLib.hav({ lat, lon }, { lat: route.lat[i], lon: route.lon[i] }); if (d < bd) { bd = d; bi = i; } } return { frac: route.D[bi] / route.total, lon: route.lon[bi], lat: route.lat[bi], off: bd }; };
+    try {
+      const poly = idx.map((i) => route.lat[i].toFixed(4) + ',' + route.lon[i].toFixed(4)).join(',');
+      const q = `[out:json][timeout:25];node(around:${rad},${poly})[place~"^(city|town${km < 60 ? '|village' : ''})$"][name];out 80;`;
+      const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 30000);
+      const j = await (await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q), { signal: ac.signal })).json(); clearTimeout(tm);
+      return (j.elements || []).map((e) => { const f = fracOf(e.lat, e.lon); return { name: e.tags['name:' + lang] || e.tags.name, kind: e.tags.place, pop: +e.tags.population || 0, frac: f.frac, lon: f.lon, lat: f.lat }; });
+    } catch (e) {
+      const out = [];
+      for (const fr of [0.3, 0.5, 0.7]) {
+        try {
+          const a = window.RouteLib.at(route, route.total * fr), lat = route.lat[a.i], lon = route.lon[a.i];
+          const jj = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=${lang}&lat=${lat}&lon=${lon}`)).json(); const ad = jj.address || {};
+          const name = ad.city || ad.town || ad.village || '';
+          if (name) out.push({ name, kind: ad.city ? 'city' : ad.town ? 'town' : 'village', pop: 0, frac: fr, lon, lat });
+        } catch (e2) { /* без сети — без мест */ }
+        await new Promise((r) => setTimeout(r, 1100));
+      }
+      return out;
+    }
   }
   function seriesInput() {
     if (isOwn()) return ownToday();
@@ -271,8 +323,7 @@
     const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
     const notes = state.o.note ? [{ text: state.o.note }] : [];
     const pl = days[days.length - 2], gapKm = pl ? window.RouteLib.hav({ lon: pl.line[pl.line.length - 1][0], lat: pl.line[pl.line.length - 1][1] }, { lon: last.line[0][0], lat: last.line[0][1] }) / 1000 : 0;
-    const { line, km, date, gain } = last;
-    const res = window.Director.addDay(prev, { day: last.day, line, km, date, gain, to: state.o.endName || last.to || null }, media, notes);
+    const res = window.Director.addDay(prev, { ...last, to: state.o.endName || last.to || null }, media, notes);
     res.change.gapKm = Math.round(gapKm);
     return { J: res.journey, change: res.change };
   }
@@ -350,13 +401,11 @@
     $('seriesBox').hidden = m !== 'series';
     t = 0; rebuild();
   }
-  $('export2').onclick = () => $('export').click();
   function refreshModes() {
     const hasR = !!state.route, hasJ = !!state.journeyData;
     $('mode').hidden = !(hasJ || state.seriesBase);
     [...$('mode').children].forEach((b) => { b.disabled = (b.dataset.v === 'track' && !hasR) || (b.dataset.v === 'both' && !(hasR && hasJ)) || (b.dataset.v === 'journey' && !hasJ) || (b.dataset.v === 'series' && !state.seriesBase); });
-    ['s2', 's3', 's4'].forEach((id) => $(id).classList.remove('off'));
-    $('export2').disabled = false;
+    ['s3', 's4'].forEach((id) => $(id).classList.remove('off'));
     $('empty').style.display = 'none'; cv.style.display = 'block';
   }
   [...$('mode').children].forEach((b) => (b.onclick = () => setMode(b.dataset.v)));
@@ -476,7 +525,7 @@
     if (abort) { abort.abort(); return; }
     abort = new AbortController();
     play(false);
-    btn.textContent = 'Отменить'; $('export2').textContent = 'Отмена';
+    btn.textContent = 'Отменить';
     $('prog').hidden = false; $('result').hidden = true; showErr('');
     const [W, H] = SIZES[state.fmt][$('res').value];
     const o = { ...state.o };
@@ -524,7 +573,7 @@
     } catch (e) {
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));
     } finally {
-      abort = null; btn.textContent = exportLabel(); $('export2').textContent = 'Скачать видео'; $('prog').hidden = true;
+      abort = null; btn.textContent = exportLabel(); $('prog').hidden = true;
     }
   };
 

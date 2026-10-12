@@ -12,7 +12,7 @@ await p.evaluate(async () => { const a = window.__app; a.loadJourney(await (awai
 await p.waitForFunction(() => window.__app.scene && window.__app.scene.duration > 5);
 await p.waitForTimeout(800);
 console.log('journey', JSON.stringify(await m()));
-await p.evaluate(() => document.getElementById('export2').scrollIntoView());
+await p.evaluate(() => document.getElementById('export').scrollIntoView());
 const png = await p.evaluate(async () => { const sc = window.__app.scene, cv = document.getElementById('cv'), c = cv.getContext('2d'); const t = 22; for (let k=0;k<3;k++) for (const q of sc.tilesAt(t)) await window.RS.getTile(q.layer,q.z,q.x,q.y,true).p; sc.draw(c, t); return cv.toDataURL(); });
 (await import('node:fs')).writeFileSync('out/j-mobile.png', Buffer.from(png.split(',')[1], 'base64'));
 await b.close();
