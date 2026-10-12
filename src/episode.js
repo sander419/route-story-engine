@@ -13,6 +13,14 @@
   const daysWord = (n) => (n % 10 === 1 && n % 100 !== 11 ? 'день' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'дня' : 'дней');
   const FADE = 0.6;
 
+  let grainCv = null;
+  function grain() {
+    if (grainCv) return grainCv;
+    const n = 256, c = document.createElement('canvas'); c.width = c.height = n;
+    const g = c.getContext('2d'), d = g.createImageData(n, n); let x = 123456789;
+    for (let i = 0; i < n * n; i++) { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; const v = 96 + ((x >>> 24) & 63) * 2.5; d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = v; d.data[i * 4 + 3] = 255; }
+    g.putImageData(d, 0, 0); return (grainCv = c);
+  }
   const imgCache = new Map();
   function img(url) {
     let e = imgCache.get(url);
@@ -151,6 +159,7 @@
       if (a.max) { const w = ctx.measureText(str).width; if (w > a.max) ctx.font = `${wt} ${size * (a.max / w)}px ${fam}`; }
       ctx.fillText(str, x, y); ctx.restore();
     }
+    let LT_NO_SCRIM = false;
     const HAND = '"Caveat", "Segoe Print", cursive';
     // видимость надписи кадра: плавно появляется, держится, плавно уходит
     const vis = (lt, dur, delay = 0.15) => smooth((lt - delay) / FADE) * (1 - smooth((lt - (dur - FADE)) / FADE));
@@ -159,13 +168,20 @@
     // титр места внизу — как в передаче
     function lowerThird(ctx, a, dy, kicker, title, sub, onPhoto) {
       if (a <= 0.01) return;
-      const ink = onPhoto ? '#ffffff' : S.ink, dimC = onPhoto ? 'rgba(255,255,255,.8)' : S.dim, sh = onPhoto ? 'rgba(0,0,0,.7)' : null;
-      const base = H - (portrait ? 360 : 150) * u + dy;
+      const ink = onPhoto ? '#ffffff' : S.ink, dimC = onPhoto ? 'rgba(255,255,255,.85)' : S.dim, sh = onPhoto ? 'rgba(0,0,0,.7)' : null;
+      const ts = portrait ? 108 : 128, ks = portrait ? 31 : 34, ss = portrait ? 40 : 44;
+      const base = H - (portrait ? 360 : 150) * u + dy, ty = base - (sub ? ss * 1.4 : 0) * u, ky = ty - ts * 0.9 * u;
+      const maxW = portrait ? W - 2 * mx : W * 0.62;
       ctx.save(); ctx.globalAlpha = a;
-      ctx.fillStyle = S.accent; ctx.fillRect(mx, base - (portrait ? 176 : 156) * u, 64 * u, 6 * u);
-      T(ctx, kicker && kicker.toUpperCase(), mx, base - (portrait ? 128 : 112) * u, { size: 30, weight: 700, color: S.accent, ls: 6, max: W - 2 * mx });
-      T(ctx, title, mx, base - (sub ? 46 : 0) * u, { size: portrait ? 100 : 92, fam: S.fHead, weight: S.headW, max: W - 2 * mx, color: ink, shadowC: sh });
-      if (sub) T(ctx, sub, mx, base + 10 * u, { size: 38, weight: 500, color: dimC, max: W - 2 * mx, shadowC: sh });
+      if (!onPhoto && !LT_NO_SCRIM) {   // мягкая подложка под титром вместо плашки
+        const y0 = ky - 190 * u, g = ctx.createLinearGradient(0, y0, 0, H); const c = S.scrim.join(',');
+        g.addColorStop(0, `rgba(${c},0)`); g.addColorStop(0.45, `rgba(${c},${S.paper ? 0.72 : 0.62})`); g.addColorStop(1, `rgba(${c},${S.paper ? 0.9 : 0.82})`);
+        ctx.fillStyle = g; ctx.fillRect(0, y0, W, H - y0);
+      }
+      ctx.fillStyle = S.accent; ctx.fillRect(mx, ky - ks * 1.5 * u, 72 * u, 7 * u);
+      T(ctx, kicker && kicker.toUpperCase(), mx, ky, { size: ks, weight: 700, color: S.accent, ls: 6, max: maxW, shadow: !!onPhoto, shadowC: sh });
+      T(ctx, title, mx, ty, { size: ts, fam: S.fHead, weight: S.headW, max: maxW, color: ink, shadowC: sh, shadow: !!onPhoto });
+      if (sub) T(ctx, sub, mx, base, { size: ss, weight: 500, color: dimC, max: maxW, shadowC: sh, shadow: !!onPhoto });
       ctx.restore();
     }
     function centerTitle(ctx, a, dy, kicker, big, sub, bigSize) {
@@ -204,13 +220,16 @@
       else { ctx.fillStyle = S.bg; ctx.fillRect(0, 0, W, H); }
       // карта — спокойный фон: без подписей и мелочи
       // на общих планах — только суша, вода и границы; дороги и мелкие реки появляются лишь вблизи
-      const close = c.z >= 8.5;
+      const close = c.z >= 9.6;
       if (LY.map && S.vec) window.VMap.draw(ctx, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, { ...S.vec, font: S.fBody, road: close ? S.vec.road : null, rail: close ? S.vec.rail : null, noWaterways: c.z < 7.5 }, { fills: !TR, lines: true, labels: false }, lang, u);
-      if (!TR && S.paper) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.25)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
+      if (!TR && S.paper) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.12)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
       if (!TR) { // мягкая виньетка вместо полос
         const g = ctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.75);
         g.addColorStop(0, `rgba(${S.scrim.join(',')},0)`); g.addColorStop(1, `rgba(${S.scrim.join(',')},${S.paper ? 0.45 : 0.6})`);
         ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        // зерно: бумага у «Атласа», плёнка у «Полночи»
+        ctx.save(); ctx.globalAlpha = S.paper ? 0.16 : 0.09; ctx.globalCompositeOperation = S.paper ? 'multiply' : 'overlay';
+        ctx.fillStyle = ctx.createPattern(grain(), 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore();
       }
 
       if (LY.route) {
@@ -262,6 +281,10 @@
       // места по пути: появляются, когда линия до них дошла
       if (LY.hud && s.recipe === 'route-reveal' && s.wps) {
         const x = revealX(s, t), span = (0.95 - s.move * 0.85) * s.durationSec;
+        if (fromLabel) {
+          const a0 = smooth((x * span - 0.1) / FADE) * smooth(((s.knots[1].x - x) * span + 0.1) / FADE);
+          if (a0 > 0.01) { const p0 = todayPts[0], wx = X(p0), wy = Y(p0), right = wx < W * 0.56; T(ctx, fromLabel, wx + (right ? 30 : -30) * u, wy + 20 * u, { size: portrait ? 62 : 56, fam: S.fHead, weight: S.headW, align: right ? 'left' : 'right', alpha: a0, max: (right ? W - wx : wx) - 60 * u }); }
+        }
         s.wps.forEach((w, i) => {
           const tIn = (x - s.knots[i + 1].x) * span, tOut = (s.knots[i + 2].x - x) * span;   // от прибытия до следующего места
           const a = smooth((tIn + 0.25) / FADE) * smooth((tOut + 0.1) / FADE);
@@ -274,7 +297,7 @@
         });
       }
 
-      if (LY.hud) hud(ctx, t, s, su, lt, TR);
+      LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
       if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: S.dim, align: 'center', alpha: 0.75, shadow: false });
       T(ctx, S.credit, W / 2, H - (S.paper ? 46 : 22) * u, { size: 15, weight: 500, color: S.dim, align: 'center', alpha: 0.55, shadow: false });
       ctx.restore();
@@ -364,7 +387,7 @@
           const pr = p.profile;
           if (pr && pr.length >= 8) {
             // профиль дня: график рисуется слева направо, вершина подписана
-            dim(ctx, 0.62 * vis(lt, dur, 0), TR);
+            dim(ctx, 0.84 * vis(lt, dur, 0), TR);
             const x0 = mx, x1 = W - mx, hh = (portrait ? 430 : 300) * u, yb = H * (portrait ? 0.56 : 0.6);
             const lo = Math.min(...pr), hi = Math.max(...pr), sp = Math.max(1, hi - lo);
             const PX = (i) => x0 + ((x1 - x0) * i) / (pr.length - 1), PY = (e) => yb - ((e - lo) / sp) * hh;
@@ -374,7 +397,7 @@
             ctx.beginPath(); ctx.moveTo(x0, PY(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(PX(i), PY(pr[i])); ctx.lineTo(ex, ey);
             ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = S.line.stops[S.line.stops.length - 1]; ctx.lineWidth = 9 * u; ctx.stroke();
             ctx.lineTo(ex, yb + 24 * u); ctx.lineTo(x0, yb + 24 * u); ctx.closePath();
-            const fg = ctx.createLinearGradient(0, yb - hh, 0, yb + 24 * u); fg.addColorStop(0, S.line.glow); fg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.globalAlpha *= 0.55; ctx.fillStyle = fg; ctx.fill();
+            const fg = ctx.createLinearGradient(0, yb - hh, 0, yb + 24 * u); const lc = S.line.stops[S.line.stops.length - 1]; fg.addColorStop(0, lc); fg.addColorStop(1, S.paper ? 'rgba(239,230,210,0)' : 'rgba(4,8,18,0)'); ctx.globalAlpha *= 0.28; ctx.fillStyle = fg; ctx.fill();
             ctx.restore();
             const mi = pr.indexOf(hi);
             if (p.maxEle != null && g >= mi) {

@@ -5,7 +5,7 @@
   const { createScene, STYLES } = window.RS;
 
   const state = {
-    route: null, journeyData: null, seriesBase: null, etype: 'returning-viewer', mode: 'track', styleId: 'night', fmt: 'v', jcount: 99,
+    route: null, journeyData: null, seriesBase: null, etype: 'returning-viewer', mode: 'track', styleId: 'paper', fmt: 'v', jcount: 99,
     o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru', places: [], note: '', photos: [] },
   };
   const touched = {};
@@ -22,7 +22,7 @@
   ).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
-  const swatch = { night: 'linear-gradient(135deg,#0b0f14,#1e293b 55%,#22d3ee 56%,#fb7185)', paper: 'linear-gradient(135deg,#e9dcc0,#d8c394 55%,#9a3412 56%,#7c2d12)', sat: 'linear-gradient(135deg,#1d2b17,#4a5d2f 55%,#fde047 56%,#fb923c)' };
+  const swatch = { night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', sat: 'linear-gradient(135deg,#1d2b17,#4a5d2f 55%,#fde047 56%,#fb923c)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
@@ -157,7 +157,9 @@
       // серия: места по пути — одним запросом; режиссёр сам выберет до трёх самых значимых
       if (state.mode === 'series') {
         if (state.demoDay) return;
-        const wps = await waypointsFor(route, state.o.lang);
+        let done; placesJob = new Promise((r) => { done = r; });
+        const wps = await waypointsFor(route, state.o.lang).catch(() => []);
+        done(); placesJob = null;
         if (state.route !== route) return;
         route.meta = { ...route.meta, waypoints: wps };
         syncDayMeta(route); rebuild(true);
@@ -177,6 +179,7 @@
       }
     } catch (e) { /* без сети просто остаются пустые поля */ }
   }
+  let placesJob = null;   // идёт поиск мест по пути — экспорт его дождётся
   // своё путешествие: найденные «откуда» и места по пути сохраняются в последнем дне
   function syncDayMeta(route) {
     if (!isOwn() || state.route !== route || !route.meta) return;
@@ -225,7 +228,8 @@
     const seg = { km: Math.round(r.total / 100) / 10, line, date, to: to || null, gain: r.ele ? Math.round(r.stats.gain) : 0, name: r.name || null };
     // факты дня для режиссёра: профиль высоты, высшая точка, время в пути
     if (r.ele) {
-      const N = 72; seg.profile = Array.from({ length: N }, (_, k) => Math.round(window.RouteLib.at(r, (r.total * k) / (N - 1)).ele));
+      const N = 72, raw = Array.from({ length: N }, (_, k) => window.RouteLib.at(r, (r.total * k) / (N - 1)).ele);
+      seg.profile = raw.map((_, k) => { const w = raw.slice(Math.max(0, k - 2), k + 3).sort((a, b) => a - b); return Math.round(w[Math.floor(w.length / 2)]); });
       const mi = r.stats.maxI;
       seg.maxEle = Math.round(r.stats.maxE); seg.minEle = Math.round(r.stats.minE);
       seg.maxAt = [+r.lon[mi].toFixed(5), +r.lat[mi].toFixed(5)]; seg.maxKm = Math.round(r.D[mi] / 1000);
@@ -242,8 +246,8 @@
     try {
       const poly = idx.map((i) => route.lat[i].toFixed(4) + ',' + route.lon[i].toFixed(4)).join(',');
       const q = `[out:json][timeout:25];node(around:${rad},${poly})[place~"^(city|town${km < 60 ? '|village' : ''})$"][name];out 80;`;
-      const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 30000);
-      const j = await (await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q), { signal: ac.signal })).json(); clearTimeout(tm);
+      const ask = async () => { const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 30000); try { const rs = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q), { signal: ac.signal }); if (!rs.ok) throw new Error('HTTP ' + rs.status); return await rs.json(); } finally { clearTimeout(tm); } };
+      let j; try { j = await ask(); } catch (e1) { await new Promise((r) => setTimeout(r, 2500)); j = await ask(); }
       return (j.elements || []).map((e) => { const f = fracOf(e.lat, e.lon); return { name: e.tags['name:' + lang] || e.tags.name, kind: e.tags.place, pop: +e.tags.population || 0, frac: f.frac, lon: f.lon, lat: f.lat }; });
     } catch (e) {
       const out = [];
@@ -328,12 +332,51 @@
     return { J: res.journey, change: res.change };
   }
   function bakeToday() { if (isOwn() && state.seriesBase.days.length) { state.seriesBase = ownToday().J; photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = ''; $('note').value = ''; state.o.endName = ''; $('endName').value = ''; touched.endName = false; } }
+  /* один файл на несколько дней → отдельные дни по местной дате (если в файле есть время) */
+  function splitDays(parsed) {
+    const pts = parsed.pts.filter((q) => isFinite(q.lat) && isFinite(q.lon));
+    if (pts.filter((q) => isFinite(q.t)).length < pts.length * 0.9) return [];
+    const groups = new Map(); let lastKey = null;
+    for (const q of pts) { const key = isFinite(q.t) ? Math.floor((q.t + (q.lon / 15) * 3600e3) / 864e5) : lastKey; if (key == null) continue; lastKey = key; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(q); }
+    const out = [...groups.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]).filter((g) => g.length >= 2);
+    return out.length >= 2 && out.length <= 120 ? out : [];
+  }
+  /* названия концов дней — чтобы у пересказа пути были вехи (Nominatim, не чаще 1 запроса в секунду, не больше 8 дней) */
+  async function nameDays() {
+    if (!isOwn()) return;
+    const days = [...state.seriesBase.days].sort((a, b) => a.day - b.day);
+    if (days.length < 2) return;
+    const need = days.slice(0, -1).filter((d) => !d.to), n = Math.min(8, need.length), pick = Array.from({ length: n }, (_, i) => need[Math.round((i * (need.length - 1)) / Math.max(1, n - 1))]);
+    const rev = async (lon, lat) => { const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=${state.o.lang}&lat=${lat}&lon=${lon}`)).json(); const a = j.address || {}; return a.city || a.town || a.village || a.municipality || a.county || ''; };
+    const apply = (day, patch, cp) => {
+      if (!isOwn()) return;
+      const J = state.seriesBase, cps = (J.checkpoints || []).slice();
+      if (cp && !cps.some((c) => c.day === cp.day && c.label === cp.label)) cps.push(cp);
+      state.seriesBase = { ...J, days: J.days.map((d) => (d.day === day ? { ...d, ...patch } : d)), checkpoints: cps };
+    };
+    try {
+      await new Promise((r) => setTimeout(r, 2500));   // сначала — «откуда/куда» текущего дня
+      const first = days[0];
+      if (!(state.seriesBase.checkpoints || []).some((c) => c.kind === 'origin')) { const nm = await rev(first.line[0][0], first.line[0][1]); if (nm) apply(first.day, { from: nm }, { day: first.day, kind: 'origin', label: nm }); await new Promise((r) => setTimeout(r, 1100)); }
+      for (const d of [...new Set(pick)]) {
+        const e = d.line[d.line.length - 1], nm = await rev(e[0], e[1]);
+        if (nm) apply(d.day, { to: nm }, { day: d.day, kind: 'city', label: nm });
+        await new Promise((r) => setTimeout(r, 1100));
+      }
+      saveOwn(); rebuild(true);
+    } catch (e) { /* без сети вехи просто не появятся */ }
+  }
   async function handleFiles(files) {
     showErr('');
     if (state.mode === 'track') { readFile(files[0]); return; }
-    const got = [];
+    const got = []; let multi = 0;
     for (const f of files) {
-      try { const tx = await f.text(); const r = prepare(parseAny(tx, f.name), f.name.replace(/\.[^.]+$/, '')); got.push({ r, name: f.name }); }
+      try {
+        const tx = await f.text(), nm = f.name.replace(/\.[^.]+$/, ''), parsed = parseAny(tx, f.name);
+        const parts = splitDays(parsed);
+        if (parts.length >= 2) { parts.forEach((pts, i) => { try { got.push({ r: prepare({ name: parsed.name, pts }, nm), name: f.name + '#' + String(i).padStart(3, '0') }); } catch (e) { /* слишком короткий кусок дня */ } }); multi = Math.max(multi, parts.length); }
+        else got.push({ r: prepare(parsed, nm), name: f.name });
+      }
       catch (e) { showErr(`${f.name}: ${e.message || e}`); }
     }
     if (!got.length) return;
@@ -345,9 +388,10 @@
     got.forEach((g) => { state.seriesBase = window.Director.addDay(state.seriesBase, segOf(g.r, null), [], []).journey; });   // каждый файл — сохранённый день
     const last = got[got.length - 1];
     state.route = last.r; state.routeIsDemo = false;
-    state.etype = 'returning-viewer'; $('etype').value = 'returning-viewer';
+    // многодневный файл: зрителю сначала нужен весь путь, потом последний день
+    state.etype = multi >= 3 ? 'new-viewer' : 'returning-viewer'; $('etype').value = state.etype;
     if (!touched.endName) { state.o.endName = ''; $('endName').value = ''; }
-    saveOwn(); placePhotos(); refreshModes(); setMode('series'); play(true);
+    saveOwn(); nameDays(); placePhotos(); refreshModes(); setMode('series'); play(true);
     $('continue').hidden = true;
     geocode(last.r);
   }
@@ -530,8 +574,9 @@
     const [W, H] = SIZES[state.fmt][$('res').value];
     const o = { ...state.o };
     const route = state.route || { name: (state.journeyData || state.seriesBase || {}).title || 'route-story' };
-    const dur = buildScene(W, H).duration;
     try {
+      if (state.mode === 'series' && placesJob) { $('stage').textContent = 'Ищу города по пути…'; $('bar').style.width = '2%'; await Promise.race([placesJob, new Promise((r) => setTimeout(r, 32000))]); }
+      const dur = buildScene(W, H).duration;
       await fontsReady;
       const slug0 = (state.mode === 'series' && state.lastEp ? `${state.seriesBase.title} день ${state.lastEp.res.plan.episodeNumber} ${state.etype}` : state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
       const sz = state.fmt === 'v' ? '9x16' : '16x9';
