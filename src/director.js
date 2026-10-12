@@ -77,10 +77,12 @@
 
   /* Места по пути: самые значимые и не кучей. Чем длиннее день, тем больше мест, но не больше трёх (правила кадра). */
   const PLACE_RANK = { city: 3, town: 2, village: 1 };
+  const COUNTRYISH = new Set(['китай', 'россия', 'индия', 'иран', 'турция', 'америка', 'европа', 'азия', 'африка', 'германия', 'франция', 'англия', 'япония', 'корея', 'монголия', 'казахстан', 'узбекистан', 'china', 'russia', 'india', 'america', 'europe', 'asia']);
   function pickWaypoints(list, km, skip = []) {
     if (!list || !list.length) return [];
     const max = km < 20 ? 1 : km < 80 ? 2 : 3;
-    const pool = list.filter((w) => w && w.name && w.frac > 0.12 && w.frac < 0.88 && !skip.includes(w.name))
+    // посёлок с названием страны («Китай» под Бухарой) в титре выглядит ошибкой — такие подписи не берём
+    const pool = list.filter((w) => w && w.name && w.frac > 0.12 && w.frac < 0.88 && !skip.includes(w.name) && !COUNTRYISH.has(w.name.toLowerCase()))
       .sort((a, b) => (PLACE_RANK[b.kind] || 0) - (PLACE_RANK[a.kind] || 0) || (b.pop || 0) - (a.pop || 0) || a.name.localeCompare(b.name));
     const out = [];
     for (const w of pool) {

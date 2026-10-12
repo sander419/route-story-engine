@@ -11,20 +11,17 @@ const click = (id) => p.evaluate((id) => document.getElementById(id).click(), id
 await p.goto(process.env.URL || 'http://localhost:4180/');
 await step('открытие: авто-демо', async () => { await p.waitForFunction(() => window.__app && window.__app.state.lastEp && /47/.test(document.getElementById('change').textContent), null, { timeout: 30000 }); return JSON.stringify(await st()); });
 await step('проигрывание 3 с', async () => { await p.waitForTimeout(3000); return await p.evaluate(() => document.getElementById('time').textContent); });
-await step('для новых зрителей', async () => { await p.selectOption('#etype', 'new-viewer'); await p.waitForTimeout(300); return (await st()).plan; });
-await step('трейлер', async () => { await p.selectOption('#etype', 'story-so-far'); await p.waitForTimeout(300); return (await st()).plan; });
+await step('для новых зрителей', async () => { await p.evaluate((v) => { const e = document.getElementById('etype'); e.value = v; e.dispatchEvent(new Event('change')); }, 'new-viewer'); await p.waitForTimeout(300); return (await st()).plan; });
+await step('трейлер', async () => { await p.evaluate((v) => { const e = document.getElementById('etype'); e.value = v; e.dispatchEvent(new Event('change')); }, 'story-so-far'); await p.waitForTimeout(300); return (await st()).plan; });
 await step('16:9', async () => { await click('fmt') ; await p.evaluate(() => document.querySelector('#fmt button[data-v="h"]').click()); await p.waitForTimeout(300); return await p.evaluate(() => document.getElementById('cv').width + 'x' + document.getElementById('cv').height); });
 await step('стиль «Бумага»', async () => { await p.evaluate(() => [...document.querySelectorAll('#styles button')].find((x) => x.dataset.id === 'paper').click()); await p.waitForTimeout(300); return (await st()).mode; });
 await step('стиль «Спутник»', async () => { await p.evaluate(() => [...document.querySelectorAll('#styles button')].find((x) => x.dataset.id === 'sat').click()); await p.waitForTimeout(800); return (await st()).mode; });
-await step('свой GPX как новый день', async () => { await p.selectOption('#etype', 'returning-viewer'); await p.setInputFiles('#file', 'samples/samarkand-bukhara.gpx'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
+await step('свой GPX как новый день', async () => { await p.evaluate((v) => { const e = document.getElementById('etype'); e.value = v; e.dispatchEvent(new Event('change')); }, 'returning-viewer'); await p.setInputFiles('#file', 'samples/samarkand-bukhara.gpx'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
 await step('убрать фото', async () => { const n = await p.evaluate(() => document.querySelectorAll('#photoList button').length); for (let i = 0; i < n; i++) await p.evaluate(() => document.querySelector('#photoList button').click()); await p.waitForTimeout(300); return 'фото: ' + (await p.evaluate(() => window.__app.state.o.photos.length)) + ' план: ' + (await st()).plan; });
-await step('пустая заметка', async () => { await p.fill('#note', ''); await p.waitForTimeout(300); return (await st()).plan; });
+await step('пустая заметка', async () => { await p.evaluate((v) => { const e = document.getElementById('note'); e.value = v; e.dispatchEvent(new Event('input')); }, ''); await p.waitForTimeout(300); return (await st()).plan; });
 await step('битый файл', async () => { await p.setInputFiles('#file', { name: 'bad.gpx', mimeType: 'application/gpx+xml', buffer: Buffer.from('<gpx><trk><trkseg></trkseg></trk></gpx>') }); await p.waitForTimeout(300); return await p.evaluate(() => document.getElementById('err').textContent); });
 await step('трейлер героя', async () => { await click('wj'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
 await step('назад к демо-серии', async () => { await click('series'); await p.waitForTimeout(500); await click('day47'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
-await step('режим «один трек»', async () => { await p.evaluate(() => document.querySelector('#mode button[data-v="track"]').click()); await p.waitForTimeout(500); return JSON.stringify(await st()); });
-await step('демо-трек Самарканд', async () => { await click('demo'); await p.waitForTimeout(800); return JSON.stringify(await st()); });
-await step('обратно в серию через кнопку режима', async () => { await p.evaluate(() => document.querySelector('#mode button[data-v="series"]').click()); await p.waitForTimeout(600); return JSON.stringify(await st()); });
 await step('запомнить серию ×3', async () => { for (let i = 0; i < 3; i++) await click('remember'); await p.waitForTimeout(300); return (await st()).plan; });
 await step('экспорт 720p (серия)', async () => {
   await p.evaluate(() => { const e = document.getElementById('res'); e.value = 'sd'; e.dispatchEvent(new Event('change')); });

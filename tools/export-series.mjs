@@ -18,7 +18,7 @@ if (etype === 'hero') {
 }
 await p.evaluate((s) => [...document.querySelectorAll('#styles button')].find((x) => x.dataset.id === s).click(), style);
 await p.evaluate((f) => document.querySelector(`#fmt button[data-v="${f}"]`).click(), fmt);
-if (etype !== 'hero') await p.selectOption('#etype', etype);
+if (etype !== 'hero') await p.evaluate((v) => { const e = document.getElementById('etype'); e.value = v; e.dispatchEvent(new Event('change')); }, etype);
 await p.evaluate((r) => { const e = document.getElementById('res'); e.value = r; e.dispatchEvent(new Event('change')); }, res);
 await p.waitForTimeout(500);
 const plan = await p.evaluate(() => window.__app.state.lastEp.res.plan.beats.map((x) => x.recipe).join(' → '));

@@ -84,6 +84,10 @@
     });
   }
 
+  /* ---- шаги под роликом ---- */
+  function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'story', 'look', 'more'].forEach((k) => { $('t-' + k).hidden = k !== id; }); }
+  [...$('tabs').children].forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
+
   /* ---- загрузка ---- */
   const drop = $('drop');
   $('file').onchange = (e) => { if (e.target.files.length) handleFiles([...e.target.files]); e.target.value = ''; };
@@ -341,12 +345,35 @@
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {
     const S = window.Director.summarize(J), fmt = (v) => Math.round(v).toLocaleString('ru-RU');
-    const c0 = res.ctx, wxLine = J.schematic ? '' : `<div class="cand">${c0.weather ? 'Погода того дня: ' + c0.weather.head + (c0.weather.sub ? ' · ' + c0.weather.sub : '') : c0.seg.tAt ? (weatherJob ? 'Ищу погоду того дня…' : 'Погода того дня не найдена') : 'В файле нет времени — погода, свет и скорость недоступны'}</div>`;
-    const ownHead = (isOwn() && ownNote ? `<div class="warn">${ownNote}</div>` : '') + wxLine + (!isOwn() ? '' : `<div class="cand">${J.title} · ${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км · сохраняется в этом браузере</div>`);
+    const c0 = res.ctx;
+    const ownHead = (isOwn() && ownNote ? `<div class="warn">${ownNote}</div>` : '') + (!isOwn() ? '' : `<div class="cand">${J.title} · ${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км · сохраняется в этом браузере</div>`);
     setTimeout(() => { const g = $('glue'); if (g) g.onclick = () => { if (!farUndo) return; const u = farUndo; farUndo = null; state.seriesBase = u.base; handleFiles(u.files, true); }; }, 0);
     $('change').innerHTML = ownHead + (J.schematic ? `<b>Кругосветка @wahrider</b>${J.days.length} мест по постам · 7 260 км по словам автора` : change
       ? `<b>+${fmt(change.km)} км · День ${change.day}</b><br>${change.media ? change.media + ' фото · ' : ''}${change.notes ? 'заметка · ' : ''}всего ${fmt(change.totalAfter)} км${change.arrival ? ' · прибытие: ' + change.arrival : ''}${change.milestones.length ? ' · веха: ' + change.milestones.map(fmt).join(', ') + ' км' : ''}${change.gapKm > 30 ? `<div class="warn">Этот день начинается в ${fmt(change.gapKm)} км от места, где закончился предыдущий. Это точно продолжение путешествия?</div>` : ''}`
       : `<b>${J.title}</b><br>${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км. Добавьте следующий день — свой GPX.`);
+    // заголовок над шагами: что это за ролик
+    const esc = (x) => String(x == null ? '' : x).replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+    const kmT = (v) => (v < 100 ? (Math.round(v * 10) / 10).toLocaleString('ru-RU') : fmt(v)) + ' км';
+    const routeName = c0.from && c0.to && c0.from !== c0.to && !c0.seg.loop ? `${c0.from} → ${c0.to}` : c0.to || c0.from || c0.name || J.title || 'Маршрут';
+    $('headline').innerHTML = J.schematic
+      ? `Кругосветка @wahrider<small>трейлер по постам канала · ролик ${Math.round(res.plan.durationSec)} с</small>`
+      : `${esc(routeName)}<small>${kmT(c0.newKm)}${S.daysCount > 1 ? ` · день ${c0.day} из путешествия на ${fmt(S.totalKm)} км` : ''}${J.id === 'demo' || state.demoDay ? ' · пример' : ''} · ролик ${Math.round(res.plan.durationSec)} с</small>`;
+    // «Что попало в ролик»: сразу видно, что программа достала из файла и чего в нём нет
+    const fact = (ok, label, value) => `<div class="fact ${ok === 'wait' ? 'wait' : ok ? '' : 'no'}"><b>${label}</b><span>${esc(value)}</span></div>`;
+    const noTime = 'в файле нет времени', used = (id) => res.plan.beats.some((b) => b.recipe === id);
+    $('facts').innerHTML = J.schematic
+      ? fact(true, 'Маршрут по постам', `${J.days.length} мест, пунктир — схема, не GPS-трек`) + fact(true, 'Фото автора', `${(J.media || []).length} кадров из канала`)
+      : [
+        fact(true, 'Маршрут', `${routeName} · ${kmT(c0.newKm)}${c0.seg.loop ? ' · кольцо' : ''}`),
+        c0.waypoints.length ? fact(true, 'Города по пути', c0.waypoints.map((w) => w.name).join(', ')) : fact(placesJob ? 'wait' : false, 'Города по пути', placesJob ? 'ищу…' : 'рядом с маршрутом не нашлись'),
+        c0.weather ? fact(true, 'Погода того дня', c0.weather.head + (c0.weather.sub ? ' · ' + c0.weather.sub : '')) : fact(c0.seg.tAt && weatherJob ? 'wait' : false, 'Погода того дня', c0.seg.tAt ? (weatherJob ? 'ищу…' : 'не найдена') : noTime),
+        c0.seg.tAt ? fact(true, 'Время суток и часы', 'свет меняется по ходу дня, часы в титре') : fact(false, 'Время суток и часы', noTime),
+        c0.movingH >= 0.4 ? fact(true, 'Время в пути и скорость', `${Math.floor(c0.movingH)} ч ${String(Math.round((c0.movingH % 1) * 60)).padStart(2, '0')} мин · ${String(c0.avgKmh).replace('.', ',')} км/ч`) : fact(false, 'Время в пути и скорость', noTime),
+        c0.profile ? fact(true, 'Высота', `набор +${fmt(c0.gain)} м${used('elevation-profile') ? ', профиль в ролике' : ' — день ровный, кадр не нужен'}`) : fact(false, 'Высота', 'в файле нет высоты'),
+        c0.photos.length ? fact(true, 'Фото', `${c0.photos.length} — на весь экран`) : fact(false, 'Фото', 'не добавлены — шаг «История»'),
+        c0.note ? fact(true, 'Фраза дня', `«${c0.note.text}»`) : fact(false, 'Фраза дня', 'не добавлена — шаг «История»'),
+      ].join('');
+    $('etypeBox').hidden = !!J.schematic || J.days.length < 2;   // выбор «для кого серия» имеет смысл только для путешествия из нескольких дней
     const v = window.Director.validate(res.plan, J);
     $('plan').innerHTML = `<div>${res.plan.episodeType} · ${res.plan.durationSec} с · зерно ${res.plan.seed}${res.plan.fallback ? ' · запасной план: ' + res.plan.fallback : ''}${v.ok ? ' · проверка пройдена' : ' · ошибки: ' + v.errors.join('; ')}</div>` +
       res.log.map((l) => `<div class="beat"><b>${NAMES[l.beat] || l.beat}</b>: ${l.selected || '—'}<div class="cand">${l.candidates.map((c) => `<span class="${c.id === l.selected ? 'sel' : ''}">${c.id} ${c.eligible ? c.total : '✕'}</span>`).join(' · ')}</div><div class="cand">${l.reason}</div></div>`).join('') +
