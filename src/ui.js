@@ -144,6 +144,10 @@
       const adm = [a.municipality, a.county, a.state].find((x) => x && !/поселение|округ|район|область|край|municipal|district|county/i.test(x)) || '';   // «Селецкое сельское поселение» в титр не годится
       return { place: a.city || a.town || a.village || a.hamlet || a.suburb || adm, country: a.country || '' };
     };
+    if (route.t && !(route.meta && route.meta.weather)) {
+      let done; weatherJob = new Promise((r) => { done = r; });
+      weatherFor(route).catch(() => null).then((w) => { done(); weatherJob = null; if (w && state.route === route) { route.meta = { ...(route.meta || {}), weather: w }; syncDayMeta(route); rebuild(true); } });
+    }
     try {
       const [a, b] = await Promise.all([one(0), one(route.n - 1)]);
       if (state.route !== route) return;
@@ -181,12 +185,54 @@
     } catch (e) { /* без сети просто остаются пустые поля */ }
   }
   let placesJob = null;   // идёт поиск мест по пути — экспорт его дождётся
+  let weatherJob = null;  // идёт запрос погоды дня — экспорт его дождётся
+  /* Погода того дня по времени и координатам трека (Open-Meteo: архив ERA5, для свежих дат — прогнозная модель).
+     Ничего не выдумываем: нет времени в файле или сервис молчит — погоды в ролике нет. */
+  async function weatherFor(route) {
+    if (!route.t) return null;
+    const t0 = route.t[0], t1 = route.t[route.n - 1]; if (!(t1 > t0)) return null;
+    const mid = window.RouteLib.at(route, route.total / 2), lat = route.lat[mid.i], lon = route.lon[mid.i];
+    const day = (ms) => new Date(ms).toISOString().slice(0, 10), today = day(Date.now());
+    const d0 = day(t0 - 432e5), d1raw = day(t1 + 432e5), d1 = d1raw > today ? today : d1raw;
+    if (d0 > today) return null;
+    const qs = `latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&start_date=${d0}&end_date=${d1}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,precipitation,weather_code&daily=sunrise,sunset&wind_speed_unit=ms&timeformat=unixtime&timezone=auto`;
+    const bearingAt = (ms) => {
+      let lo = 0, hi = route.n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (route.t[m] <= ms) lo = m; else hi = m; }
+      let j = lo; while (j < route.n - 1 && route.D[j] - route.D[lo] < 1500) j++;
+      if (j === lo) { while (lo > 0 && route.D[j] - route.D[lo] < 1500) lo--; }
+      if (route.D[j] - route.D[lo] < 200) return null;
+      const f1 = (route.lat[lo] * Math.PI) / 180, f2 = (route.lat[j] * Math.PI) / 180, dl = ((route.lon[j] - route.lon[lo]) * Math.PI) / 180;
+      return Math.atan2(Math.sin(dl) * Math.cos(f2), Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl));
+    };
+    const read = (j) => {
+      const H = j.hourly; if (!H || !H.time) return null;
+      let n = 0, tMin = Infinity, tMax = -Infinity, ws = 0, hs = 0, hn = 0, sx = 0, sy = 0, pr = 0, code = 0;
+      H.time.forEach((sec, i) => {
+        const ms = sec * 1000; if (ms < t0 - 18e5 || ms > t1 + 18e5) return;
+        const T = H.temperature_2m[i], Wv = H.wind_speed_10m[i], Wd = H.wind_direction_10m[i]; if (T == null || Wv == null || Wd == null) return;
+        n++; tMin = Math.min(tMin, T); tMax = Math.max(tMax, T); ws += Wv; pr += H.precipitation[i] || 0; code = Math.max(code, H.weather_code[i] || 0);
+        const wr = (Wd * Math.PI) / 180; sx += Wv * Math.sin(wr); sy += Wv * Math.cos(wr);
+        const b = bearingAt(Math.min(Math.max(ms, t0), t1)); if (b != null) { hs += Wv * Math.cos(wr - b); hn++; }   // «откуда дует» совпало с «куда едем» — ветер в лицо
+      });
+      if (!n) return null;
+      const off = j.utc_offset_seconds || 0, locDay = day(t0 + off * 1000), D = j.daily || {};
+      let sunrise = null, sunset = null;
+      (D.time || []).forEach((sec, i) => { if (day(sec * 1000 + off * 1000) === locDay && D.sunrise[i] && D.sunset[i]) { sunrise = (((D.sunrise[i] + off) % 86400) + 86400) % 86400 / 3600; sunset = (((D.sunset[i] + off) % 86400) + 86400) % 86400 / 3600; } });
+      const r1 = (x) => Math.round(x * 10) / 10;
+      return { tz: off, sunrise: sunrise != null ? r1(sunrise) : null, sunset: sunset != null ? r1(sunset) : null, tMin: r1(tMin), tMax: r1(tMax), wind: r1(ws / n), head: hn ? r1(hs / hn) : 0,
+        dir: Math.round((((Math.atan2(sx, sy) * 180) / Math.PI) + 360) % 360), precip: r1(pr), code, hours: n, src: 'Open-Meteo' };
+    };
+    for (const host of ['https://archive-api.open-meteo.com/v1/archive', 'https://api.open-meteo.com/v1/forecast']) {
+      try { const rs = await fetch(host + '?' + qs); if (!rs.ok) continue; const w = read(await rs.json()); if (w) return w; } catch (e) { /* пробуем следующий источник */ }
+    }
+    return null;
+  }
   // своё путешествие: найденные «откуда» и места по пути сохраняются в последнем дне
   function syncDayMeta(route) {
     if (!isOwn() || state.route !== route || !route.meta) return;
     const days = [...state.seriesBase.days].sort((x, y) => x.day - y.day), last = days[days.length - 1];
     if (!last) return;
-    const upd = { ...last, from: route.meta.from || last.from || null, waypoints: route.meta.waypoints || last.waypoints || [] };
+    const upd = { ...last, from: route.meta.from || last.from || null, waypoints: route.meta.waypoints || last.waypoints || [], weather: route.meta.weather || last.weather || null };
     state.seriesBase = { ...state.seriesBase, days: state.seriesBase.days.map((d) => (d.day === last.day ? upd : d)) };
     saveOwn();
   }
@@ -236,7 +282,8 @@
       seg.maxAt = [+r.lon[mi].toFixed(5), +r.lat[mi].toFixed(5)]; seg.maxKm = Math.round(r.D[mi] / 1000);
     }
     if (r.t && r.stats.avg) { seg.movingH = Math.round((r.stats.moving / 3.6e6) * 100) / 100; seg.avgKmh = Math.round(r.stats.avg * 10) / 10; }
-    if (r.meta) { seg.from = r.meta.from || null; seg.waypoints = r.meta.waypoints || []; }
+    if (r.t) { const K = 24; seg.tAt = Array.from({ length: K + 1 }, (_, k) => Math.round(window.RouteLib.at(r, (r.total * k) / K).t)); seg.lon0 = +r.lon[0].toFixed(3); }
+    if (r.meta) { seg.from = r.meta.from || null; seg.waypoints = r.meta.waypoints || []; if (r.meta.weather) seg.weather = r.meta.weather; }
     // кольцо: финиш рядом со стартом
     seg.loop = window.RouteLib.hav({ lat: r.lat[0], lon: r.lon[0] }, { lat: r.lat[r.n - 1], lon: r.lon[r.n - 1] }) < Math.max(400, r.total * 0.06);
     return seg;
@@ -578,7 +625,7 @@
     const o = { ...state.o };
     const route = state.route || { name: (state.journeyData || state.seriesBase || {}).title || 'route-story' };
     try {
-      if (state.mode === 'series' && placesJob) { $('stage').textContent = 'Ищу города по пути…'; $('bar').style.width = '2%'; await Promise.race([placesJob, new Promise((r) => setTimeout(r, 32000))]); }
+      if (state.mode === 'series' && (placesJob || weatherJob)) { $('stage').textContent = 'Ищу города по пути и погоду того дня…'; $('bar').style.width = '2%'; await Promise.race([Promise.all([placesJob, weatherJob]), new Promise((r) => setTimeout(r, 32000))]); }
       const dur = buildScene(W, H).duration;
       await fontsReady;
       const slug0 = (state.mode === 'series' && state.lastEp ? `${state.seriesBase.title} день ${state.lastEp.res.plan.episodeNumber} ${state.etype}` : state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';

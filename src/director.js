@@ -90,6 +90,24 @@
     }
     return out.sort((a, b) => a.frac - b.frac).map((w) => ({ name: w.name, lon: w.lon, lat: w.lat, frac: r2(w.frac), kind: w.kind || 'town' }));
   }
+  /* Погода дня → одна главная мысль и одна строка подробностей. Только по данным: ни одного слова «на глаз». */
+  function weatherLine(w) {
+    const deg = (v) => (Math.round(v) > 0 ? '+' : Math.round(v) < 0 ? '−' : '') + Math.abs(Math.round(v)) + '°';
+    const wind = Math.round(w.wind), snow = w.code >= 71 && w.code <= 86 && !(w.code >= 80 && w.code <= 82);
+    let head, kind, sev;
+    if (w.head >= 3.5) { head = `Встречный ветер ${wind} м/с`; kind = 'headwind'; sev = clamp(0.55 + w.head / 14, 0, 1); }
+    else if (w.precip >= 2) { head = snow ? 'Снег в дороге' : `Дождь в дороге · ${Math.round(w.precip)} мм`; kind = snow ? 'snow' : 'rain'; sev = 0.75; }
+    else if (w.tMax >= 30) { head = `Жара ${deg(w.tMax)}`; kind = 'heat'; sev = clamp(0.6 + (w.tMax - 30) / 20, 0, 1); }
+    else if (w.tMin <= 0) { head = `Мороз ${deg(w.tMin)}`; kind = 'frost'; sev = 0.8; }
+    else if (w.head <= -3.5) { head = `Попутный ветер ${wind} м/с`; kind = 'tailwind'; sev = 0.5; }
+    else if (w.wind >= 7) { head = `Ветер ${wind} м/с`; kind = 'wind'; sev = 0.5; }
+    else { head = Math.round(w.tMin) === Math.round(w.tMax) ? deg(w.tMax) : `${deg(w.tMin)} … ${deg(w.tMax)}`; kind = 'mild'; sev = 0.3; }
+    const sub = [];
+    if (kind !== 'mild' && kind !== 'heat' && kind !== 'frost') sub.push(Math.round(w.tMin) === Math.round(w.tMax) ? deg(w.tMax) : `${deg(w.tMin)} … ${deg(w.tMax)}`);
+    if (!/wind/.test(kind) && wind >= 1) sub.push(`ветер ${wind} м/с`);
+    if (kind !== 'rain' && kind !== 'snow') sub.push(w.precip >= 0.5 ? `осадки ${Math.round(w.precip * 10) / 10} мм` : 'без осадков');
+    return { head, sub: sub.join(' · '), kind, sev: r2(sev), wind: w.wind, dir: w.dir, headwind: w.head, precip: w.precip, snow, tz: w.tz, sunrise: w.sunrise, sunset: w.sunset, src: w.src || '' };
+  }
   function hoursText(h) { const m = Math.round(h * 60); return m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч ${String(m % 60).padStart(2, '0')} мин`; }
 
   function buildContext(J, episodeType, opts = {}) {
@@ -117,6 +135,7 @@
       profile: seg.profile && seg.profile.length >= 8 ? seg.profile : null,
       maxEle: seg.maxEle != null ? seg.maxEle : null, minEle: seg.minEle != null ? seg.minEle : null, maxAt: seg.maxAt || null, maxKm: seg.maxKm != null ? seg.maxKm : null,
       movingH: seg.movingH || 0, avgKmh: seg.avgKmh || 0,
+      weather: seg.weather ? weatherLine(seg.weather) : null,
       isLong: seg.km > median * 1.8 && seg.km > 60, isShort: seg.km < 15,
       milestoneKm: crossedK, dayMilestone, arrival,
       history: compressHistory(J, seg.day),
@@ -178,6 +197,12 @@
       base: (c) => ({ relevance: 0.8, novelty: 0.8, emotion: 0.5, visual: clamp(0.5 + (c.maxEle - c.minEle) / 2000, 0.5, 1), milestone: 0 }),
       pref: () => 4,
       params: (c) => ({ ele: Math.round(c.maxEle), at: c.maxAt, km: c.maxKm }) },
+    // погода того дня: «каково было ехать», а не только «где»
+    { id: 'weather-card', types: ['new-viewer', 'returning-viewer'], beats: ['conditions'], min: 3.4, max: 4.6, flex: true,
+      eligible: (c) => !!c.weather,
+      base: (c) => ({ relevance: 0.85, novelty: 0.9, emotion: c.weather.sev, visual: c.weather.kind === 'mild' ? 0.4 : 0.8, milestone: 0 }),
+      pref: (c) => (c.weather.kind === 'mild' ? 3.6 : 4.2),
+      params: (c) => ({ head: c.weather.head, sub: c.weather.sub, kind: c.weather.kind, wind: c.weather.wind, dir: c.weather.dir, precip: c.weather.precip, snow: c.weather.snow, src: c.weather.src }) },
     { id: 'time-on-road', types: ['new-viewer', 'returning-viewer'], beats: ['fact'], min: 3, max: 4.2, flex: true,
       eligible: (c) => c.movingH >= 0.4 && c.avgKmh > 0,
       base: (c) => ({ relevance: 0.8, novelty: 0.8, emotion: c.movingH >= 6 ? 0.7 : 0.45, visual: 0.4, milestone: 0 }),
@@ -253,12 +278,12 @@
 
   /* ================= Типы эпизода и биты ================= */
   const TYPES = {
-    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['achievement', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
-    'returning-viewer': [['hook', true], ['new-leg', true], ['achievement', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
+    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['achievement', false], ['conditions', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
+    'returning-viewer': [['hook', true], ['new-leg', true], ['achievement', false], ['conditions', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
     'story-so-far': [['hook', true], ['context', true], ['moment', false], ['proof', false], ['outro', true]],
   };
   // длительность от содержания: лучше дольше, чем мелькание (правила кадра)
-  const DURATION = { 'new-viewer': [30, 42, 24, 50], 'returning-viewer': [26, 38, 20, 46], 'story-so-far': [40, 58, 30, 66] };
+  const DURATION = { 'new-viewer': [30, 46, 24, 54], 'returning-viewer': [26, 42, 20, 50], 'story-so-far': [40, 58, 30, 66] };
 
   /* ================= Скоринг ================= */
   const W = { relevance: 4, novelty: 3, emotion: 3, visual: 2, milestone: 2, mediaQ: 2, repetition: 4, redundancy: 3, durationCost: 1 };
@@ -361,7 +386,7 @@
   function finish(shots, ctx, log, fallbackReason, fitNote) {
     let t = 0;
     const beats = shots.map((s) => { const b = { beat: s.beat, recipe: s.recipe, startSec: r2(t), durationSec: s.durationSec, params: s.params }; t += s.durationSec; return b; });
-    const seedSrc = JSON.stringify([ctx.journeyId, ctx.day, ctx.type, ctx.aspect, ctx.newKm, ctx.photos.map((m) => m.id), ctx.note && ctx.note.text, ctx.recent.map((e) => e.episodeId), ctx.from, ctx.to, ctx.waypoints.map((w) => w.name), ctx.movingH, ctx.maxEle]);
+    const seedSrc = JSON.stringify([ctx.journeyId, ctx.day, ctx.type, ctx.aspect, ctx.newKm, ctx.photos.map((m) => m.id), ctx.note && ctx.note.text, ctx.recent.map((e) => e.episodeId), ctx.from, ctx.to, ctx.waypoints.map((w) => w.name), ctx.movingH, ctx.maxEle, ctx.weather && ctx.weather.head]);
     const plan = {
       episodeId: `day-${ctx.day}-${ctx.type}`, journeyId: ctx.journeyId, episodeNumber: ctx.day, episodeType: ctx.type, aspect: ctx.aspect,
       seed: hash(seedSrc), durationSec: r2(t), fallback: fallbackReason || null, fitting: fitNote || '', beats,
@@ -396,6 +421,6 @@
     return { episodeId: plan.episodeId, episodeType: plan.episodeType, recipes: plan.beats.map((b) => b.recipe), byBeat, hookRecipe: byBeat.hook, momentRecipe: byBeat.moment, outroRecipe: byBeat.outro };
   }
 
-  const API = { summarize, addDay, buildContext, direct, validate, summaryOf, compressHistory, pickWaypoints, RECIPES, TYPES, DURATION, hash };
+  const API = { summarize, addDay, buildContext, direct, validate, summaryOf, compressHistory, pickWaypoints, weatherLine, RECIPES, TYPES, DURATION, hash };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Director = API;
 })(typeof window !== 'undefined' ? window : globalThis);

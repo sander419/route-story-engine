@@ -69,7 +69,7 @@
     };
     const dateRu = (iso) => (iso ? new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(' г.', '') : '');
     const TARGET = {
-      'trip-title': 'journey', 'day-summary': 'journey', 'time-on-road': 'segment', 'high-point': 'high',
+      'weather-card': 'segment', 'trip-title': 'journey', 'day-summary': 'journey', 'time-on-road': 'segment', 'high-point': 'high',
       'day-card': 'journey', 'season-card': 'journey', 'progress-overview': 'journey', 'overview-to-detail': 'segment', 'route-reveal': 'segment',
       'camera-follow': 'segment', 'checkpoint-arrival': 'end', 'photo-reveal': 'end', 'note-card': 'end', 'location-card': 'end', 'distance-counter': 'segment',
       'day-barcode': null, 'elevation-profile': 'segment', 'pullback': 'journey', 'progress-poster': 'journey', 'journey-recap': 'journey', 'highlights-reel': null,
@@ -140,6 +140,38 @@
     const fSample = (F, arr, x) => { const q = clamp(x, 0, 1) * F.N, i = Math.min(F.N - 1, Math.floor(q)); return lerp(arr[i], arr[i + 1], q - i); };
     // ход по заранее посчитанной траектории: разгон и торможение без скачка скорости на стыках с соседними кадрами
     const followX = (s, uu) => { const q = clamp((uu - s.move) / (FOLLOW_END - s.move), 0, 1), e = 0.14, nrm = 1 - e; return (q < e ? (q * q) / (2 * e) : q > 1 - e ? 1 - e - ((1 - q) * (1 - q)) / (2 * e) : q - e / 2) / nrm; };
+
+    /* ---- свет по времени суток: настоящий час в точке, где сейчас едет путешественник; рассвет и закат — настоящие, если есть погода ---- */
+    const WX = today.weather || null, tzSec = WX && WX.tz != null ? WX.tz : today.lon0 != null ? Math.round((today.lon0 / 15) * 3600) : null;
+    const SR = WX && WX.sunrise != null ? WX.sunrise : 6.2, SS = WX && WX.sunset != null ? WX.sunset : 19.8;
+    const NIGHT = [22, 34, 92, 0.36], DAWN = [255, 138, 104, 0.2], NONE = [255, 220, 170, 0], GOLD = [255, 160, 56, 0.24], DUSK = [128, 78, 170, 0.3];
+    const LKEYS = [[SR - 1.3, NIGHT], [SR - 0.2, DAWN], [SR + 0.9, [255, 170, 120, 0.12]], [SR + 2.2, NONE], [SS - 2.8, NONE], [SS - 1.3, GOLD], [SS - 0.1, [255, 140, 60, 0.28]], [SS + 0.5, DUSK], [SS + 1.4, NIGHT]];
+    function lightAt(h) {
+      if (h <= LKEYS[0][0] || h >= LKEYS[LKEYS.length - 1][0]) return NIGHT;
+      let i = 1; while (i < LKEYS.length - 1 && LKEYS[i][0] < h) i++;
+      const a = LKEYS[i - 1], b = LKEYS[i], q = smooth((h - a[0]) / Math.max(1e-6, b[0] - a[0]));
+      return [0, 1, 2, 3].map((k) => lerp(a[1][k], b[1][k], q));
+    }
+    const msAt = (fr) => { const A = today.tAt; if (!A || A.length < 2) return null; const x = clamp(fr, 0, 1) * (A.length - 1), i = Math.min(A.length - 2, Math.floor(x)); return lerp(A[i], A[i + 1], x - i); };
+    const hourAt = (fr) => { const ms = msAt(fr); return ms == null || tzSec == null ? null : ((((ms / 1000 + tzSec) % 86400) + 86400) % 86400) / 3600; };
+    const clockAt = (fr) => { const h = hourAt(fr); if (h == null || !(WX && WX.tz != null)) return ''; const m = Math.round(h * 60) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+    const OUTRO = { pullback: 1, 'progress-poster': 1, 'day-summary': 1, 'journey-recap': 1, 'season-card': 1, 'progress-overview': 1, 'day-barcode': 1, 'highlights-reel': 1 };
+    /* ---- ветер и дождь: штрихи летят по настоящему направлению ветра; положение штрихов задано номером, а не случаем ---- */
+    const frac = (v) => v - Math.floor(v);
+    function streaks(ctx, t, a, toDeg, speed, n, len, color) {
+      if (a <= 0.01) return;
+      const ang = (toDeg * Math.PI) / 180, dx = Math.sin(ang), dy = -Math.cos(ang), R = Math.hypot(W, H);
+      ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = 3 * u;
+      for (let i = 0; i < n; i++) {
+        const h1 = frac(Math.sin(i * 12.9898) * 43758.5453), h2 = frac(Math.sin(i * 78.233) * 12543.123), h3 = frac(Math.sin(i * 39.425) * 9631.77);
+        const along = (frac(h1 + (t * speed * (0.75 + 0.5 * h3)) / R) - 0.5) * R * 1.2, across = (h2 - 0.5) * R * 1.2;
+        const x = W / 2 + dx * along - dy * across, y = H / 2 + dy * along + dx * across, L = len * (0.7 + 0.6 * h3);
+        const edge = Math.sin(Math.PI * frac(h1 + (t * speed * (0.75 + 0.5 * h3)) / R));   // гаснут у краёв полёта
+        const g = ctx.createLinearGradient(x - dx * L, y - dy * L, x, y); g.addColorStop(0, color + '0)'); g.addColorStop(1, color + (a * (0.25 + 0.45 * h2) * edge).toFixed(3) + ')');
+        ctx.strokeStyle = g; ctx.beginPath(); ctx.moveTo(x - dx * L, y - dy * L); ctx.lineTo(x, y); ctx.stroke();
+      }
+      ctx.restore();
+    }
 
     const shots = plan.beats.map((b) => ({ ...b, t0: b.startSec, t1: b.startSec + b.durationSec }));
     const duration = plan.durationSec;
@@ -286,6 +318,18 @@
         ctx.fillStyle = ctx.createPattern(grain(), 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore();
       }
 
+      if (!TR && today.tAt && tzSec != null && !journey.schematic) {
+        const hasReveal = shots.find((q) => q.recipe === 'route-reveal'), fr = hasReveal ? (t < hasReveal.t0 ? 0 : todayReveal(t)) : 1;
+        const h = hourAt(fr), L = h == null ? null : lightAt(h);
+        const fade = OUTRO[s.recipe] ? (shots.indexOf(s) === 0 ? 0 : 1 - smooth(lt / 1.2)) : s.recipe === 'trip-title' || s.recipe === 'day-card' ? smooth((lt - 0.4) / 1.5) : 1;
+        if (L && L[3] * fade > 0.005) {
+          const k = L[3] * fade;
+          ctx.save();
+          if (S.paper) { ctx.globalCompositeOperation = 'multiply'; const m = Math.min(1, k * 2.1); ctx.fillStyle = `rgb(${L.slice(0, 3).map((c) => Math.round(255 - (255 - c) * m)).join(',')})`; }
+          else { ctx.globalCompositeOperation = L[0] < 100 ? 'multiply' : 'soft-light'; ctx.fillStyle = L[0] < 100 ? `rgb(${L.slice(0, 3).map((c) => Math.round(255 - (255 - c) * Math.min(1, k * 1.6))).join(',')})` : `rgba(${L.slice(0, 3).map(Math.round).join(',')},${Math.min(1, k * 2.4).toFixed(3)})`; }
+          ctx.fillRect(0, 0, W, H); ctx.restore();
+        }
+      }
       if (LY.route) {
         ctx.lineCap = 'round'; ctx.lineJoin = 'round';
         const poly = (pts, upto) => { ctx.beginPath(); for (let i = 0; i < pts.length && (upto == null || i <= upto); i++) i ? ctx.lineTo(X(pts[i]), Y(pts[i])) : ctx.moveTo(X(pts[i]), Y(pts[i])); };
@@ -344,6 +388,13 @@
           lab(q.name, q.p, smooth((dt + 0.2) / FADE) * (1 - smooth((dt - hold) / FADE)));
         });
       }
+      if (LY.hud && WX && !TR) {
+        const onCard = s.recipe === 'weather-card', onRide = s.recipe === 'route-reveal' && s.follow && su >= s.move;
+        const a = onCard ? vis(lt, s.durationSec, 0) : onRide ? 0.5 * smooth(((su - s.move) * s.durationSec) / 1.2) * (1 - smooth((su - 0.9) / 0.07)) : 0;
+        const col = S.paper ? 'rgba(70,48,30,' : 'rgba(225,238,255,';
+        if (a > 0.01 && WX.precip >= 2) streaks(ctx, t, Math.min(1, a * 1.7), 168 + (WX.dir != null ? Math.sin((WX.dir * Math.PI) / 180) * -14 : 0), 1500 * u, 240, 58 * u, S.paper ? 'rgba(60,90,130,' : 'rgba(170,205,255,');
+        else if (a > 0.01 && WX.wind >= 4.5 && WX.dir != null) streaks(ctx, t, a, WX.dir + 180, (260 + WX.wind * 55) * u, 34, (110 + WX.wind * 14) * u, col);
+      }
       LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
       if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: S.dim, align: 'center', alpha: 0.75, shadow: false });
       T(ctx, S.credit, W / 2, H - (S.paper ? 46 : 22) * u, { size: 15, weight: 500, color: S.dim, align: 'center', alpha: 0.55, shadow: false });
@@ -372,6 +423,10 @@
           centerTitle(ctx, smooth((lt - 0.5) / FADE), rise(lt, 0.5), head, fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', sub, 200);
           break;
         }
+        case 'weather-card':
+          lowerThird(ctx, a, dy, 'погода в тот день', p.head, p.sub);
+          if (p.src) T(ctx, 'Погода: ' + p.src, W - mx, H - (portrait ? 250 : 60) * u, { size: 18, weight: 500, color: S.dim, align: 'right', shadow: false, alpha: a * 0.8 });
+          break;
         case 'time-on-road':
           lowerThird(ctx, a, dy, 'в пути', p.text, 'средняя скорость ' + fmtN(p.avgKmh, 1) + ' км/ч');
           break;
@@ -391,7 +446,8 @@
         case 'route-reveal': case 'camera-follow': {
           const km = p.km * todayReveal(t);
           const d0 = s.move * dur * (s.follow ? 1 : 0.85);   // титр — когда маршрут начинает рисоваться
-          lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), single ? 'пройдено' : 'день ' + today.day, (single ? '' : '+') + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
+          const ck = clockAt(todayReveal(t));
+          lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), (single ? 'пройдено' : 'день ' + today.day) + (ck ? ' · ' + ck : ''), (single ? '' : '+') + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
           break;
         }
         case 'checkpoint-arrival':
