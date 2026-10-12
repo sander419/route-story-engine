@@ -149,7 +149,7 @@
       weatherFor(route).catch(() => null).then((w) => { done(); weatherJob = null; if (w && state.route === route) { route.meta = { ...(route.meta || {}), weather: w }; syncDayMeta(route); rebuild(true); } });
     }
     try {
-      const [a, b] = await Promise.all([one(0), one(route.n - 1)]);
+      const blank = { place: '', country: '' }, [a, b] = await Promise.all([one(0).catch(() => blank), one(route.n - 1).catch(() => blank)]);
       if (state.route !== route) return;
       if (!touched.startName && a.place) { state.o.startName = a.place; $('startName').value = a.place; }
       if (!touched.endName && !state.demoDay && b.place) { state.o.endName = b.place; $('endName').value = b.place; if (isOwn()) { state.seriesBase = ownToday().J; saveOwn(); } }
@@ -167,6 +167,8 @@
         done(); placesJob = null;
         if (state.route !== route) return;
         route.meta = { ...route.meta, waypoints: wps };
+        // адресный сервис не назвал старт или финиш — берём ближайший город из карты
+        if (!state.demoDay) { if (!route.meta.from) route.meta.from = nearName(route, 0) || null; if (!state.o.endName && !touched.endName) { const nm = nearName(route, 1); if (nm) { state.o.endName = nm; $('endName').value = nm; if (isOwn()) { state.seriesBase = ownToday().J; saveOwn(); } } } }
         syncDayMeta(route); rebuild(true);
         return;
       }
@@ -219,7 +221,8 @@
       let sunrise = null, sunset = null;
       (D.time || []).forEach((sec, i) => { if (day(sec * 1000 + off * 1000) === locDay && D.sunrise[i] && D.sunset[i]) { sunrise = (((D.sunrise[i] + off) % 86400) + 86400) % 86400 / 3600; sunset = (((D.sunset[i] + off) % 86400) + 86400) % 86400 / 3600; } });
       const r1 = (x) => Math.round(x * 10) / 10;
-      return { tz: off, sunrise: sunrise != null ? r1(sunrise) : null, sunset: sunset != null ? r1(sunset) : null, tMin: r1(tMin), tMax: r1(tMax), wind: r1(ws / n), head: hn ? r1(hs / hn) : 0,
+      const tempsAt = Array.from({ length: 13 }, (_, k) => { const ms = window.RouteLib.at(route, (route.total * k) / 12).t; let best = null, bd = Infinity; H.time.forEach((sec, i) => { const d = Math.abs(sec * 1000 - ms); if (d < bd && H.temperature_2m[i] != null) { bd = d; best = H.temperature_2m[i]; } }); return best == null ? null : r1(best); });
+      return { temps: tempsAt.some((v) => v == null) ? null : tempsAt, tz: off, sunrise: sunrise != null ? r1(sunrise) : null, sunset: sunset != null ? r1(sunset) : null, tMin: r1(tMin), tMax: r1(tMax), wind: r1(ws / n), head: hn ? r1(hs / hn) : 0,
         dir: Math.round((((Math.atan2(sx, sy) * 180) / Math.PI) + 360) % 360), precip: r1(pr), code, hours: n, src: 'Open-Meteo' };
     };
     for (const host of ['https://archive-api.open-meteo.com/v1/archive', 'https://api.open-meteo.com/v1/forecast']) {
@@ -288,31 +291,32 @@
     seg.loop = window.RouteLib.hav({ lat: r.lat[0], lon: r.lon[0] }, { lat: r.lat[r.n - 1], lon: r.lon[r.n - 1] }) < Math.max(400, r.total * 0.06);
     return seg;
   }
-  /* места по пути одним запросом: города и посёлки в коридоре вдоль трека (OSM Overpass); запасной путь — Nominatim по трём точкам */
+  /* места по пути — из тех же векторных тайлов, из которых рисуется карта (слой place): отдельный сервис не нужен, работает всегда, когда есть карта */
   async function waypointsFor(route, lang) {
-    const N = Math.min(40, route.n), idx = Array.from({ length: N }, (_, k) => Math.round((k * (route.n - 1)) / (N - 1)));
-    const km = route.total / 1000, rad = km < 30 ? 2500 : km < 150 ? 5000 : 8000;
-    const fracOf = (lat, lon) => { let bi = 0, bd = Infinity; for (let i = 0; i < route.n; i += Math.max(1, Math.floor(route.n / 400))) { const d = window.RouteLib.hav({ lat, lon }, { lat: route.lat[i], lon: route.lon[i] }); if (d < bd) { bd = d; bi = i; } } return { frac: route.D[bi] / route.total, lon: route.lon[bi], lat: route.lat[bi], off: bd }; };
-    try {
-      const poly = idx.map((i) => route.lat[i].toFixed(4) + ',' + route.lon[i].toFixed(4)).join(',');
-      const q = `[out:json][timeout:25];node(around:${rad},${poly})[place~"^(city|town${km < 60 ? '|village' : ''})$"][name];out 80;`;
-      const ask = async () => { const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 30000); try { const rs = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q), { signal: ac.signal }); if (!rs.ok) throw new Error('HTTP ' + rs.status); return await rs.json(); } finally { clearTimeout(tm); } };
-      let j; try { j = await ask(); } catch (e1) { await new Promise((r) => setTimeout(r, 2500)); j = await ask(); }
-      return (j.elements || []).map((e) => { const f = fracOf(e.lat, e.lon); return { name: e.tags['name:' + lang] || e.tags.name, kind: e.tags.place, pop: +e.tags.population || 0, frac: f.frac, lon: f.lon, lat: f.lat }; });
-    } catch (e) {
-      const out = [];
-      for (const fr of [0.3, 0.5, 0.7]) {
-        try {
-          const a = window.RouteLib.at(route, route.total * fr), lat = route.lat[a.i], lon = route.lon[a.i];
-          const jj = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=${lang}&lat=${lat}&lon=${lon}`)).json(); const ad = jj.address || {};
-          const name = ad.city || ad.town || ad.village || '';
-          if (name) out.push({ name, kind: ad.city ? 'city' : ad.town ? 'town' : 'village', pop: 0, frac: fr, lon, lat });
-        } catch (e2) { /* без сети — без мест */ }
-        await new Promise((r) => setTimeout(r, 1100));
+    const km = route.total / 1000, z = km < 25 ? 12 : km < 90 ? 11 : km < 400 ? 9 : 7, n2 = 1 << z;
+    const maxOff = km < 25 ? 1500 : km < 90 ? 3500 : km < 400 ? 7000 : 15000;
+    const keys = new Map(), step = Math.max(1, Math.floor(route.n / 400));
+    for (let i = 0; i < route.n; i += step) { const tx = Math.floor((route.X[i] / 256) * n2), ty = Math.floor((route.Y[i] / 256) * n2); for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { if (z >= 11 && (dx || dy)) continue; keys.set((tx + dx) + '/' + (ty + dy), [tx + dx, ty + dy]); } }
+    const tiles = [...keys.values()].filter(([x, y]) => x >= 0 && y >= 0 && x < n2 && y < n2).slice(0, 48).map(([x, y]) => ({ x, y, e: window.VMap.getTile(z, x, y) }));
+    await Promise.race([Promise.all(tiles.map((q) => q.e.p)), new Promise((r) => setTimeout(r, 15000))]);
+    const out = [];
+    for (const q of tiles) {
+      const L = q.e.data && q.e.data.place; if (!L) continue;
+      for (const F of L.feats) {
+        const kind = F.props.class; if (F.type !== 1 || !(kind === 'city' || kind === 'town' || kind === 'village')) continue;
+        const name = (lang === 'ru' && F.props['name:ru']) || F.props.name || F.props['name:latin']; if (!name) continue;
+        const wx = ((q.x + F.parts[0][0] / L.extent) / n2) * 256, wy = ((q.y + F.parts[0][1] / L.extent) / n2) * 256;
+        let bi = 0, bd = Infinity; for (let i = 0; i < route.n; i += step) { const d = Math.hypot(route.X[i] - wx, route.Y[i] - wy); if (d < bd) { bd = d; bi = i; } }
+        const lon = (wx / 256) * 360 - 180, lat = (Math.atan(Math.sinh(Math.PI * (1 - (2 * wy) / 256))) * 180) / Math.PI;
+        const off = window.RouteLib.hav({ lat, lon }, { lat: route.lat[bi], lon: route.lon[bi] });
+        out.push({ name, kind, pop: 100 - (F.props.rank != null ? F.props.rank : 50), frac: route.D[bi] / route.total, lon: route.lon[bi], lat: route.lat[bi], off });
       }
-      return out;
     }
+    route.placesAll = out;
+    return out.filter((w) => w.off <= maxOff * (w.kind === 'city' ? 1.6 : 1));
   }
+  // название места у точки маршрута — запасной путь, если адресный сервис промолчал
+  const nearName = (route, fr) => { const c = (route.placesAll || []).filter((w) => Math.abs(w.frac - fr) < 0.04 && w.off < 12000).sort((a, b) => a.off - b.off)[0]; return c ? c.name : ''; };
   function seriesInput() {
     if (isOwn()) return ownToday();
     let J = state.seriesBase, change = null;
@@ -337,7 +341,9 @@
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {
     const S = window.Director.summarize(J), fmt = (v) => Math.round(v).toLocaleString('ru-RU');
-    const ownHead = isOwn() ? `<div class="cand">${J.title} · ${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км · сохраняется в этом браузере</div>` : '';
+    const c0 = res.ctx, wxLine = J.schematic ? '' : `<div class="cand">${c0.weather ? 'Погода того дня: ' + c0.weather.head + (c0.weather.sub ? ' · ' + c0.weather.sub : '') : c0.seg.tAt ? (weatherJob ? 'Ищу погоду того дня…' : 'Погода того дня не найдена') : 'В файле нет времени — погода, свет и скорость недоступны'}</div>`;
+    const ownHead = (isOwn() && ownNote ? `<div class="warn">${ownNote}</div>` : '') + wxLine + (!isOwn() ? '' : `<div class="cand">${J.title} · ${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км · сохраняется в этом браузере</div>`);
+    setTimeout(() => { const g = $('glue'); if (g) g.onclick = () => { if (!farUndo) return; const u = farUndo; farUndo = null; state.seriesBase = u.base; handleFiles(u.files, true); }; }, 0);
     $('change').innerHTML = ownHead + (J.schematic ? `<b>Кругосветка @wahrider</b>${J.days.length} мест по постам · 7 260 км по словам автора` : change
       ? `<b>+${fmt(change.km)} км · День ${change.day}</b><br>${change.media ? change.media + ' фото · ' : ''}${change.notes ? 'заметка · ' : ''}всего ${fmt(change.totalAfter)} км${change.arrival ? ' · прибытие: ' + change.arrival : ''}${change.milestones.length ? ' · веха: ' + change.milestones.map(fmt).join(', ') + ' км' : ''}${change.gapKm > 30 ? `<div class="warn">Этот день начинается в ${fmt(change.gapKm)} км от места, где закончился предыдущий. Это точно продолжение путешествия?</div>` : ''}`
       : `<b>${J.title}</b><br>${S.daysCount} ${S.daysCount % 10 === 1 && S.daysCount % 100 !== 11 ? 'день' : S.daysCount % 10 >= 2 && S.daysCount % 10 <= 4 && (S.daysCount % 100 < 10 || S.daysCount % 100 >= 20) ? 'дня' : 'дней'} · ${fmt(S.totalKm)} км. Добавьте следующий день — свой GPX.`);
@@ -416,7 +422,8 @@
       saveOwn(); rebuild(true);
     } catch (e) { /* без сети вехи просто не появятся */ }
   }
-  async function handleFiles(files) {
+  let ownNote = '', farUndo = null;
+  async function handleFiles(files, glue) {
     showErr('');
     if (state.mode === 'track') { readFile(files[0]); return; }
     const got = []; let multi = 0;
@@ -434,6 +441,30 @@
     // свой трек начинает (или продолжает) своё путешествие — не клеится к демо
     if (!isOwn()) { state.seriesBase = loadOwnSaved() || newOwn(); state.route = null; }
     else bakeToday();
+    ownNote = '';
+    if (!glue) {
+      const hv = window.RouteLib.hav, P = (q) => ({ lon: q[0], lat: q[1] }), ends = (r) => [{ lon: r.lon[0], lat: r.lat[0] }, { lon: r.lon[r.n - 1], lat: r.lat[r.n - 1] }];
+      const sameDay = (d, r) => { const [a, b] = ends(r); return Math.abs(d.km - r.total / 1000) < Math.max(0.3, d.km * 0.01) && hv(P(d.line[0]), a) < 300 && hv(P(d.line[d.line.length - 1]), b) < 300; };
+      const days0 = [...state.seriesBase.days].sort((a, b) => a.day - b.day);
+      // 1) этот день уже есть в путешествии — не добавляем его второй раз
+      const fresh = got.filter((g) => !days0.some((d) => sameDay(d, g.r)));
+      if (fresh.length < got.length) {
+        const dup = got.find((g) => days0.some((d) => sameDay(d, g.r))), dd = days0.find((d) => sameDay(d, dup.r));
+        if (!fresh.length) {   // загружен только уже известный день: путешествие не растёт
+          const isLast = dd.day === days0[days0.length - 1].day;
+          if (!isLast) ownNote = `Этот день уже есть в путешествии (день ${dd.day}) — второй раз не добавляю.`;
+          else { state.route = dup.r; state.routeIsDemo = false; }
+          placePhotos(); refreshModes(); setMode('series'); play(true); $('continue').hidden = true; if (isLast) geocode(dup.r); return;
+        }
+        got.length = 0; fresh.forEach((g) => got.push(g));
+      }
+      // 2) трек начинается далеко от конца путешествия — это другое путешествие, а не «следующий день»
+      const lastD = days0[days0.length - 1];
+      if (lastD) {
+        const gap = hv(P(lastD.line[lastD.line.length - 1]), ends(got[0].r)[0]) / 1000;
+        if (gap > 80) { farUndo = { base: state.seriesBase, files }; state.seriesBase = newOwn(); ownNote = `Этот трек начинается в ${Math.round(gap).toLocaleString('ru-RU')} км от конца прошлого путешествия — начал новое. <button class="linkbtn" id="glue">Нет, это продолжение</button>`; }
+      }
+    }
     if (state.demoDay || state.demoNote) { photoFiles = photoFiles.filter((p) => !p.demo); if (state.demoNote) { state.o.note = ''; $('note').value = ''; } state.demoDay = false; state.demoNote = false; }
     got.forEach((g) => { state.seriesBase = window.Director.addDay(state.seriesBase, segOf(g.r, null), [], []).journey; });   // каждый файл — сохранённый день
     const last = got[got.length - 1];

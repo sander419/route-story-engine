@@ -144,8 +144,8 @@
     /* ---- свет по времени суток: настоящий час в точке, где сейчас едет путешественник; рассвет и закат — настоящие, если есть погода ---- */
     const WX = today.weather || null, tzSec = WX && WX.tz != null ? WX.tz : today.lon0 != null ? Math.round((today.lon0 / 15) * 3600) : null;
     const SR = WX && WX.sunrise != null ? WX.sunrise : 6.2, SS = WX && WX.sunset != null ? WX.sunset : 19.8;
-    const NIGHT = [22, 34, 92, 0.36], DAWN = [255, 138, 104, 0.2], NONE = [255, 220, 170, 0], GOLD = [255, 160, 56, 0.24], DUSK = [128, 78, 170, 0.3];
-    const LKEYS = [[SR - 1.3, NIGHT], [SR - 0.2, DAWN], [SR + 0.9, [255, 170, 120, 0.12]], [SR + 2.2, NONE], [SS - 2.8, NONE], [SS - 1.3, GOLD], [SS - 0.1, [255, 140, 60, 0.28]], [SS + 0.5, DUSK], [SS + 1.4, NIGHT]];
+    const NIGHT = [22, 34, 92, 0.4], DAWN = [255, 138, 104, 0.27], NONE = [255, 220, 170, 0], GOLD = [255, 160, 56, 0.32], DUSK = [128, 78, 170, 0.34];
+    const LKEYS = [[SR - 1.3, NIGHT], [SR - 0.2, DAWN], [SR + 0.9, [255, 170, 120, 0.12]], [SR + 2.2, NONE], [SS - 2.8, NONE], [SS - 1.3, GOLD], [SS - 0.1, [255, 132, 52, 0.36]], [SS + 0.5, DUSK], [SS + 1.4, NIGHT]];
     function lightAt(h) {
       if (h <= LKEYS[0][0] || h >= LKEYS[LKEYS.length - 1][0]) return NIGHT;
       let i = 1; while (i < LKEYS.length - 1 && LKEYS[i][0] < h) i++;
@@ -155,6 +155,7 @@
     const msAt = (fr) => { const A = today.tAt; if (!A || A.length < 2) return null; const x = clamp(fr, 0, 1) * (A.length - 1), i = Math.min(A.length - 2, Math.floor(x)); return lerp(A[i], A[i + 1], x - i); };
     const hourAt = (fr) => { const ms = msAt(fr); return ms == null || tzSec == null ? null : ((((ms / 1000 + tzSec) % 86400) + 86400) % 86400) / 3600; };
     const clockAt = (fr) => { const h = hourAt(fr); if (h == null || !(WX && WX.tz != null)) return ''; const m = Math.round(h * 60) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+    const tempAt = (fr) => { const A = WX && WX.temps; if (!A || A.length < 2) return ''; const x = clamp(fr, 0, 1) * (A.length - 1), i = Math.min(A.length - 2, Math.floor(x)), v = Math.round(lerp(A[i], A[i + 1], x - i)); return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '°'; };
     const OUTRO = { pullback: 1, 'progress-poster': 1, 'day-summary': 1, 'journey-recap': 1, 'season-card': 1, 'progress-overview': 1, 'day-barcode': 1, 'highlights-reel': 1 };
     /* ---- ветер и дождь: штрихи летят по настоящему направлению ветра; положение штрихов задано номером, а не случаем ---- */
     const frac = (v) => v - Math.floor(v);
@@ -167,8 +168,10 @@
         const along = (frac(h1 + (t * speed * (0.75 + 0.5 * h3)) / R) - 0.5) * R * 1.2, across = (h2 - 0.5) * R * 1.2;
         const x = W / 2 + dx * along - dy * across, y = H / 2 + dy * along + dx * across, L = len * (0.7 + 0.6 * h3);
         const edge = Math.sin(Math.PI * frac(h1 + (t * speed * (0.75 + 0.5 * h3)) / R));   // гаснут у краёв полёта
-        const g = ctx.createLinearGradient(x - dx * L, y - dy * L, x, y); g.addColorStop(0, color + '0)'); g.addColorStop(1, color + (a * (0.25 + 0.45 * h2) * edge).toFixed(3) + ')');
-        ctx.strokeStyle = g; ctx.beginPath(); ctx.moveTo(x - dx * L, y - dy * L); ctx.lineTo(x, y); ctx.stroke();
+        const al = a * (0.25 + 0.45 * h2) * edge;
+        if (n > 80) { ctx.strokeStyle = color + (al * 0.8).toFixed(3) + ')'; }   // дождь: штрихов много — без градиента, иначе кадр тяжёлый
+        else { const g = ctx.createLinearGradient(x - dx * L, y - dy * L, x, y); g.addColorStop(0, color + '0)'); g.addColorStop(1, color + al.toFixed(3) + ')'); ctx.strokeStyle = g; }
+        ctx.beginPath(); ctx.moveTo(x - dx * L, y - dy * L); ctx.lineTo(x, y); ctx.stroke();
       }
       ctx.restore();
     }
@@ -245,7 +248,7 @@
       if (a.max) { const w = ctx.measureText(str).width; if (w > a.max) ctx.font = `${wt} ${size * (a.max / w)}px ${fam}`; }
       ctx.fillText(str, x, y); ctx.restore();
     }
-    let LT_NO_SCRIM = false;
+    let LT_NO_SCRIM = false, mapCache = null, lastCam = null;
     const HAND = '"Caveat", "Segoe Print", cursive';
     // видимость надписи кадра: плавно появляется, держится, плавно уходит
     const vis = (lt, dur, delay = 0.15) => smooth((lt - delay) / FADE) * (1 - smooth((lt - (dur - FADE)) / FADE));
@@ -307,7 +310,20 @@
       // карта — спокойный фон: без подписей и мелочи
       // на общих планах — только суша, вода и границы; дороги и мелкие реки появляются лишь вблизи
       const close = c.z >= 9.6;
-      if (LY.map && S.vec) window.VMap.draw(ctx, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, { ...S.vec, font: S.fBody, road: close ? S.vec.road : null, rail: close ? S.vec.rail : null, noWaterways: c.z < 7.5 }, { fills: !TR, lines: true, labels: false }, lang, u);
+      if (LY.map && S.vec) {
+        const theme = { ...S.vec, font: S.fBody, road: close ? S.vec.road : null, rail: close ? S.vec.rail : null, noWaterways: c.z < 7.5 };
+        // камера стоит на месте (только лёгкий наезд) — карту не перерисовываем, а берём готовую картинку: кадр в несколько раз дешевле
+        const st = window.VMap.stamp(), M = mapCache, still = lastCam && lastCam.cx === c.cx && lastCam.cy === c.cy && !TR;
+        if (still && M && M.cx === c.cx && M.cy === c.cy && M.st === st && M.close === close && c.z >= M.z - 1e-9 && c.z - M.z < 0.2) {
+          const sc = Math.pow(2, c.z - M.z); ctx.drawImage(M.cv, ax - ax * sc, ay - ay * sc, W * sc, H * sc);
+        } else if (still) {
+          const cv = (M && M.cv) || document.createElement('canvas'); if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+          const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+          window.VMap.draw(g, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, theme, { fills: true, lines: true, labels: false }, lang, u);
+          mapCache = { cv, cx: c.cx, cy: c.cy, z: c.z, st, close }; ctx.drawImage(cv, 0, 0);
+        } else window.VMap.draw(ctx, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, theme, { fills: !TR, lines: true, labels: false }, lang, u);
+        lastCam = c;
+      }
       if (!TR && S.paper) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.12)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
       if (!TR) { // мягкая виньетка вместо полос
         const g = ctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.75);
@@ -393,7 +409,7 @@
         const a = onCard ? vis(lt, s.durationSec, 0) : onRide ? 0.5 * smooth(((su - s.move) * s.durationSec) / 1.2) * (1 - smooth((su - 0.9) / 0.07)) : 0;
         const col = S.paper ? 'rgba(70,48,30,' : 'rgba(225,238,255,';
         if (a > 0.01 && WX.precip >= 2) streaks(ctx, t, Math.min(1, a * 1.7), 168 + (WX.dir != null ? Math.sin((WX.dir * Math.PI) / 180) * -14 : 0), 1500 * u, 240, 58 * u, S.paper ? 'rgba(60,90,130,' : 'rgba(170,205,255,');
-        else if (a > 0.01 && WX.wind >= 4.5 && WX.dir != null) streaks(ctx, t, a, WX.dir + 180, (260 + WX.wind * 55) * u, 34, (110 + WX.wind * 14) * u, col);
+        else if (a > 0.01 && WX.wind >= 3 && WX.dir != null) streaks(ctx, t, a * clamp(WX.wind / 7, 0.5, 1), WX.dir + 180, (260 + WX.wind * 55) * u, 34, (110 + WX.wind * 14) * u, col);
       }
       LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
       if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: S.dim, align: 'center', alpha: 0.75, shadow: false });
@@ -413,7 +429,7 @@
         case 'trip-title': {
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
           const head = p.from && p.to && p.from !== p.to && !loopDay ? `${p.from} → ${p.to}` : p.to || p.from || p.name || journey.title || 'Маршрут';
-          centerTitle(ctx, a, dy, dateRu(p.date) || 'маршрут', head, (loopDay ? 'кольцо · ' : '') + fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', portrait ? 124 : 132);
+          centerTitle(ctx, a, dy, dateRu(p.date) || 'маршрут', head, (loopDay && head.toLowerCase() !== 'кольцо' ? 'кольцо · ' : '') + fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', portrait ? 124 : 132);
           break;
         }
         case 'day-summary': {
@@ -446,7 +462,7 @@
         case 'route-reveal': case 'camera-follow': {
           const km = p.km * todayReveal(t);
           const d0 = s.move * dur * (s.follow ? 1 : 0.85);   // титр — когда маршрут начинает рисоваться
-          const ck = clockAt(todayReveal(t));
+          const frNow = todayReveal(t), ck = [clockAt(frNow), tempAt(frNow)].filter(Boolean).join(' · ');
           lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), (single ? 'пройдено' : 'день ' + today.day) + (ck ? ' · ' + ck : ''), (single ? '' : '+') + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
           break;
         }

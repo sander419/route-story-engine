@@ -71,16 +71,16 @@
         try {
           const tj = await tilejson();
           const r = await fetch(tj.tiles[0].replace('{z}', z).replace('{x}', x).replace('{y}', y));
-          if (r.status === 404) { e.data = {}; e.done = true; onTile(); return; } // пустой тайл
+          if (r.status === 404) { e.data = {}; e.done = true; stamp++; onTile(); return; } // пустой тайл
           if (!r.ok) throw new Error('HTTP ' + r.status);
-          e.data = decodeTile(await r.arrayBuffer()); e.done = true; onTile();
+          e.data = decodeTile(await r.arrayBuffer()); e.done = true; stamp++; onTile();
         } catch (err) { if (++e.fail < 3) { await new Promise((r) => setTimeout(r, 500 * e.fail)); return attempt(); } e.done = true; }
       };
       e.p = attempt();
     }
     return e;
   }
-  let onTile = () => {};
+  let onTile = () => {}, stamp = 0;
 
   /* ---------- какие тайлы нужны на кадре ---------- */
   const TILE_LEVEL_BIAS = 0.6;
@@ -162,7 +162,9 @@
         const stroke = (L, color, w, filter, alpha, dash) => {
           if (!L) return; const kk = size / L.extent;
           ctx.save(); ctx.scale(kk, kk); ctx.strokeStyle = color; ctx.lineWidth = (w * u) / kk; if (alpha != null) ctx.globalAlpha = alpha; if (dash) ctx.setLineDash(dash.map((d) => (d * u) / kk));
-          for (const F of L.feats) { if (filter && !filter(F)) continue; path(L, F, F.type === 3); ctx.stroke(); }
+          ctx.beginPath();   // все линии слоя — одним контуром: в разы быстрее, чем обводить каждую по отдельности
+          for (const F of L.feats) { if (filter && !filter(F)) continue; const cl = F.type === 3; for (const pr of F.parts) { ctx.moveTo(pr[0], pr[1]); for (let i = 2; i < pr.length; i += 2) ctx.lineTo(pr[i], pr[i + 1]); if (cl) ctx.closePath(); } }
+          ctx.stroke();
           ctx.restore();
         };
         const z = cam.z;
@@ -239,5 +241,5 @@
     }
   }
 
-  window.VMap = { draw, tilesAt, getTile, setOnTile: (f) => { onTile = f; }, decodeTile };
+  window.VMap = { stamp: () => stamp, draw, tilesAt, getTile, setOnTile: (f) => { onTile = f; }, decodeTile };
 })();

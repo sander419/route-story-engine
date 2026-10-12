@@ -111,3 +111,5 @@ button:hover{border-color:var(--acc)}
 #mode button[data-v="journey"],#mode button[data-v="both"]{display:none}
 
 .warn{margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.5);font-size:13px}
+
+.linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
