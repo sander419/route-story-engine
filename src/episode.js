@@ -74,6 +74,73 @@
       'camera-follow': 'segment', 'checkpoint-arrival': 'end', 'photo-reveal': 'end', 'note-card': 'end', 'location-card': 'end', 'distance-counter': 'segment',
       'day-barcode': null, 'elevation-profile': 'segment', 'pullback': 'journey', 'progress-poster': 'journey', 'journey-recap': 'journey', 'highlights-reel': null,
     };
+    /* ---- камера-спутник для проезда: всё считается заранее, поэтому движение гладкое и одинаковое при каждом рендере ----
+       1) время: на экране путь идёт не равномерно, а по «интересу» — медленнее на поворотах, подъёмах, у мест по пути и на старте/финише;
+       2) камера: центр — сглаженное (по Гауссу) положение точки с небольшим упреждением, без рывков по построению;
+       3) масштаб «дышит»: где точка идёт медленно — ближе, где быстро — дальше. */
+    const FOLLOW_END = 0.97;
+    function gauss(arr, sigma) {
+      const n = arr.length, r = Math.max(1, Math.ceil(sigma * 3)), k = []; let ks = 0;
+      for (let i = -r; i <= r; i++) { const v = Math.exp(-(i * i) / (2 * sigma * sigma)); k.push(v); ks += v; }
+      const out = new Float64Array(n);
+      for (let i = 0; i < n; i++) { let a = 0; for (let j = -r; j <= r; j++) a += arr[clamp(i + j, 0, n - 1)] * k[j + r]; out[i] = a / ks; }
+      return out;
+    }
+    function buildFollow(s) {
+      const n = todayPts.length, total = todayCum[n - 1] || 1;
+      const at = (fr) => { const L = clamp(fr, 0, 1) * total; let i = 1; while (i < n - 1 && todayCum[i] < L) i++; const g = clamp((L - todayCum[i - 1]) / Math.max(1e-9, todayCum[i] - todayCum[i - 1]), 0, 1); return [lerp(todayPts[i - 1][0], todayPts[i][0], g), lerp(todayPts[i - 1][1], todayPts[i][1], g)]; };
+      // места по пути (их выбрал режиссёр)
+      const wps = (s.params.waypoints || []).map((w) => {
+        const q = [px(w.lon), py(w.lat)]; let bi = 0, bd = Infinity;
+        todayPts.forEach((pt, i) => { const d = Math.hypot(pt[0] - q[0], pt[1] - q[1]); if (d < bd) { bd = d; bi = i; } });
+        return { name: w.name, p: todayPts[bi], frac: todayCum[bi] / total };
+      }).filter((w) => w.frac > 0.06 && w.frac < 0.94).sort((a, b) => a.frac - b.frac);
+      // «интерес» вдоль пути → сколько экранного времени отдать каждому участку
+      const M = 400, P = Array.from({ length: M + 1 }, (_, k) => at(k / M)), prof = today.profile;
+      const pr = (fr) => { if (!prof) return 0; const x = clamp(fr, 0, 1) * (prof.length - 1), i = Math.min(prof.length - 2, Math.floor(x)); return lerp(prof[i], prof[i + 1], x - i); };
+      const span = prof ? Math.max(40, Math.max(...prof) - Math.min(...prof)) : 1;
+      let w = new Float64Array(M + 1);
+      for (let k = 0; k <= M; k++) {
+        const fr = k / M, a = P[Math.max(0, k - 5)], b = P[k], c = P[Math.min(M, k + 5)];
+        const v1 = [b[0] - a[0], b[1] - a[1]], v2 = [c[0] - b[0], c[1] - b[1]], l1 = Math.hypot(v1[0], v1[1]), l2 = Math.hypot(v2[0], v2[1]);
+        const turn = l1 > 0 && l2 > 0 ? clamp(Math.acos(clamp((v1[0] * v2[0] + v1[1] * v2[1]) / (l1 * l2), -1, 1)) / 1.2, 0, 1) : 0;
+        const climb = prof ? clamp((pr(fr + 0.025) - pr(fr - 0.025)) / (span * 0.22), 0, 1) : 0;
+        let v = 1 + 0.9 * turn + 1.1 * climb;
+        for (const q of wps) v += 1.8 * Math.exp(-Math.pow((fr - q.frac) / 0.035, 2));
+        v += 2.4 * Math.exp(-Math.pow(fr / 0.05, 2)) + 3 * Math.exp(-Math.pow((1 - fr) / 0.06, 2));   // мягкий старт и финиш
+        w[k] = v;
+      }
+      w = gauss(w, 7);
+      const T = new Float64Array(M + 1); for (let k = 1; k <= M; k++) T[k] = T[k - 1] + (w[k - 1] + w[k]) / 2;
+      const dur = s.durationSec * (FOLLOW_END - 0.12), N = Math.max(150, Math.round(dur * 30));   // ~30 отсчётов в секунду
+      const f = new Float64Array(N + 1); let kk = 1;
+      for (let j = 0; j <= N; j++) { const tt = (j / N) * T[M]; while (kk < M && T[kk] < tt) kk++; f[j] = clamp((kk - 1 + (tt - T[kk - 1]) / Math.max(1e-9, T[kk] - T[kk - 1])) / M, 0, 1); }
+      f[N] = 1;
+      const perSec = N / dur, la = Math.round(0.45 * perSec);
+      const hx = new Float64Array(N + 1), hy = new Float64Array(N + 1), lx = new Float64Array(N + 1), ly = new Float64Array(N + 1);
+      for (let j = 0; j <= N; j++) { const h = at(f[j]), l = at(f[Math.min(N, j + la)]); hx[j] = h[0]; hy[j] = h[1]; lx[j] = l[0]; ly[j] = l[1]; }
+      // масштаб: чем медленнее идёт точка, тем ближе камера
+      const sp = new Float64Array(N + 1); for (let j = 0; j <= N; j++) { const a = Math.max(0, j - 1), b = Math.min(N, j + 1); sp[j] = Math.hypot(hx[b] - hx[a], hy[b] - hy[a]) / (b - a); }
+      const ss = gauss(sp, 1.3 * perSec); let lo = Infinity, hi = -Infinity; for (const v of ss) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      // приближение подбирается так, чтобы карта плыла спокойно: не больше ~0,3 ширины кадра в секунду
+      const zf = Math.min(clamp(Math.log2((0.3 * Math.min(W, H) * dur) / total), CAM.segment.z + 0.35, CAM.segment.z + 1.6), 13.2);
+      let z = new Float64Array(N + 1); for (let j = 0; j <= N; j++) z[j] = zf + 0.32 - 0.64 * (hi > lo ? (ss[j] - lo) / (hi - lo) : 0.5);
+      z = gauss(z, 0.9 * perSec);
+      // центр камеры: сглаженная точка с упреждением; если точка уходит из кадра — сглаживаем слабее
+      let cx, cy, sig = 0.85 * perSec;
+      for (let tries = 0; tries < 4; tries++) {
+        cx = gauss(lx, sig); cy = gauss(ly, sig);
+        let off = 0; for (let j = 0; j <= N; j++) off = Math.max(off, Math.hypot(hx[j] - cx[j], hy[j] - cy[j]) * Math.pow(2, z[j]));
+        if (off < Math.min(W, H) * 0.3) break; sig *= 0.6;
+      }
+      const xAt = (fr) => { let j = 0; while (j < N && f[j] < fr) j++; return j / N; };
+      wps.forEach((q) => { q.x = xAt(q.frac); });
+      return { N, f, cx, cy, z, dur, wps, cam0: { cx: cx[0], cy: cy[0], z: z[0] }, cam1: { cx: cx[N], cy: cy[N], z: z[N] } };
+    }
+    const fSample = (F, arr, x) => { const q = clamp(x, 0, 1) * F.N, i = Math.min(F.N - 1, Math.floor(q)); return lerp(arr[i], arr[i + 1], q - i); };
+    // ход по заранее посчитанной траектории: разгон и торможение без скачка скорости на стыках с соседними кадрами
+    const followX = (s, uu) => { const q = clamp((uu - s.move) / (FOLLOW_END - s.move), 0, 1), e = 0.14, nrm = 1 - e; return (q < e ? (q * q) / (2 * e) : q > 1 - e ? 1 - e - ((1 - q) * (1 - q)) / (2 * e) : q - e / 2) / nrm; };
+
     const shots = plan.beats.map((b) => ({ ...b, t0: b.startSec, t1: b.startSec + b.durationSec }));
     const duration = plan.durationSec;
     // цепочка: каждый кадр начинается там, где закончился предыдущий
@@ -83,32 +150,18 @@
       const tg = TARGET[s.recipe];
       if (tg === 'high' && s.params.at) { s.hp = [px(s.params.at[0]), py(s.params.at[1])]; s.camTo = { cx: s.hp[0], cy: s.hp[1], z: Math.min(CAM.segment.z + 1.2, 13) }; }
       else s.camTo = tg && CAM[tg] ? CAM[tg] : prevEnd;
-      if (s.recipe === 'route-reveal') {
-        // места по пути: линия идёт от места к месту с мягкой остановкой, подпись держится до следующего места
-        const total = todayCum[todayCum.length - 1] || 1;
-        const wps = (s.params.waypoints || []).map((w) => {
-          const q = [px(w.lon), py(w.lat)]; let bi = 0, bd = Infinity;
-          todayPts.forEach((pt, i) => { const d = Math.hypot(pt[0] - q[0], pt[1] - q[1]); if (d < bd) { bd = d; bi = i; } });
-          return { name: w.name, p: todayPts[bi], frac: todayCum[bi] / total };
-        }).filter((w) => w.frac > 0.06 && w.frac < 0.94).sort((a, b) => a.frac - b.frac);
-        if (wps.length) {
-          const fr = [0, ...wps.map((w) => w.frac), 1], share = [];
-          for (let i = 1; i < fr.length; i++) share.push(Math.max(fr[i] - fr[i - 1], 0.6 / (fr.length - 1)));   // короткий отрезок не проскакивает
-          const sum = share.reduce((a, b) => a + b, 0); let acc = 0;
-          s.knots = [{ f: 0, x: 0 }, ...share.map((sh, i) => { acc += sh / sum; return { f: fr[i + 1], x: acc }; })];
-          s.wps = wps;
-        }
-      }
+      if (s.recipe === 'route-reveal' && todayPts.length > 2) { s.follow = buildFollow(s); s.camTo = s.follow.cam0; }
       // время перелёта зависит от его дальности: ~0,45 с на каждый уровень приближения (без рывков)
       const dz = Math.abs(s.camTo.z - s.camFrom.z), far = Math.hypot(s.camTo.cx - s.camFrom.cx, s.camTo.cy - s.camFrom.cy) * Math.pow(2, Math.max(s.camTo.z, s.camFrom.z)) / Math.max(W, H);
       const moveSec = clamp(1 + 0.45 * dz + 0.3 * Math.min(far, 4), 1.2, s.durationSec * (s.recipe === 'pullback' ? 0.78 : s.recipe === 'overview-to-detail' ? 0.88 : 0.62));
       s.move = clamp(moveSec / s.durationSec, 0.15, 0.9);
+      if (s.follow) { s.move = clamp(moveSec, 1.5, 2.6) / s.durationSec; s.follow.dur = s.durationSec * (FOLLOW_END - s.move); }
       if (s.recipe === 'journey-recap') {
         const hist = (s.params.history || []).filter((h) => dayEnd(h.day));
         s.stops = hist.map((h) => { const p = dayEnd(h.day); return { h, cam: { cx: p[0], cy: p[1], z: Math.min(CAM.journey.z + 1.8, 9) } }; });
         s.camTo = CAM.journey;
       }
-      prevEnd = s.recipe === 'journey-recap' ? s.camTo : { ...s.camTo, z: s.camTo.z + 0.08 };   // учитываем дрейф — следующий кадр стартует ровно отсюда
+      prevEnd = s.follow ? s.follow.cam1 : s.recipe === 'journey-recap' ? s.camTo : { ...s.camTo, z: s.camTo.z + 0.08 };   // учитываем дрейф — следующий кадр стартует ровно отсюда
     }
     function shotAt(t) { let i = shots.findIndex((s) => t < s.t1); if (i < 0) i = shots.length - 1; const s = shots[i]; return { i, s, u: clamp((t - s.t0) / s.durationSec, 0, 1), lt: t - s.t0 }; }
     function recapState(s, uu) {
@@ -123,19 +176,20 @@
         const from = r.k === 0 ? s.camFrom : s.stops[r.k - 1].cam;
         return glide(from, s.stops[r.k].cam, sine(r.f / 0.32));
       }
+      if (s.follow) {
+        if (uu < s.move) return glide(s.camFrom, s.follow.cam0, sine(uu / s.move));
+        const x = followX(s, uu), F = s.follow;
+        return { cx: fSample(F, F.cx, x), cy: fSample(F, F.cy, x), z: fSample(F, F.z, x) };
+      }
       const c = glide(s.camFrom, s.camTo, sine(uu / s.move));
       return { ...c, z: c.z + 0.08 * smooth((uu - s.move) / (1 - s.move)) };   // мягкий дрейф после движения
     }
     function todayReveal(t) {
       const s = shots.find((x) => x.recipe === 'route-reveal' || x.recipe === 'camera-follow');
       if (!s) return 1; if (t < s.t0) return 0; if (t >= s.t1) return 1;
-      const x = revealX(s, t);
-      if (!s.knots) return sine(x);   // рисуем, когда камера уже прилетела
-      let i = 1; while (i < s.knots.length - 1 && x > s.knots[i].x) i++;
-      const a = s.knots[i - 1], b = s.knots[i];
-      return lerp(a.f, b.f, sine((x - a.x) / Math.max(1e-6, b.x - a.x)));
+      if (s.follow) { const uu = (t - s.t0) / s.durationSec; return uu < s.move ? 0 : fSample(s.follow, s.follow.f, followX(s, uu)); }
+      return sine(clamp(((t - s.t0) / s.durationSec - s.move * 0.85) / (0.95 - s.move * 0.85), 0, 1));
     }
-    const revealX = (s, t) => clamp(((t - s.t0) / s.durationSec - s.move * 0.85) / (0.95 - s.move * 0.85), 0, 1);
     function pastReveal(t) {
       const po = shots.find((x) => x.recipe === 'progress-overview');
       if (po) { if (t < po.t0) return 0; return sine(clamp((t - po.t0) / (po.durationSec * 0.8), 0, 1)); }
@@ -278,25 +332,18 @@
           ctx.restore();
         }
       }
-      // места по пути: появляются, когда линия до них дошла
-      if (LY.hud && s.recipe === 'route-reveal' && s.wps) {
-        const x = revealX(s, t), span = (0.95 - s.move * 0.85) * s.durationSec;
-        if (fromLabel) {
-          const a0 = smooth((x * span - 0.1) / FADE) * smooth(((s.knots[1].x - x) * span + 0.1) / FADE);
-          if (a0 > 0.01) { const p0 = todayPts[0], wx = X(p0), wy = Y(p0), right = wx < W * 0.56; T(ctx, fromLabel, wx + (right ? 30 : -30) * u, wy + 20 * u, { size: portrait ? 62 : 56, fam: S.fHead, weight: S.headW, align: right ? 'left' : 'right', alpha: a0, max: (right ? W - wx : wx) - 60 * u }); }
-        }
-        s.wps.forEach((w, i) => {
-          const tIn = (x - s.knots[i + 1].x) * span, tOut = (s.knots[i + 2].x - x) * span;   // от прибытия до следующего места
-          const a = smooth((tIn + 0.25) / FADE) * smooth((tOut + 0.1) / FADE);
-          if (a <= 0.01) return;
-          const wx = X(w.p), wy = Y(w.p), right = wx < W * 0.56;
-          ctx.save(); ctx.globalAlpha = a;
-          ctx.beginPath(); ctx.arc(wx, wy, 13 * u, 0, 6.2832); ctx.fillStyle = S.paper ? '#fbf3df' : '#ffffff'; ctx.fill(); ctx.lineWidth = 5 * u; ctx.strokeStyle = S.accent; ctx.stroke();
-          T(ctx, w.name, wx + (right ? 34 : -34) * u, wy + 20 * u, { size: portrait ? 62 : 56, fam: S.fHead, weight: S.headW, align: right ? 'left' : 'right', max: (right ? W - wx : wx) - 60 * u });
-          ctx.restore();
+      // места по пути: появляются, когда линия до них дошла, и держатся не меньше ~3 с
+      if (LY.hud && s.recipe === 'route-reveal' && s.follow && su >= s.move) {
+        const F = s.follow, x = followX(s, su), sec = (v) => v * F.dur;
+        const lab = (name, p0, a0) => { if (a0 <= 0.01) return; const wx = X(p0), wy = Y(p0), right = wx < W * 0.56;
+          ctx.save(); ctx.globalAlpha = a0; ctx.beginPath(); ctx.arc(wx, wy, 13 * u, 0, 6.2832); ctx.fillStyle = S.paper ? '#fbf3df' : '#ffffff'; ctx.fill(); ctx.lineWidth = 5 * u; ctx.strokeStyle = S.accent; ctx.stroke(); ctx.restore();
+          T(ctx, name, wx + (right ? 34 : -34) * u, wy + 20 * u, { size: portrait ? 64 : 58, fam: S.fHead, weight: S.headW, align: right ? 'left' : 'right', alpha: a0, max: (right ? W - wx : wx) - 60 * u, shadowC: S.paper ? 'rgba(239,230,210,.95)' : 'rgba(4,8,18,.9)' }); };
+        if (fromLabel) lab(fromLabel, todayPts[0], smooth(sec(x) / FADE) * (1 - smooth((sec(x) - 2.8) / FADE)));
+        F.wps.forEach((q, i) => {
+          const nx = F.wps[i + 1] ? F.wps[i + 1].x : 2, hold = clamp(sec(nx - q.x) - 0.3, 2.2, 3.6), dt = sec(x - q.x);
+          lab(q.name, q.p, smooth((dt + 0.2) / FADE) * (1 - smooth((dt - hold) / FADE)));
         });
       }
-
       LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
       if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: S.dim, align: 'center', alpha: 0.75, shadow: false });
       T(ctx, S.credit, W / 2, H - (S.paper ? 46 : 22) * u, { size: 15, weight: 500, color: S.dim, align: 'center', alpha: 0.55, shadow: false });
@@ -305,7 +352,8 @@
 
     function hud(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, p = s.params || {}, a = vis(lt, dur), dy = rise(lt);
-      const route2 = [fromLabel, toLabel].filter(Boolean).join(' → ');
+      const loopDay = !!today.loop;
+      const route2 = loopDay ? [fromLabel || toLabel, 'кольцо'].filter(Boolean).join(' · ') : [fromLabel, toLabel].filter(Boolean).join(' → ');
       switch (s.recipe) {
         case 'day-card':
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
@@ -313,13 +361,13 @@
           break;
         case 'trip-title': {
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
-          const head = p.from && p.to && p.from !== p.to ? `${p.from} → ${p.to}` : p.to || p.from || p.name || journey.title || 'Маршрут';
-          centerTitle(ctx, a, dy, dateRu(p.date) || 'маршрут', head, fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', portrait ? 124 : 132);
+          const head = p.from && p.to && p.from !== p.to && !loopDay ? `${p.from} → ${p.to}` : p.to || p.from || p.name || journey.title || 'Маршрут';
+          centerTitle(ctx, a, dy, dateRu(p.date) || 'маршрут', head, (loopDay ? 'кольцо · ' : '') + fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', portrait ? 124 : 132);
           break;
         }
         case 'day-summary': {
           dim(ctx, 0.5 * smooth((lt - 0.3) / FADE), TR);
-          const head = p.from && p.to && p.from !== p.to ? `${p.from} → ${p.to}` : p.to || p.from || p.name || 'итог';
+          const head = loopDay ? route2 || 'кольцо' : p.from && p.to && p.from !== p.to ? `${p.from} → ${p.to}` : p.to || p.from || p.name || 'итог';
           const sub = [p.time, p.gain ? '+' + fmtN(p.gain) + ' м' : null, p.time || p.gain ? null : dateRu(p.date)].filter(Boolean).join('  ·  ');
           centerTitle(ctx, smooth((lt - 0.5) / FADE), rise(lt, 0.5), head, fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', sub, 200);
           break;
@@ -342,12 +390,12 @@
           break;
         case 'route-reveal': case 'camera-follow': {
           const km = p.km * todayReveal(t);
-          const d0 = s.move * dur * 0.85;   // титр — когда маршрут начинает рисоваться
+          const d0 = s.move * dur * (s.follow ? 1 : 0.85);   // титр — когда маршрут начинает рисоваться
           lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), single ? 'пройдено' : 'день ' + today.day, (single ? '' : '+') + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
           break;
         }
         case 'checkpoint-arrival':
-          lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : single ? (dateRu(today.date) || '') : 'день ' + today.day);
+          lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : single ? (dateRu(today.date) || '') : 'день ' + today.day);
           break;
         case 'photo-reveal': case 'highlights-reel': {
           const ids = (p.mediaIds || []).filter((id) => mediaById[id]), n = ids.length; if (!n) break;

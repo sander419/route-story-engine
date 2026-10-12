@@ -141,7 +141,8 @@
       const u = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=${state.o.lang}&lat=${route.lat[i]}&lon=${route.lon[i]}`;
       const j = await (await fetch(u)).json(); const a = j.address || {};
       // населённый пункт важнее района: «Листвянка», а не «Иркутский муниципальный округ»
-      return { place: a.city || a.town || a.village || a.hamlet || a.suburb || a.municipality || a.county || a.state || '', country: a.country || '' };
+      const adm = [a.municipality, a.county, a.state].find((x) => x && !/поселение|округ|район|область|край|municipal|district|county/i.test(x)) || '';   // «Селецкое сельское поселение» в титр не годится
+      return { place: a.city || a.town || a.village || a.hamlet || a.suburb || adm, country: a.country || '' };
     };
     try {
       const [a, b] = await Promise.all([one(0), one(route.n - 1)]);
@@ -236,6 +237,8 @@
     }
     if (r.t && r.stats.avg) { seg.movingH = Math.round((r.stats.moving / 3.6e6) * 100) / 100; seg.avgKmh = Math.round(r.stats.avg * 10) / 10; }
     if (r.meta) { seg.from = r.meta.from || null; seg.waypoints = r.meta.waypoints || []; }
+    // кольцо: финиш рядом со стартом
+    seg.loop = window.RouteLib.hav({ lat: r.lat[0], lon: r.lon[0] }, { lat: r.lat[r.n - 1], lon: r.lon[r.n - 1] }) < Math.max(400, r.total * 0.06);
     return seg;
   }
   /* места по пути одним запросом: города и посёлки в коридоре вдоль трека (OSM Overpass); запасной путь — Nominatim по трём точкам */

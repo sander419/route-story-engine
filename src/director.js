@@ -154,9 +154,9 @@
       eligible: (c) => c.type !== 'story-so-far',
       base: (c) => ({ relevance: 1, novelty: 1, emotion: c.waypoints.length ? 0.6 : 0.4, visual: c.sinuosity > 1.25 || c.waypoints.length ? 0.7 : 0.5, milestone: 0 }),
       // с местами по пути линия идёт от места к месту: на каждое — не меньше ~3,4 с (ничего не мелькает)
-      pref: (c) => (c.waypoints.length ? 2.4 + (c.waypoints.length + 1) * 3.4 : clamp(5.5 + Math.log10(Math.max(1, c.newKm)) * 0.6, 5.5, 7.5)),
-      minFor: (c) => (c.waypoints.length ? 2 + (c.waypoints.length + 1) * 3.1 : 5),
-      maxFor: (c) => (c.waypoints.length ? 18 : 8),
+      pref: (c) => (c.waypoints.length ? 3 + (c.waypoints.length + 1) * 3.4 : clamp(7 + Math.log10(Math.max(1, c.newKm)) * 1.2, 7, 10.5)),
+      minFor: (c) => (c.waypoints.length ? 2.6 + (c.waypoints.length + 1) * 3.1 : 6.5),
+      maxFor: (c) => (c.waypoints.length ? 18 : 12),
       params: (c) => ({ day: c.day, km: c.newKm, waypoints: c.waypoints }) },
     { id: 'camera-follow', beats: ['new-leg'], min: 3.6, max: 6.5, flex: true, hero: true,
       eligible: () => false,   // отключено: слежение за точкой дёргает камеру (правила кадра)
