@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Не пускает в коммит файлы крупнее 10 МБ (ролики раздули .git до 1,6 ГБ).
+# Включается один раз: git config core.hooksPath .githooks
+LIMIT=$((10 * 1024 * 1024))
+bad=0
+
+while IFS= read -r -d '' f; do
+  size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
+  if [ "$size" -gt "$LIMIT" ]; then
+    echo "pre-commit: файл крупнее 10 МБ: $f ($((size / 1024 / 1024)) МБ)"
+    bad=1
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACM -z)
+
+if [ $bad -eq 1 ]; then
+  echo "Коммит остановлен. Убери файл из индекса: git reset -- <файл>"
+  echo "Или спроси Сашу, если большой файл нужен."
+  exit 1
+fi
+exit 0
