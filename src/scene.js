@@ -68,7 +68,7 @@
       head: '#fffaf0', headHalo: 'rgba(176,42,12,.35)',
       ink: '#2a1c12', dim: 'rgba(42,28,18,.68)', accent: '#b02a0c',
       panel: 'rgba(247,236,211,.93)', panelLine: 'rgba(92,58,30,.55)',
-      fHead: '"Playfair Display", Georgia, serif', fBody: '"Inter", "Segoe UI", system-ui, sans-serif', headW: 800,
+      fHead: '"Yeseva One", "RS Geologica", Georgia, serif', headW: 400, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif', 
       scrim: [239, 230, 210], paper: true, credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
     },
     night: {
@@ -81,7 +81,7 @@
       head: '#ffffff', headHalo: 'rgba(255,190,110,.55)',
       ink: '#f6f8fc', dim: 'rgba(226,232,240,.66)', accent: '#ffb454',
       panel: 'rgba(8,12,20,.72)', panelLine: 'rgba(148,163,184,.28)',
-      fHead: '"Oswald", "Arial Narrow", sans-serif', fBody: '"Inter", "Segoe UI", system-ui, sans-serif', headW: 700,
+      fHead: '"RS DINish", "RS Geologica", "Arial Narrow", sans-serif', headW: 700, fNum: '"RS DINish", "RS Geologica", sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
       scrim: [4, 8, 18], credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
     },
     navigator: {
@@ -92,7 +92,7 @@
       head: '#e9f9ff', headHalo: 'rgba(240,93,225,.5)',
       ink: '#e9f9ff', dim: 'rgba(185,227,245,.72)', accent: '#43e7ff',
       panel: 'rgba(9,14,26,.78)', panelLine: 'rgba(67,231,255,.4)',
-      fHead: '"Oswald", "Arial Narrow", sans-serif', fBody: '"Inter", "Segoe UI", system-ui, sans-serif', headW: 700,
+      fHead: '"RS DINish", "RS Geologica", "Arial Narrow", sans-serif', headW: 700, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
       scrim: [9, 14, 26], credit: '',
     },
     sat: {
@@ -105,7 +105,7 @@
       head: '#ffffff', headHalo: 'rgba(253,224,71,.5)',
       ink: '#ffffff', dim: 'rgba(255,255,255,.7)', accent: '#fde047',
       panel: 'rgba(10,14,10,.7)', panelLine: 'rgba(255,255,255,.25)',
-      fHead: '"Oswald", "Arial Narrow", sans-serif', fBody: '"Inter", "Segoe UI", system-ui, sans-serif', headW: 700,
+      fHead: '"RS Geologica", "Segoe UI", system-ui, sans-serif', headW: 700, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
       scrim: [0, 0, 0], credit: 'Imagery © Esri, Maxar, Earthstar Geographics',
     },
   };

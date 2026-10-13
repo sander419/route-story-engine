@@ -1,0 +1,35 @@
+{
+ "total": 309324,
+ "fonts": {
+  "RS Geologica": {
+   "file": "geologica.woff2",
+   "bytes": 96596,
+   "tnumGlyphsMapped": 0,
+   "missingGlyphs": ""
+  },
+  "RS Geologica Num": {
+   "file": "geologica-num.woff2",
+   "bytes": 90544,
+   "tnumGlyphsMapped": 10,
+   "missingGlyphs": ""
+  },
+  "RS DINish": {
+   "file": "dinish.woff2",
+   "bytes": 58300,
+   "tnumGlyphsMapped": 10,
+   "missingGlyphs": "→≈№"
+  },
+  "Yeseva One": {
+   "file": "yeseva-one.woff2",
+   "bytes": 36608,
+   "modified": false,
+   "missingGlyphs": "−→≈"
+  },
+  "Marck Script": {
+   "file": "marck-script.woff2",
+   "bytes": 27276,
+   "modified": false,
+   "missingGlyphs": "−→"
+  }
+ }
+}

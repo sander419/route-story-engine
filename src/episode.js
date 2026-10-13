@@ -293,7 +293,10 @@
       ctx.fillText(str, x, y); ctx.restore();
     }
     let LT_NO_SCRIM = false, mapCache = null, lastCam = null;
-    const HAND = '"Caveat", "Segoe Print", cursive';
+    const HAND = '"Marck Script", "RS Geologica", "Segoe Script", cursive';
+    // строки с цифрами — данные: шрифт S.fNum с табличными цифрами; слова (места, заголовки) — S.fHead с трекингом заголовка −2 %
+    const withDigits = (str) => /\d/.test(String(str));
+    const headStyle = (str, size) => (withDigits(str) ? { fam: S.fNum, weight: S.numW, ls: 0 } : { fam: S.fHead, weight: S.headW, ls: -0.02 * size });
     // видимость надписи кадра: плавно появляется, держится, плавно уходит
     const vis = (lt, dur, delay = 0.15) => smooth((lt - delay) / FADE) * (1 - smooth((lt - (dur - FADE)) / FADE));
     const rise = (lt, delay = 0.15) => (1 - sine((lt - delay) / 0.8)) * 26 * u;
@@ -312,8 +315,8 @@
         ctx.fillStyle = g; ctx.fillRect(0, y0, W, H - y0);
       }
       ctx.fillStyle = S.accent; ctx.fillRect(mx, ky - ks * 1.5 * u, 72 * u, 7 * u);
-      T(ctx, kicker && kicker.toUpperCase(), mx, ky, { size: ks, weight: 700, color: S.accent, ls: 6, max: maxW, shadow: !!onPhoto, shadowC: sh });
-      T(ctx, title, mx, ty, { size: ts, fam: S.fHead, weight: S.headW, max: maxW, color: ink, shadowC: sh, shadow: !!onPhoto });
+      T(ctx, kicker && kicker.toUpperCase(), mx, ky, { size: ks, weight: 700, color: S.accent, ls: ks * 0.05, max: maxW, shadow: !!onPhoto, shadowC: sh });
+      T(ctx, title, mx, ty, { size: ts, ...headStyle(title, ts), max: maxW, color: ink, shadowC: sh, shadow: !!onPhoto });
       if (sub) T(ctx, sub, mx, base, { size: ss, weight: 500, color: dimC, max: maxW, shadowC: sh, shadow: !!onPhoto });
       ctx.restore();
     }
@@ -321,8 +324,8 @@
       if (a <= 0.01) return;
       const my = H * (portrait ? 0.45 : 0.47) + dy;
       ctx.save(); ctx.globalAlpha = a;
-      T(ctx, kicker && kicker.toUpperCase(), W / 2, my - bigSize * 0.62 * u, { size: 34, weight: 700, color: S.accent, ls: 14, align: 'center' });
-      T(ctx, big, W / 2, my + bigSize * 0.28 * u, { size: bigSize, fam: S.fHead, weight: S.headW, align: 'center', max: W - 2 * mx });
+      T(ctx, kicker && kicker.toUpperCase(), W / 2, my - bigSize * 0.62 * u, { size: 34, weight: 700, color: S.accent, ls: 34 * 0.05, align: 'center' });
+      T(ctx, big, W / 2, my + bigSize * 0.28 * u, { size: bigSize, ...headStyle(big, bigSize), align: 'center', max: W - 2 * mx });
       T(ctx, sub, W / 2, my + bigSize * 0.28 * u + 70 * u, { size: 40, weight: 600, align: 'center', max: W - 2 * mx, alpha: 0.9 });
       ctx.restore();
     }
@@ -338,8 +341,8 @@
       }
       const lh = size * 1.12, blockH = lines.length * lh, cy = H * (portrait ? 0.46 : 0.5) + dy, top = cy - blockH / 2, mr = (portrait ? 92 : 78) * u;
       ctx.save(); ctx.globalAlpha = a; if (MARK) drawMark(ctx, MARK, W / 2, top - 120 * u - mr, mr, MCOL, 0); ctx.restore();
-      T(ctx, kicker && kicker.toUpperCase(), W / 2, top - 44 * u, { size: 32, weight: 700, color: S.accent, ls: 10, align: 'center', alpha: a, max: maxW });
-      lines.forEach((ln, i) => T(ctx, ln, W / 2, top + lh * (i + 0.82), { size: size / u, fam: S.fHead, weight: S.headW, align: 'center', alpha: a }));
+      T(ctx, kicker && kicker.toUpperCase(), W / 2, top - 44 * u, { size: 32, weight: 700, color: S.accent, ls: 32 * 0.05, align: 'center', alpha: a, max: maxW });
+      lines.forEach((ln, i) => T(ctx, ln, W / 2, top + lh * (i + 0.82), { size: size / u, fam: S.fHead, weight: S.headW, ls: -0.02 * (size / u), align: 'center', alpha: a }));
       T(ctx, sub, W / 2, top + blockH + 62 * u, { size: 40, weight: 600, align: 'center', alpha: a * 0.9, max: maxW });
     }
     function dim(ctx, a, TR) { if (TR || a <= 0.01) return; ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = `rgb(${S.scrim.join(',')})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
@@ -560,12 +563,12 @@
           dim(ctx, 0.55 * vis(lt, dur, 0), TR);
           const txt = p.text || '';
           ctx.save(); ctx.globalAlpha = a;
-          const size = (portrait ? 96 : 84) * u; ctx.font = `700 ${size}px ${HAND}`;
+          const size = (portrait ? 96 : 84) * u; ctx.font = `400 ${size}px ${HAND}`;
           const words = ('«' + txt + '»').split(/\s+/), lines = []; let cur = '';
           for (const w of words) { const tt = cur ? cur + ' ' + w : w; if (ctx.measureText(tt).width > W - 2 * mx && cur) { lines.push(cur); cur = w; } else cur = tt; }
           lines.push(cur);
           T(ctx, 'из дневника · день ' + today.day, W / 2, H * 0.45 - lines.length * size * 0.55 - 40 * u + dy, { size: 30, weight: 700, color: S.accent, ls: 8, align: 'center' });
-          lines.forEach((ln, i) => T(ctx, ln, W / 2, H * 0.45 + (i - (lines.length - 1) / 2) * size * 1.1 + dy, { size: size / u, fam: HAND, weight: 700, align: 'center', color: S.paper ? '#3b2412' : '#fffbea' }));
+          lines.forEach((ln, i) => T(ctx, ln, W / 2, H * 0.45 + (i - (lines.length - 1) / 2) * size * 1.1 + dy, { size: size / u, fam: HAND, weight: 400, align: 'center', color: S.paper ? '#3b2412' : '#fffbea' }));
           ctx.restore();
           break;
         }
@@ -597,7 +600,7 @@
             if (p.maxEle != null && g >= mi) {
               const ma = smooth((g - mi) / 3) * vis(lt, dur, 0), tx = clamp(PX(mi), mx + 150 * u, W - mx - 150 * u);
               ctx.save(); ctx.globalAlpha = ma; ctx.beginPath(); ctx.arc(PX(mi), PY(hi), 12 * u, 0, 6.2832); ctx.fillStyle = S.head; ctx.fill(); ctx.restore();
-              T(ctx, fmtN(p.maxEle) + ' м', tx, PY(hi) - 34 * u, { size: 54, fam: S.fHead, weight: S.headW, align: 'center', alpha: ma });
+              T(ctx, fmtN(p.maxEle) + ' м', tx, PY(hi) - 34 * u, { size: 54, fam: S.fNum, weight: S.numW, align: 'center', alpha: ma });
             }
           }
           lowerThird(ctx, a, dy, 'набор высоты', '+' + fmtN(p.gain) + ' м', pr ? 'рельеф дня' : 'за день ' + today.day);

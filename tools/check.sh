@@ -14,7 +14,7 @@ trap 'kill $SERVER 2>/dev/null' EXIT
 sleep 2
 
 fail=0
-for t in tools/route-test.mjs tools/director-test.mjs tools/smoke.mjs tools/own-journey-test.mjs; do
+for t in tools/route-test.mjs tools/director-test.mjs tools/smoke.mjs tools/own-journey-test.mjs tools/fonts-test.mjs; do
   echo "=== $t"
   if node "$t" >/tmp/check-out 2>&1; then
     echo "OK"

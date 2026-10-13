@@ -17,7 +17,7 @@
 
   /* ---- шрифты ---- */
   const fontsReady = Promise.all(
-    ['700 40px Caveat', '700 40px Oswald', '600 40px Oswald', '600 30px Inter', '500 30px Inter', '800 40px "Playfair Display"', '600 30px Lora', '500 30px Lora']
+    ['400 40px "Yeseva One"', '400 40px "Marck Script"', '700 40px "RS DINish"', '400 30px "RS Geologica"', '500 30px "RS Geologica"', '600 30px "RS Geologica"', '700 30px "RS Geologica"', '700 40px "RS Geologica Num"']
       .map((f) => document.fonts.load(f, 'АаЯя Aa 0123').catch(() => {}))
   ).then(() => document.fonts.ready).catch(() => {});
 

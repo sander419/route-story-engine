@@ -20,7 +20,8 @@
 - `barbos-kit.json`: `referencePost: 243`, `configuration: "A"`, `version`, `reviewStatus: "candidate, не утверждён Сашей"`, `sourceSha256`, список файлов с размерами.
 - Сравнение «фото 243 ↔ маркер ↔ стикер» одной картинкой `barbos-vs-photo.png`.
 
-## 2. Шрифты проекта (`assets/fonts/`)
+## 2. Шрифты проекта — ✅ СДЕЛАНО Claude Code 14.10 (коммит ниже), Codex этот пункт НЕ делает
+Готово в корне проекта: `fonts/` (Yeseva One, Marck Script, RS Geologica, RS Geologica Num, RS DINish — 302 КБ, лицензии, `fonts.css`, `build-report.json`), сборка `tools/build-fonts.py`, проверка `tools/fonts-test.mjs`, подключено во все стили. IBM Plex Mono не нужен (моноширинная запятая рвёт десятичные числа). Не создавай `assets/fonts/`. Остаётся от тебя только `design/typography-plan.md` — по готовым семействам (см. `fonts/README.md`), если ещё не написан. Исходный текст пункта ниже оставлен для истории.
 Из волта `Атлас/Заметки/Дизайн/Typography Collection 2026/fonts/` взять **только нужные** семейства: **DINish, Geologica, Yeseva One, Prata, Marck Script** и **IBM Plex Mono Bold** (WOFF2 + `LICENSE.txt` рядом с каждым, это условие OFL).
 - `assets/fonts/fonts.css` с **настоящими именами семейств без префикса «TC »** (`'DINish'`, `'Geologica'`, …): `@font-face` с диапазоном весов для вариативных, `font-display: block`.
 - ⚠ В исходной коллекции семейства названы `'TC …'`, и `document.fonts.check()` для незагруженного шрифта возвращает `true` — проверяй только по `document.fonts` (статус `loaded`) и по `ctx.measureText` на канвасе (ширина должна отличаться от запасного шрифта).

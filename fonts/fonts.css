@@ -1,0 +1,6 @@
+/* Шрифты проекта: хранятся в репозитории, из сети не грузятся. Сборка — tools/build-fonts.py. */
+@font-face{font-family:'RS Geologica';src:url('geologica.woff2') format('woff2');font-weight:400 800;font-style:normal;font-display:block}
+@font-face{font-family:'RS Geologica Num';src:url('geologica-num.woff2') format('woff2');font-weight:400 800;font-style:normal;font-display:block}
+@font-face{font-family:'RS DINish';src:url('dinish.woff2') format('woff2');font-weight:400 800;font-style:normal;font-display:block}
+@font-face{font-family:'Yeseva One';src:url('yeseva-one.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
+@font-face{font-family:'Marck Script';src:url('marck-script.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}

@@ -219,7 +219,7 @@
       }
       cand.sort((a, b) => a.r - b.r || a.q - b.q);
       const taken = []; let shown = 0;
-      const fam = theme.font || 'Inter, sans-serif';
+      const fam = theme.font || '"RS Geologica", system-ui, sans-serif';
       for (const c of cand) {
         if (shown > (theme.maxLabels || 38)) break;
         const size = ([36, 30, 31, 26, 22, 19, 17, 20][c.r]) * u * (theme.labelScale || 1);

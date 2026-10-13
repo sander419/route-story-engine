@@ -76,9 +76,8 @@
 | [Nominatim](https://nominatim.openstreetmap.org/) | названия старта и финиша | координаты нескольких точек |
 | [Open-Meteo](https://open-meteo.com/) | погода того дня | координаты и дата трека |
 | Esri World Imagery | подложка только в стиле «Спутник» | номера плиток |
-| Google Fonts | шрифты титров | запрос шрифтов (скоро будут храниться в проекте) |
 
-Без сети карта не загрузится; без Nominatim, Open-Meteo и шрифтов ролик экспортируется, но беднее (проверено тестом). Если нужна страховка от плохой сети — готовые ролики лежат в [`exports/`](exports).
+Шрифты хранятся в проекте ([`fonts/`](fonts), 302 КБ) и из сети не грузятся. Без сети карта не загрузится; без Nominatim и Open-Meteo ролик экспортируется, но беднее (проверено тестом). Если нужна страховка от плохой сети — готовые ролики лежат в [`exports/`](exports).
 
 ## Как устроен экспорт
 
@@ -107,9 +106,10 @@ python -m http.server 4180
 |---|---|---|
 | `node tools/route-test.mjs` | подготовка маршрута: разрывы, скачки высоты, 180-й меридиан, сбой (0,0), прореживание | только Node |
 | `node tools/director-test.mjs` | режиссёр: 10 случаев, детерминированность планов | только Node |
+| `node tools/fonts-test.mjs` | шрифты: свои файлы загружены, Google Fonts не запрашивается, цифры счётчиков одной ширины, нужные знаки (→ ≈ − №) не уходят на системный шрифт | сервер на 4180, Playwright + Edge |
 | `node tools/smoke.mjs`, `node tools/own-journey-test.mjs` | экран: 20 сценариев, «моё путешествие» | сервер на 4180, Playwright + Edge |
 | `node tools/judge.mjs` | путь жюри: 11 чужих файлов (форматы, южное полушарие, 22 000 точек, разрыв, 180-й меридиан, мусор), экспорт через интерфейс, проверка MP4 через `ffprobe`; `BLOCK=…` и `NOCODEC=1` имитируют недоступные сервисы и браузер без WebCodecs | то же + `ffmpeg` |
-| `bash tools/check.sh` | route-test, director-test, smoke, own-journey | то же |
+| `bash tools/check.sh` | route-test, director-test, smoke, own-journey, fonts-test | то же |
 
 `smoke`, `own-journey` и `judge` берут Playwright из `C:/Users/glina/route-story-spike` (путь автора); на другой машине замените путь `createRequire` в начале скриптов на свою установку Playwright.
 
@@ -126,6 +126,7 @@ python -m http.server 4180
 | `src/ui.js`, `src/journey.js`, `src/exif.js` | экран, «моё путешествие» в браузере, режим «весь путь», EXIF фото |
 | `src/audio.js` | встроенная музыка, кодирование AAC |
 | `src/export.js`, `src/layers-export.js` | MP4 кадр за кадром; прозрачные слои для монтажа |
+| `fonts/` | шрифты проекта (WOFF2, лицензии, `build-report.json`); пересборка — `python tools/build-fonts.py <Typography Collection 2026>` |
 | `data/`, `samples/`, `media/` | демо-путешествие, пример героя, треки-образцы, фото |
 | `design/`, `assets/`, `asset-factory/` | визуальная библиотека, «Полевой дневник» (Travel Scrapbook), символика стран — материалы для следующих стилей; **в экспорт MP4 пока не подключены** |
 | `docs/` | [сценарий защиты](docs/DEMO-SCRIPT.md), [правила кадра](docs/SHOW-RULES.md), [режиссёр и дополнительные режимы](docs/DIRECTOR.md), [gap-анализ](docs/GAP-ANALYSIS.md) |
@@ -142,4 +143,4 @@ python -m http.server 4180
 
 ## Карта, шрифты, лицензии
 
-Карта — © OpenStreetMap contributors через OpenFreeMap; подпись об источнике добавляется в каждый кадр. Шрифты — Google Fonts (Oswald, Inter, Playfair Display, Lora, Caveat; SIL OFL 1.1). Погода — Open-Meteo, [CC BY 4.0](https://open-meteo.com/en/license). Фото демо — CC BY-SA 4.0 (Wikimedia Commons). Символика стран из `assets/country-symbols`: собственные SVG-стикеры — по [`STICKER-LICENSE.txt`](assets/country-symbols/STICKER-LICENSE.txt), старые материалы с Commons сохраняют индивидуальные лицензии ([`CREDITS.md`](assets/country-symbols/CREDITS.md)). `vendor/mp4-muxer.min.js` — [mp4-muxer](https://github.com/Vanilagy/mp4-muxer) (MIT). Код проекта — MIT, файл [`LICENSE`](LICENSE).
+Карта — © OpenStreetMap contributors через OpenFreeMap; подпись об источнике добавляется в каждый кадр. Шрифты — SIL OFL 1.1, тексты лицензий в [`fonts/licenses`](fonts/licenses): Yeseva One и Marck Script без изменений; Geologica и DINish — собственные облегчённые сборки «RS Geologica», «RS Geologica Num», «RS DINish» (подмножество, одна ось жирности, табличные цифры), см. [`fonts/README.md`](fonts/README.md). Погода — Open-Meteo, [CC BY 4.0](https://open-meteo.com/en/license). Фото демо — CC BY-SA 4.0 (Wikimedia Commons). Символика стран из `assets/country-symbols`: собственные SVG-стикеры — по [`STICKER-LICENSE.txt`](assets/country-symbols/STICKER-LICENSE.txt), старые материалы с Commons сохраняют индивидуальные лицензии ([`CREDITS.md`](assets/country-symbols/CREDITS.md)). `vendor/mp4-muxer.min.js` — [mp4-muxer](https://github.com/Vanilagy/mp4-muxer) (MIT). Код проекта — MIT, файл [`LICENSE`](LICENSE).
