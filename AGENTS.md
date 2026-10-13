@@ -5,6 +5,7 @@
 ## Запуск и проверка
 - Одной командой: `bash tools/check.sh` — поднимает сервер на 4180, гоняет director-test, smoke, own-journey-test.
 - Вручную: `python -m http.server 4180` в папке проекта.
+- Путь жюри (чужие файлы разных форматов, экспорт через интерфейс, проверка готового MP4 через ffprobe): `node tools/judge.mjs` при поднятом сервере; `URL=https://sander419.github.io/route-story-engine/` — против живого сайта. Известные дефекты помечены ⚠ и прогон не валят; `BLOCK=nominatim,open-meteo,googleapis` / `NOCODEC=1` имитируют недоступные сервисы и браузер без WebCodecs.
 - smoke и own-journey нужен Playwright из `C:/Users/glina/route-story-spike` (Edge). Без него smoke не запустится.
 
 ## Кто что правит (два агента в одном репозитории)
