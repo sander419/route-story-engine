@@ -249,6 +249,44 @@
       tape(ctx, [bx / u + bw / u * 0.58, by / u - 36, 288, 80], -4, a, dy);
       ctx0 = ctx; heroBox(c.hero, a, dy + (1 - easeOut(lt / 0.8)) * px(30), 0);
     }
+
+    /* ---------- рельеф: настоящие высоты, 3D-вид с маршрутом поверх (Terrain), запасной вариант — эскиз ---------- */
+    const terr = { today: null, all: null }, relLoads = [];
+    if (E.relief !== false && window.Terrain) {
+      const fams = new Set(E.famsInPlan());
+      if (fams.has('road')) relLoads.push(window.Terrain.load(E.bboxToday()).then((T) => { terr.today = T; }));
+      if (fams.has('jroad')) relLoads.push(window.Terrain.load(E.bboxAll()).then((T) => { terr.all = T; }));
+    }
+    function reliefView(ctx, jr, sets, tr, t, a, opts, c) {
+      const T = jr ? terr.all : terr.today; if (!T || !window.Terrain) return false;
+      const [mx, my, mw, mh] = box(c.map), ix = mx + px(18), iy = my + px(18), iw = mw - px(36), ih = mh - px(36);
+      const today = sets.find((s) => s.today) || sets[sets.length - 1], use = jr ? sets : [today];
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const s of use) for (const p of s.pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+      const e = Math.max(x1 - x0, y1 - y0, 0.02), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      const a0 = today.pts[0], a1 = today.pts[today.pts.length - 1], len = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
+      const heading = len > e * 0.25 ? (Math.atan2(a1[0] - a0[0], -(a1[1] - a0[1])) * 180) / Math.PI : 0;   // линия уходит от зрителя
+      const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
+      const fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.8 : 0.95);
+      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.8 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.8 * follow), dist, pitch: 54 + 8 * easeOut(t / 14), bearing: heading + 7 * Math.sin(t * 0.32), fov: 38 };
+      const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
+      ctx.save(); ctx.globalAlpha *= a; ctx.drawImage(cv, ix, iy);
+      ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
+      const P = window.Terrain.projector(T, cam, iw, ih), poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (const s of sets) if (s !== today) { poly(s.pts, s.brk, null); if (E.journey.schematic) ctx.setLineDash([14 * u, 10 * u]); ctx.strokeStyle = 'rgba(244,232,203,.85)'; ctx.lineWidth = 7 * u; ctx.stroke(); ctx.strokeStyle = 'rgba(89,80,61,.85)'; ctx.lineWidth = 3.5 * u; ctx.stroke(); ctx.setLineDash([]); }
+      if (hd) {
+        poly(today.pts, today.brk, hd.i, [hd.x, hd.y]); if (E.journey.schematic) ctx.setLineDash([26 * u, 18 * u]);
+        ctx.strokeStyle = 'rgba(255,244,217,.92)'; ctx.lineWidth = 20 * u; ctx.stroke(); ctx.strokeStyle = C.accent; ctx.lineWidth = 12 * u; ctx.stroke(); ctx.setLineDash([]);
+        const s0 = P(today.pts[0][0], today.pts[0][1]); if (s0) { ctx.beginPath(); ctx.arc(s0[0], s0[1], 16 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
+      }
+      const mark = (pt, tri) => { const q = pt && P(pt[0], pt[1]); if (!q) return; if (tri) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - 34 * u); ctx.lineTo(q[0] + 26 * u, q[1] + 14 * u); ctx.lineTo(q[0] - 26 * u, q[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.stroke(); } else { const pulse = (t / 2) % 1; ctx.beginPath(); ctx.arc(q[0], q[1], (20 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = C.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha *= 1 - pulse; ctx.stroke(); ctx.globalAlpha /= Math.max(1e-3, 1 - pulse); ctx.beginPath(); ctx.arc(q[0], q[1], 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); } };
+      mark(opts.mark, true); mark(opts.stop, false);
+      if (hd) { const q = P(hd.x, hd.y); if (q) heroAt(ctx, q[0], q[1], 1, t, 0.9); }
+      ctx.restore();
+      text(ctx, 'Рельеф: SRTM · AWS Terrain Tiles · вертикаль ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
+      return true;
+    }
     function roadScene(ctx, s, p, t, lt, dur, jr, rs) {
       const c = L.road, env = rs.env, a = env, dy = (1 - easeOut(rs.lt / 0.7)) * px(36);
       const [mx, my, mw, mh] = box(c.map);
@@ -257,9 +295,12 @@
       tape(ctx, c.tape, 3, a, dy);
       const sets = jr ? E.allSets() : [E.todaySet()];
       const tr = jr ? easeOut(lt / (dur * 0.6)) : E.reveal(t, s);
-      ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip();
-      sketch(ctx, c.core, sets, tr, t, a, { mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null });
-      ctx.restore();
+      const ropts = { mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
+      if (!reliefView(ctx, jr, sets, tr, t, a, ropts, c)) {
+        ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip();
+        sketch(ctx, c.core, sets, tr, t, a, ropts);
+        ctx.restore();
+      }
       const spec = E.metric(s, p, t, lt, dur); const ma = E.vis(lt, dur); const sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
       const mh2 = metricCard(ctx, c.metric, spec, ma * env, (1 - easeOut(lt / 0.6)) * px(24), -1, 11);
       if (sticker && stickerImg(sticker)) fitImg(ctx, stickerImg(sticker), [c.metric[0] + c.metric[2] - 190, c.metric[1] - 150, 200, 200], ma * env, 6, 0);   // на уголке карточки, поверх текста не лежит
@@ -370,7 +411,7 @@
         default: roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt });
       }
     }
-    return { draw, ready: READY(), isDark: (s) => FAM[s.recipe] === 'fin' };
+    return { draw, ready: Promise.all([READY(), ...relLoads]), isDark: (s) => FAM[s.recipe] === 'fin' };
   }
 
   window.Journal = { create, FAM };

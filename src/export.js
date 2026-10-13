@@ -77,7 +77,9 @@
     }
 
     // запасной путь: запись в реальном времени
-    const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+    const safari = /^((?!chrome|chromium|android|edg).)*safari/i.test(navigator.userAgent);   // Safari/iPhone умеет MP4, а не WebM
+    const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1.42E01E', 'video/mp4'];
+    const mime = (safari ? [...mimes.slice(3), ...mimes.slice(0, 3)] : mimes).find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
     if (!mime) throw new Error('Браузер не умеет записывать видео. Откройте страницу в Chrome или Edge.');
     const stream = cv.captureStream(fps);
     const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrate });
@@ -97,7 +99,8 @@
     scene.draw(ctx, duration);
     await sleep(120);
     rec.stop(); await stopped;
-    return { blob: new Blob(chunks, { type: 'video/webm' }), ext: 'webm', codec: mime };
+    const isMp4 = /mp4/.test(mime);
+    return { blob: new Blob(chunks, { type: isMp4 ? 'video/mp4' : 'video/webm' }), ext: isMp4 ? 'mp4' : 'webm', codec: mime };
   }
 
   window.RSExport = { exportVideo, prefetch };

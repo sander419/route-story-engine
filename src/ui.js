@@ -370,7 +370,7 @@
     const res = window.Director.direct(J, state.etype, { aspect: state.fmt === 'v' ? '9:16' : '16:9' });
     state.lastEp = { res, change, J };
     renderSeriesPanel(res, change, J);
-    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang }, w, h);
+    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false }, w, h);
   }
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {
@@ -555,6 +555,9 @@
       placePhotos(); }
     catch (e) { showErr('Не удалось загрузить день 47: ' + e.message); }
   };
+  $('relief').onchange = () => { state.relief = $('relief').value !== 'off'; t = 0; rebuild(); };
+  // на телефоне по умолчанию HD 720: быстрее и меньше памяти (Full HD остаётся в «Ещё → Качество»)
+  try { if (matchMedia('(pointer: coarse)').matches) $('res').value = 'sd'; } catch (e) { /* без media queries */ }
   $('etype').onchange = () => { state.etype = $('etype').value; t = 0; rebuild(); };
   $('remember').onclick = () => {
     if (!state.lastEp) return;

@@ -15,6 +15,7 @@
 
 ## Стили
 - «Дневник» (по умолчанию) — `src/journal.js` + `art/`; не рисует карту. Раскладки — `design/journal-tokens-v2.json` (координаты в u). Материалы пересобирать `python tools/build-art.py`. Остальные стили — `src/scene.js` (`STYLES`) и `src/episode.js`.
+- Рельеф «Дневника» — `src/terrain.js` (высоты AWS Terrain Tiles, WebGL; без сети/WebGL — эскиз). Мобильные пределы внутри (`mobile()`); переключатель в «Вид».
 - Шрифты — `fonts/` (`python tools/build-fonts.py`); цифры данных рисуются шрифтом `S.fNum` / ячейками фиксированной ширины.
 
 ## Ловушки

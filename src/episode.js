@@ -68,7 +68,7 @@
     return e;
   }
 
-  function createEpisodeScene({ journey, plan, styleId, lang = 'ru' }, W, H) {
+  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true }, W, H) {
     /* Лицо героя (не меняется от стиля к стилю): знак, цвет, имя. Стиль карты — одежда. */
     const S0 = window.RS.STYLES[styleId] || window.RS.STYLES.night, PF = journey.profile || {};
     const S = PF.color ? heroTint(S0, PF.color) : S0;
@@ -654,6 +654,7 @@
         allSets: () => dayPts.map((d) => ({ pts: d.pts, brk: d.brk, cum: d.day === today.day ? todayCum : null, today: d.day === today.day })),
         reveal: (t) => todayReveal(t),
         routeNames: () => route2T() || journey.title || '',
+        relief, bboxToday: () => bbox(todayPts), bboxAll: () => bbox(allPts), famsInPlan: () => shots.map(famOf),
         journeyName: () => journey.title || route2T() || '',
         recapPoint: (s, lt, dur) => { const r = recapState(s, lt / dur), st = s.stops[r.k]; return st ? [st.cam.cx, st.cam.cy] : null; },
         photoDate: (m, s) => (journey.schematic || s.recipe === 'highlights-reel' ? DL(m.day) : [DL(today.day), dateRu(today.date)].filter(Boolean).join(' · ')),
