@@ -77,13 +77,14 @@
     const days = [...journey.days].sort((a, b) => a.day - b.day);
     const today = days.find((d) => d.day === plan.episodeNumber) || days[days.length - 1];
     const P = (d) => d.line.map(([lo, la]) => [px(lo), py(la)]);
-    const dayPts = days.map((d) => ({ day: d.day, pts: P(d) }));
-    const todayPts = P(today);
+    const dayPts = days.map((d) => ({ day: d.day, pts: P(d), brk: new Set(d.breaks || []) }));   // brk — разрывы записи: через них не считаем длину и не рисуем
+    const todayPts = P(today), todayBrk = new Set(today.breaks || []);
     const past = dayPts.filter((d) => d.day < today.day);
     const pastFlat = past.flatMap((d) => d.pts);
     const pastDayAt = []; past.forEach((d) => d.pts.forEach(() => pastDayAt.push(d.day)));
-    const cum = (pts) => { const c = [0]; for (let i = 1; i < pts.length; i++) c.push(c[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return c; };
-    const pastCum = cum(pastFlat), todayCum = cum(todayPts);
+    const pastBrk = new Set(); { let off = 0; past.forEach((d) => { d.brk.forEach((k) => pastBrk.add(off + k)); off += d.pts.length; }); }
+    const cum = (pts, brk) => { const c = [0]; for (let i = 1; i < pts.length; i++) c.push(c[i - 1] + (brk && brk.has(i) ? 0 : Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))); return c; };
+    const pastCum = cum(pastFlat, pastBrk), todayCum = cum(todayPts, todayBrk);
     const allPts = dayPts.flatMap((d) => d.pts);
     const maxKm = Math.max(1, ...days.map((d) => d.km));
     const mediaById = Object.fromEntries((journey.media || []).map((m) => [m.id, m]));
@@ -408,7 +409,7 @@
       }
       if (LY.route) {
         ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        const poly = (pts, upto) => { ctx.beginPath(); for (let i = 0; i < pts.length && (upto == null || i <= upto); i++) i ? ctx.lineTo(X(pts[i]), Y(pts[i])) : ctx.moveTo(X(pts[i]), Y(pts[i])); };
+        const poly = (pts, upto, brk) => { ctx.beginPath(); for (let i = 0; i < pts.length && (upto == null || i <= upto); i++) (i && !(brk && brk.has(i))) ? ctx.lineTo(X(pts[i]), Y(pts[i])) : ctx.moveTo(X(pts[i]), Y(pts[i])); };
         // прошлый путь
         let pr = pastReveal(t), upto = null;
         if (pr === -1) {   // пересказ: путь дорисовывается до вехи, у которой сейчас камера
@@ -420,7 +421,7 @@
         } else if (pr < 1) { const L = pastCum[pastCum.length - 1] * pr; upto = 0; while (upto < pastFlat.length - 1 && pastCum[upto] < L) upto++; }
         if (pastFlat.length > 1 && pr > 0 && (upto == null || upto > 0)) {
           const glow = s.recipe === 'pullback' ? smooth((su - 0.3) / 0.5) : 0;
-          poly(pastFlat, upto);
+          poly(pastFlat, upto, pastBrk);
           if (journey.schematic) ctx.setLineDash([16 * u, 12 * u]);
           ctx.strokeStyle = S.line.glow; ctx.globalAlpha = 0.25 + 0.55 * glow; ctx.lineWidth = S.line.w * 2.2 * u; ctx.stroke();
           ctx.globalAlpha = 0.85; ctx.strokeStyle = S.paper ? S.accent : 'rgba(225,235,255,.85)'; ctx.lineWidth = 4.5 * u; ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]);
@@ -432,7 +433,7 @@
           const L = todayCum[todayCum.length - 1] * tr; let i = 1; while (i < todayCum.length - 1 && todayCum[i] < L) i++;
           const f = (L - todayCum[i - 1]) / Math.max(1e-9, todayCum[i] - todayCum[i - 1]);
           const hx = lerp(todayPts[i - 1][0], todayPts[i][0], f), hy = lerp(todayPts[i - 1][1], todayPts[i][1], f);
-          poly(todayPts, i - 1); ctx.lineTo(X([hx, hy]), Y([hx, hy]));
+          poly(todayPts, i - 1, todayBrk); ctx.lineTo(X([hx, hy]), Y([hx, hy]));
           ctx.strokeStyle = S.line.glow; ctx.lineWidth = S.line.w * 3.2 * u; ctx.stroke();
           const g = ctx.createLinearGradient(X(todayPts[0]), Y(todayPts[0]), X([hx, hy]) + 1, Y([hx, hy]));
           S.line.stops.forEach((cc, j, a) => g.addColorStop(j / (a.length - 1), cc));

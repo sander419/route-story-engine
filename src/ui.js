@@ -275,11 +275,16 @@
   /* ---- сборка сцены: трек дня / весь путь / оба подряд ---- */
   /* ---- серия: путешествие по дням + новый день → план режиссёра → эпизод ---- */
   function segOf(r, to) {
-    const step = Math.max(1, Math.floor(r.n / 250)), line = [];
-    for (let i = 0; i < r.n; i += step) line.push([+r.lon[i].toFixed(5), +r.lat[i].toFixed(5)]);
-    line.push([+r.lon[r.n - 1].toFixed(5), +r.lat[r.n - 1].toFixed(5)]);
+    const step = Math.max(1, Math.floor(r.n / 250)), pick = [];
+    for (let i = 0; i < r.n; i += step) pick.push(i);
+    pick.push(r.n - 1);
+    if (r.brk) for (let i = 1; i < r.n; i++) if (r.brk[i]) pick.push(i - 1, i);   // границы разрывов обязаны попасть в линию
+    const idx = [...new Set(pick)].sort((a, b) => a - b);
+    const line = idx.map((i) => [+(r.lonU ? r.lonU[i] : r.lon[i]).toFixed(5), +r.lat[i].toFixed(5)]);   // долгота непрерывная: за 180° идёт 180,1, а не −179,9
+    const breaks = r.brk ? idx.reduce((a, i, k) => (r.brk[i] ? (a.push(k), a) : a), []) : [];
     const date = r.t ? new Date(r.t[0] + (r.lon[0] / 15) * 3600e3).toISOString().slice(0, 10) : null;
     const seg = { km: Math.round(r.total / 100) / 10, line, date, to: to || null, gain: r.ele ? Math.round(r.stats.gain) : 0, name: r.name || null };
+    if (breaks.length) { seg.breaks = breaks; seg.gapKm = Math.round(r.gapM / 100) / 10; }   // разрывы записи: линию через них не рисуем, км не считаем
     // факты дня для режиссёра: профиль высоты, высшая точка, время в пути
     if (r.ele) {
       const N = 72, raw = Array.from({ length: N }, (_, k) => window.RouteLib.at(r, (r.total * k) / (N - 1)).ele);
@@ -444,8 +449,8 @@
   function splitDays(parsed) {
     const pts = parsed.pts.filter((q) => isFinite(q.lat) && isFinite(q.lon));
     if (pts.filter((q) => isFinite(q.t)).length < pts.length * 0.9) return [];
-    const groups = new Map(); let lastKey = null;
-    for (const q of pts) { const key = isFinite(q.t) ? Math.floor((q.t + (q.lon / 15) * 3600e3) / 864e5) : lastKey; if (key == null) continue; lastKey = key; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(q); }
+    const groups = new Map(); let lastKey = null, lonU = pts.length ? pts[0].lon : 0, prevLon = lonU;   // долгота без скачка на 180-м меридиане
+    for (const q of pts) { let dl = q.lon - prevLon; if (dl > 180) dl -= 360; else if (dl < -180) dl += 360; lonU += dl; prevLon = q.lon; const key = isFinite(q.t) ? Math.floor((q.t + (lonU / 15) * 3600e3) / 864e5) : lastKey; if (key == null) continue; lastKey = key; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(q); }
     const out = [...groups.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]).filter((g) => g.length >= 2);
     return out.length >= 2 && out.length <= 120 ? out : [];
   }
@@ -455,7 +460,7 @@
     const days = [...state.seriesBase.days].sort((a, b) => a.day - b.day);
     if (days.length < 2) return;
     const need = days.slice(0, -1).filter((d) => !d.to), n = Math.min(8, need.length), pick = Array.from({ length: n }, (_, i) => need[Math.round((i * (need.length - 1)) / Math.max(1, n - 1))]);
-    const rev = async (lon, lat) => { const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=${state.o.lang}&lat=${lat}&lon=${lon}`)).json(); const a = j.address || {}; return a.city || a.town || a.village || a.municipality || a.county || ''; };
+    const rev = async (lon, lat) => { lon = ((((lon + 540) % 360) + 360) % 360) - 180; const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=${state.o.lang}&lat=${lat}&lon=${lon}`)).json(); const a = j.address || {}; return a.city || a.town || a.village || a.municipality || a.county || ''; };
     const apply = (day, patch, cp) => {
       if (!isOwn()) return;
       const J = state.seriesBase, cps = (J.checkpoints || []).slice();

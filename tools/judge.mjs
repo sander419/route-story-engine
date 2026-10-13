@@ -40,11 +40,11 @@ const cases = [
   { id: 'csv-no-ele', file: 'samples/ride-no-elevation.csv', style: 1, fmt: 'h', res: 'sd', note: 'CSV без высоты, 16:9, второй стиль' },
   { id: 'csv-navigator', file: 'samples/ride-no-elevation.csv', style: 2, fmt: 'v', res: 'sd', note: 'стиль «Навигатор» вместе с погодой, часами, знаком и цветом героя' },
   { id: 'gpx-south-notime', text: gpx('Ушуайя — Толуин', [walk(-54.80, -68.30, 500, 90, 0.35, false, false)]), ext: '.gpx', style: 2, fmt: 'v', res: 'sd', note: 'южное полушарие, без времени и высоты' },
-  { id: 'gpx-gap', text: gpx('Два куска', [walk(48.85, 2.35, 300, 40, 0.3, true, true), walk(48.40, 3.20, 300, 40, 0.3, true, true, Date.UTC(2026, 5, 3, 9, 0, 0))]), ext: '.gpx', style: 0, fmt: 'h', res: 'sd', maxKm: 40, known: 'разрыв между сегментами рисуется прямой и засчитывается как пройденный путь (скорость тоже)', note: 'два сегмента с разрывом ~80 км, записано ~24 км' },
+  { id: 'gpx-gap', text: gpx('Два куска', [walk(48.85, 2.35, 300, 40, 0.3, true, true), walk(48.40, 3.20, 300, 40, 0.3, true, true, Date.UTC(2026, 5, 3, 9, 0, 0))]), ext: '.gpx', style: 0, fmt: 'h', res: 'sd', maxKm: 40, note: 'два сегмента с разрывом ~80 км, записано ~24 км' },
   { id: 'gpx-big', text: gpx('Большой трек', [walk(35.68, 139.70, 22000, 12, 0.5, true, true)], ' xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"'), ext: '.gpx', style: 3, fmt: 'v', res: 'sd', note: '22 000 точек, расширения Garmin' },
   { id: 'gpx-glitch00', text: gpx('Сбой GPS', [glitchy]), ext: '.gpx', style: 0, fmt: 'v', res: 'sd', maxKm: 40, note: 'одиночный сбой GPS «в (0,0)» посреди трека (бывает у Strava/Garmin): путь не должен растягиваться' },
-  { id: 'gpx-antimeridian', text: gpx('Таveuni, 180-й меридиан', [line(-16.9, 179.8, 0.0007, 0.0066, 120, 20)]), ext: '.gpx', style: 1, fmt: 'h', res: 'sd', maxKm: 90, noDaySplit: true, known: '180-й меридиан режет один трек на два «дня» (день считается по долготе)', note: 'один короткий трек через 180-й меридиан (Фиджи), 83 км за 16 мин записи' },
-  { id: 'gpx-elev-gap', text: gpx('Перепад между сегментами', [line(47.00, 8.00, 0.0001, 0.0002, 200, 100), line(47.02, 8.04, 0.0001, 0.0002, 200, 1000, Date.UTC(2026, 5, 3, 9, 0, 0))]), ext: '.gpx', style: 0, fmt: 'v', res: 'sd', maxGain: 50, known: 'перепад высоты между сегментами засчитывается как набор (+900 м из ничего)', note: 'сегмент на 100 м, затем сегмент на 1000 м: настоящего набора нет' },
+  { id: 'gpx-antimeridian', text: gpx('Таveuni, 180-й меридиан', [line(-16.9, 179.8, 0.0007, 0.0066, 120, 20)]), ext: '.gpx', style: 1, fmt: 'h', res: 'sd', maxKm: 90, noDaySplit: true, maxSpanX: 5, note: 'один короткий трек через 180-й меридиан (Фиджи), 83 км за 16 мин записи' },
+  { id: 'gpx-elev-gap', text: gpx('Перепад между сегментами', [line(47.00, 8.00, 0.0001, 0.0002, 200, 100), line(47.02, 8.04, 0.0001, 0.0002, 200, 1000, Date.UTC(2026, 5, 3, 9, 0, 0))]), ext: '.gpx', style: 0, fmt: 'v', res: 'sd', maxGain: 50, note: 'сегмент на 100 м, затем сегмент на 1000 м: настоящего набора нет' },
   { id: 'garbage', text: 'это не маршрут, просто текст\nвторая строка', ext: '.txt', expectError: true, note: 'мусорный файл — понятная ошибка, без падения' },
   { id: 'one-point', text: gpx('Одна точка', [[{ lat: 50, lon: 8, t: null, ele: null }]]), ext: '.gpx', expectError: true, note: 'одна точка — понятная ошибка' },
 ];
@@ -90,6 +90,7 @@ for (const c of cases) {
     const km = (r.head.match(/(\d[\d\s ]*(?:,\d+)?)\s*км/) || [])[1]; r.km = km ? +km.replace(/[\s ]/g, '').replace(',', '.') : null;
     const gain = (r.facts.match(/набор\s*\+(\d+)\s*м/) || [])[1];
     if (c.maxGain != null && gain != null && +gain > c.maxGain) r.problems.push(`набор высоты +${gain} м, реально не больше ${c.maxGain}`);
+    if (c.maxSpanX) { r.spanX = await p.evaluate(() => { const rt = window.__app.state.route; return rt ? +(rt.bx1 - rt.bx0).toFixed(3) : null; }); if (r.spanX == null || r.spanX > c.maxSpanX) r.problems.push(`трек растянут по карте: ширина ${r.spanX} (должна быть < ${c.maxSpanX}) — линия через весь мир`); }
     if (c.noDaySplit && /день \d+ из путешествия/.test(r.head)) r.problems.push('один трек разрезан на «дни»: ' + r.head.slice(0, 80));
     if (c.maxKm && r.km != null && r.km > c.maxKm) r.problems.push(`в заголовке ${r.km} км, реально не больше ${c.maxKm}`);
     if (c.expectError) {

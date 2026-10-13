@@ -19,28 +19,33 @@
   function parseGPX(text) {
     const doc = new DOMParser().parseFromString(text.trim(), 'application/xml');
     if (doc.querySelector('parsererror')) throw new Error('Файл GPX повреждён или это не GPX.');
-    let nodes = [...doc.getElementsByTagName('trkpt')];
-    if (!nodes.length) nodes = [...doc.getElementsByTagName('rtept')];
-    if (!nodes.length) nodes = [...doc.getElementsByTagName('wpt')];
+    // каждый trkseg — отдельный сегмент записи: между ними может быть разрыв (пауза, склейка файлов)
+    let groups = [...doc.getElementsByTagName('trkseg')].map((g) => [...g.getElementsByTagName('trkpt')]);
+    if (!groups.some((g) => g.length)) groups = [...doc.getElementsByTagName('trkpt')].length ? [[...doc.getElementsByTagName('trkpt')]] : [];
+    if (!groups.some((g) => g.length)) groups = [...doc.getElementsByTagName('rte')].map((g) => [...g.getElementsByTagName('rtept')]);
+    if (!groups.some((g) => g.length)) groups = [[...doc.getElementsByTagName('wpt')]];
     const child = (n, tag) => { const c = n.getElementsByTagName(tag)[0]; return c ? c.textContent : null; };
-    const pts = nodes.map((n) => ({
+    const pts = groups.flatMap((g, gi) => g.map((n) => ({
       lat: +n.getAttribute('lat'),
       lon: +n.getAttribute('lon'),
-      ele: child(n, 'ele') != null ? +child(n, 'ele') : NaN,
+      ele: child(n, 'ele') != null && child(n, 'ele') !== '' ? +child(n, 'ele') : NaN,
       t: parseTime(child(n, 'time')),
-    }));
+      seg: gi,
+    })));
     const nm = doc.querySelector('trk > name') || doc.querySelector('metadata > name') || doc.querySelector('rte > name');
     return { name: nm ? nm.textContent.trim() : '', pts };
   }
 
   function parseGeoJSON(obj) {
     const pts = [];
-    let name = '';
+    let name = '', segN = 0;
     const addLine = (coords, times) => {
+      const sg = segN++;
       coords.forEach((c, i) => pts.push({
         lon: +c[0], lat: +c[1],
         ele: c.length > 2 && c[2] != null ? +c[2] : NaN,
         t: times && times[i] != null ? parseTime(times[i]) : NaN,
+        seg: sg,
       }));
     };
     (function walk(o, props) {
@@ -96,10 +101,12 @@
 
   function parseTCX(text) {
     const doc = xmlDoc(text);
-    const pts = [...doc.getElementsByTagName('Trackpoint')].map((n) => ({
+    let tracks = [...doc.getElementsByTagName('Track')].map((t) => [...t.getElementsByTagName('Trackpoint')]);
+    if (!tracks.some((t) => t.length)) tracks = [[...doc.getElementsByTagName('Trackpoint')]];
+    const pts = tracks.flatMap((t, ti) => t.map((n) => ({
       lat: +kid(n, 'LatitudeDegrees'), lon: +kid(n, 'LongitudeDegrees'),
-      ele: kid(n, 'AltitudeMeters') != null ? +kid(n, 'AltitudeMeters') : NaN, t: parseTime(kid(n, 'Time')),
-    }));
+      ele: kid(n, 'AltitudeMeters') != null ? +kid(n, 'AltitudeMeters') : NaN, t: parseTime(kid(n, 'Time')), seg: ti,
+    })));
     return { name: (kid(doc, 'Name') || '').trim(), pts };
   }
 
@@ -109,11 +116,12 @@
     const gx = [...doc.getElementsByTagName('gx:coord')];
     if (gx.length) {
       const when = [...doc.getElementsByTagName('when')].map((n) => parseTime(n.textContent));
-      gx.forEach((n, i) => { const [lon, lat, ele] = n.textContent.trim().split(/\s+/).map(Number); pts.push({ lat, lon, ele: ele == null ? NaN : ele, t: when[i] ?? NaN }); });
+      const trk = (n) => { let k = 0, e = n.parentNode; while (e && e.nodeName !== 'gx:Track') e = e.parentNode; return e ? [...doc.getElementsByTagName('gx:Track')].indexOf(e) : k; };
+      gx.forEach((n, i) => { const [lon, lat, ele] = n.textContent.trim().split(/\s+/).map(Number); pts.push({ lat, lon, ele: ele == null ? NaN : ele, t: when[i] ?? NaN, seg: trk(n) }); });
     } else {
-      [...doc.getElementsByTagName('coordinates')].forEach((n) => n.textContent.trim().split(/\s+/).forEach((tr) => {
+      [...doc.getElementsByTagName('coordinates')].forEach((n, ci) => n.textContent.trim().split(/\s+/).forEach((tr) => {
         const [lon, lat, ele] = tr.split(',').map(Number);
-        if (isFinite(lat) && isFinite(lon)) pts.push({ lat, lon, ele: ele == null || !isFinite(ele) ? NaN : ele, t: NaN });
+        if (isFinite(lat) && isFinite(lon)) pts.push({ lat, lon, ele: ele == null || !isFinite(ele) ? NaN : ele, t: NaN, seg: ci });
       }));
     }
     return { name: (kid(doc, 'name') || '').trim(), pts };
@@ -139,22 +147,37 @@
     return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 256;
   };
 
+  /* Разрыв записи: сегмент файла сменился, и прыжок не объяснить обычным шагом (≥1 км и ≥20 типичных шагов).
+     Через разрыв не считаем ни километры, ни скорость, ни набор высоты и не рисуем линию — этого пути никто не проезжал. */
+  const GAP_MIN_M = 1000, GAP_STEPS = 20;
+  const wrapLon = (x) => ((((x + 540) % 360) + 360) % 360) - 180;
+
   function prepare(parsed, fallbackName) {
     let p = parsed.pts.filter((q) => isFinite(q.lat) && isFinite(q.lon) && Math.abs(q.lat) <= 90 && Math.abs(q.lon) <= 180 && !(q.lat === 0 && q.lon === 0));
     // убираем подряд идущие дубли
     p = p.filter((q, i) => i === 0 || q.lat !== p[i - 1].lat || q.lon !== p[i - 1].lon);
     if (p.length < 2) throw new Error('В файле меньше двух точек маршрута.');
-    // накопленная дистанция
+    // разрывы между сегментами файла
+    const hops = new Float64Array(p.length);
+    for (let i = 1; i < p.length; i++) hops[i] = hav(p[i - 1], p[i]);
+    const med = Array.from(hops.subarray(1)).sort((a, b) => a - b)[(p.length - 1) >> 1] || 0;
+    const gapLimit = Math.max(GAP_MIN_M, GAP_STEPS * med);
+    let gapM = 0;
+    p.forEach((q, i) => { q.brk = i > 0 && q.seg !== p[i - 1].seg && hops[i] > gapLimit; if (q.brk) { gapM += hops[i]; q.keep = true; p[i - 1].keep = true; } });
+    // накопленная дистанция (через разрыв не растёт)
     let d = 0;
     p[0].d = 0;
-    for (let i = 1; i < p.length; i++) { d += hav(p[i - 1], p[i]); p[i].d = d; }
+    for (let i = 1; i < p.length; i++) { if (!p[i].brk) d += hops[i]; p[i].d = d; }
     if (d < 50) throw new Error('Маршрут короче 50 метров — нечего анимировать.');
-    // прореживание до ~1800 точек (ровно по дистанции)
+    // прореживание до ~1800 точек (ровно по дистанции); границы разрывов сохраняем
     if (p.length > 1800) {
       const step = d / 1700; let next = 0; const q = [];
-      p.forEach((pt, i) => { if (i === 0 || i === p.length - 1 || pt.d >= next) { q.push(pt); next = pt.d + step; } });
+      p.forEach((pt, i) => { if (i === 0 || i === p.length - 1 || pt.keep || pt.d >= next) { q.push(pt); next = pt.d + step; } });
       p = q;
     }
+    const brk = Uint8Array.from(p, (q) => (q.brk ? 1 : 0));
+    const piece = new Int32Array(p.length);
+    for (let i = 1; i < p.length; i++) piece[i] = piece[i - 1] + brk[i];
     // время: годится, только если оно у почти всех точек и растёт
     const withT = p.filter((q) => isFinite(q.t)).length;
     let hasT = withT >= p.length * 0.9;
@@ -164,43 +187,54 @@
       hasT = p[p.length - 1].t > p[0].t;
     }
     const hasE = p.filter((q) => isFinite(q.ele)).length >= p.length * 0.9;
-    let ele = null;
+    let ele = null, ebrk = brk;
     if (hasE) {
       const raw = p.map((q) => (isFinite(q.ele) ? q.ele : NaN));
       for (let i = 0; i < raw.length; i++) if (!isFinite(raw[i])) raw[i] = raw[i - 1] ?? raw.find(isFinite);
-      ele = raw.map((_, i) => { let s = 0, n = 0; for (let j = Math.max(0, i - 3); j <= Math.min(raw.length - 1, i + 3); j++) { s += raw[j]; n++; } return s / n; });
+      // разрыв высоты: разрыв записи или невозможный скачок (>40 м при уклоне круче ~150%) — набором это не считаем
+      ebrk = Uint8Array.from(raw, (v, i) => (i > 0 && (brk[i] || (Math.abs(v - raw[i - 1]) > 40 && (p[i].d - p[i - 1].d) * 1.5 < Math.abs(v - raw[i - 1]))) ? 1 : 0));
+      const epiece = new Int32Array(raw.length);
+      for (let i = 1; i < raw.length; i++) epiece[i] = epiece[i - 1] + ebrk[i];
+      // сглаживание только внутри своего куска
+      ele = raw.map((_, i) => { let s = 0, n = 0; for (let j = Math.max(0, i - 3); j <= Math.min(raw.length - 1, i + 3); j++) { if (epiece[j] !== epiece[i]) continue; s += raw[j]; n++; } return s / n; });
     }
-    // скорость (км/ч): окно ±4 точки
+    // скорость (км/ч): окно ±4 точки, не выходя за свой кусок записи
     let speed = null;
     if (hasT) {
       speed = p.map((_, i) => {
-        const a = Math.max(0, i - 4), b = Math.min(p.length - 1, i + 4);
+        let a = Math.max(0, i - 4), b = Math.min(p.length - 1, i + 4);
+        while (piece[a] !== piece[i]) a++;
+        while (piece[b] !== piece[i]) b--;
         const dt = (p[b].t - p[a].t) / 1000;
         return dt > 0 ? Math.min(80, ((p[b].d - p[a].d) / dt) * 3.6) : 0;
       });
     }
+    // долгота без скачка на 180-м меридиане: по ней строится карта (плитки сами оборачиваются), местное время и «день»
+    const lonU = new Float64Array(p.length); lonU[0] = p[0].lon;
+    for (let i = 1; i < p.length; i++) { let dl = p[i].lon - p[i - 1].lon; if (dl > 180) dl -= 360; else if (dl < -180) dl += 360; lonU[i] = lonU[i - 1] + dl; }
     const X = new Float64Array(p.length), Y = new Float64Array(p.length), D = new Float64Array(p.length);
-    p.forEach((q, i) => { X[i] = px(q.lon); Y[i] = py(q.lat); D[i] = q.d; });
+    p.forEach((q, i) => { X[i] = px(lonU[i]); Y[i] = py(q.lat); D[i] = q.d; });
     let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
     for (let i = 0; i < p.length; i++) { bx0 = Math.min(bx0, X[i]); bx1 = Math.max(bx1, X[i]); by0 = Math.min(by0, Y[i]); by1 = Math.max(by1, Y[i]); }
     const total = D[D.length - 1];
     let gain = 0, maxE = -Infinity, maxI = 0, minE = Infinity;
     if (ele) {
       let ref = ele[0];
-      ele.forEach((e, i) => { if (e - ref > 3) { gain += e - ref; ref = e; } else if (ref - e > 3) ref = e; if (e > maxE) { maxE = e; maxI = i; } if (e < minE) minE = e; });
+      ele.forEach((e, i) => { if (ebrk[i]) ref = e; if (e - ref > 3) { gain += e - ref; ref = e; } else if (ref - e > 3) ref = e; if (e > maxE) { maxE = e; maxI = i; } if (e < minE) minE = e; });
     }
     let moving = 0;
-    if (hasT) for (let i = 1; i < p.length; i++) { const dt = p[i].t - p[i - 1].t; if (dt < 600000) moving += dt; }
+    if (hasT) for (let i = 1; i < p.length; i++) { const dt = p[i].t - p[i - 1].t; if (dt < 600000 && !brk[i]) moving += dt; }
     const route = {
       name: parsed.name || fallbackName || 'Маршрут',
-      n: p.length, lat: p.map((q) => q.lat), lon: p.map((q) => q.lon),
+      n: p.length, lat: p.map((q) => q.lat), lon: p.map((q) => q.lon), lonU,
       X, Y, D, total, ele, speed, t: hasT ? p.map((q) => q.t) : null,
+      brk, piece, gapM, pieces: piece[p.length - 1] + 1,
       bx0, by0, bx1, by1,
       stats: { gain, maxE, maxI, minE, moving, avg: hasT && moving > 0 ? (total / (moving / 1000)) * 3.6 : null },
     };
     // дни путешествия по местной дате
     if (hasT) {
-      const dayOf = (i) => { const ms = route.t[i] + (route.lon[i] / 15) * 3600e3; return Math.floor(ms / 864e5); };
+      const dayOf = (i) => { const ms = route.t[i] + (lonU[i] / 15) * 3600e3; return Math.floor(ms / 864e5); };
       const d0 = dayOf(0);
       route.dayArr = Int16Array.from(p, (_, i) => dayOf(i) - d0 + 1);
       route.days = route.dayArr[p.length - 1];
@@ -223,7 +257,7 @@
       ele: route.ele ? L(route.ele) : null,
       speed: route.speed ? L(route.speed) : null,
       t: route.t ? L(route.t) : null,
-      lon: L(route.lon),
+      lon: wrapLon(L(route.lonU || route.lon)),
       day: route.dayArr ? route.dayArr[f > 0.5 ? hi : lo] : null,
     };
   }

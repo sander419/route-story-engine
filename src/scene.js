@@ -327,7 +327,7 @@
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       const path = (to) => {
         ctx.beginPath(); ctx.moveTo(sx(route.X[0]), sy(route.Y[0]));
-        for (let i = 1; i <= to; i++) ctx.lineTo(sx(route.X[i]), sy(route.Y[i]));
+        for (let i = 1; i <= to; i++) (route.brk && route.brk[i] ? ctx.moveTo : ctx.lineTo).call(ctx, sx(route.X[i]), sy(route.Y[i]));
       };
       path(route.n - 1);
       ctx.strokeStyle = S.ghost; ctx.lineWidth = S.ghostW * u;
@@ -344,7 +344,7 @@
       {
         const j = at(route, Math.max(0, s - total * 0.06)).i;
         ctx.beginPath(); ctx.moveTo(sx(route.X[j]), sy(route.Y[j]));
-        for (let i = j + 1; i <= head.i; i++) ctx.lineTo(sx(route.X[i]), sy(route.Y[i]));
+        for (let i = j + 1; i <= head.i; i++) (route.brk && route.brk[i] ? ctx.moveTo : ctx.lineTo).call(ctx, sx(route.X[i]), sy(route.Y[i]));
         ctx.lineTo(hx, hy);
         ctx.save(); ctx.shadowColor = S.head; ctx.shadowBlur = 26 * u;
         ctx.strokeStyle = S.head; ctx.globalAlpha = 0.9; ctx.lineWidth = S.line.w * 0.42 * u; ctx.stroke(); ctx.restore();
