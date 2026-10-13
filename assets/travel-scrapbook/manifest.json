@@ -1,0 +1,2096 @@
+{
+  "schemaVersion": 1,
+  "world": "travel-scrapbook",
+  "recipe": "../../asset-factory/travel-scrapbook.recipe.json",
+  "generatedBy": "node tools/asset-factory.mjs",
+  "assetCount": 76,
+  "sceneCount": 6,
+  "palette": {
+    "paper": "#efe3c6",
+    "paperLight": "#f8f0dc",
+    "ink": "#2d3028",
+    "rust": "#a25a39",
+    "lake": "#6b969d",
+    "olive": "#788060",
+    "rule": "#a79b80"
+  },
+  "typography": {
+    "display": "Lora, Georgia, serif",
+    "body": "Inter, Segoe UI, sans-serif",
+    "handwritten": "Caveat, cursive",
+    "note": "Рукописный акцент только в коротких подписях; сцены остаются понятными при системных заменах"
+  },
+  "motion": {
+    "inkDrawMs": 2400,
+    "stampMs": 650,
+    "photoLiftMs": 900,
+    "pageHoldMs": 4200,
+    "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+    "reducedMotion": "без смещения и рисования; сохраняется порядок слоёв"
+  },
+  "motionLibrary": "motion.json",
+  "assets": [
+    {
+      "id": "icon-compass",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "compass",
+      "kind": "svg",
+      "path": "generated/icons/icon-compass.svg",
+      "preview": "generated/icons/icon-compass.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "compass",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "c6e91bf40384561e6d56f3ae5d0bf52f10490274757bcac9d134987aa0701679"
+    },
+    {
+      "id": "sticker-compass",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "compass",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-compass.svg",
+      "preview": "generated/stickers/sticker-compass.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "compass",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "ad546e1383ab4343a19bda2e5490ddf445cc81b43862455d83d1134678b5e721"
+    },
+    {
+      "id": "icon-mountain",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "mountain",
+      "kind": "svg",
+      "path": "generated/icons/icon-mountain.svg",
+      "preview": "generated/icons/icon-mountain.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "mountain",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "3c76093d3fc6b545694f161a356a65e099e64e7b3ad1c4b631f28f9c3332938e"
+    },
+    {
+      "id": "sticker-mountain",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "mountain",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-mountain.svg",
+      "preview": "generated/stickers/sticker-mountain.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "mountain",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "10af254818aee99f7dbe868b5bec4cac40bf8350f6556b809f3c7662ef2b8f67"
+    },
+    {
+      "id": "icon-lake",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "lake",
+      "kind": "svg",
+      "path": "generated/icons/icon-lake.svg",
+      "preview": "generated/icons/icon-lake.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "lake",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "7b8bcb89a5902140f32af355aa3d6e30421a57eaf49c09af07c8e1daeeb9d68e"
+    },
+    {
+      "id": "sticker-lake",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "lake",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-lake.svg",
+      "preview": "generated/stickers/sticker-lake.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "lake",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "199abaf06f81e1383841adecd9f16853f4ad40d7666e273f88d5fee908488b3a"
+    },
+    {
+      "id": "icon-sun",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "sun",
+      "kind": "svg",
+      "path": "generated/icons/icon-sun.svg",
+      "preview": "generated/icons/icon-sun.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "sun",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "e0b37ba196acee6b6b2a7966929d957402b24b68543d91248c30ae363dcbc30d"
+    },
+    {
+      "id": "sticker-sun",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "sun",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-sun.svg",
+      "preview": "generated/stickers/sticker-sun.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "sun",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "7e76a1078dc206c0c176bebc250b73af7cf8816ad6319ebfa5c8b09057cf69e6"
+    },
+    {
+      "id": "icon-tent",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "tent",
+      "kind": "svg",
+      "path": "generated/icons/icon-tent.svg",
+      "preview": "generated/icons/icon-tent.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "tent",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "fe50b7548108e00607cbd35c752bd995942320f46eca71447d0f83dbb4e8b424"
+    },
+    {
+      "id": "sticker-tent",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "tent",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-tent.svg",
+      "preview": "generated/stickers/sticker-tent.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "tent",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "0df1f193475efbde2c019bd59b4c07f0a3ba7b71fab81ab587a55a58e2ba5b36"
+    },
+    {
+      "id": "icon-camera",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "camera",
+      "kind": "svg",
+      "path": "generated/icons/icon-camera.svg",
+      "preview": "generated/icons/icon-camera.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "camera",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "92c16a389552924ede7d29460bbea54e8d4b8217e4d6a268280d5334a01e2cb6"
+    },
+    {
+      "id": "sticker-camera",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "camera",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-camera.svg",
+      "preview": "generated/stickers/sticker-camera.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "camera",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "024369444f9bcd8ecf05008569e55c7468a4754d73d3c0bfd5f6291339d355fd"
+    },
+    {
+      "id": "icon-train",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "train",
+      "kind": "svg",
+      "path": "generated/icons/icon-train.svg",
+      "preview": "generated/icons/icon-train.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "train",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "4fcfed8ee8b6e9de712b9dddd50526a2f5c824320e348c2643ced70a7f3d4942"
+    },
+    {
+      "id": "sticker-train",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "train",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-train.svg",
+      "preview": "generated/stickers/sticker-train.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "train",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "78d7bb857aae8211bb571e499dc340359b9d03048d8e181864f2add5828f01d2"
+    },
+    {
+      "id": "icon-pin",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "pin",
+      "kind": "svg",
+      "path": "generated/icons/icon-pin.svg",
+      "preview": "generated/icons/icon-pin.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "pin",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "9d756e92c83a1662fbaefd4988beb481a794fd2ed62506ec2f4115b097573408"
+    },
+    {
+      "id": "sticker-pin",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "pin",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-pin.svg",
+      "preview": "generated/stickers/sticker-pin.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "pin",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "1c4ed973c8e54cc3ef44e9101ec1cd6bc95547561ab9b9eac4be300340fdb839"
+    },
+    {
+      "id": "icon-clock",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "clock",
+      "kind": "svg",
+      "path": "generated/icons/icon-clock.svg",
+      "preview": "generated/icons/icon-clock.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "clock",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "51d0a9db74cfecae9da59d4e44ec88bec7049f383774cc481cb458eb10b73812"
+    },
+    {
+      "id": "sticker-clock",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "clock",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-clock.svg",
+      "preview": "generated/stickers/sticker-clock.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "clock",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "28e9f4a947fb7dba9d6f82a5726107956438571ec5334b0c3ea613067644646a"
+    },
+    {
+      "id": "icon-wind",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "wind",
+      "kind": "svg",
+      "path": "generated/icons/icon-wind.svg",
+      "preview": "generated/icons/icon-wind.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "wind",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "03b3d43dd16777275d9a5629c1cd7c2b5b8af85c56bedd756097f9e8569273fa"
+    },
+    {
+      "id": "sticker-wind",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "wind",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-wind.svg",
+      "preview": "generated/stickers/sticker-wind.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "wind",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "e7e8c64c50f528ee03b4b5f01bf5f5eef5a7a116f4a40c5f9a6fa0d14bb456e3"
+    },
+    {
+      "id": "icon-ascent",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "ascent",
+      "kind": "svg",
+      "path": "generated/icons/icon-ascent.svg",
+      "preview": "generated/icons/icon-ascent.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "ascent",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "fc12a426a24ece4488baace3fdfcef7ba84b0dd83b54477e06bb6befa26036b2"
+    },
+    {
+      "id": "sticker-ascent",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "ascent",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-ascent.svg",
+      "preview": "generated/stickers/sticker-ascent.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "ascent",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "20d2e6783c73b8b84edc209369ff18f13b13c587ba6d944f77e3b81b023165d6"
+    },
+    {
+      "id": "icon-border",
+      "world": "travel-scrapbook",
+      "category": "icons",
+      "variant": "border",
+      "kind": "svg",
+      "path": "generated/icons/icon-border.svg",
+      "preview": "generated/icons/icon-border.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "icon",
+        "border",
+        "wayfinding"
+      ],
+      "usage": "Пиктограмма факта или события; не подменяет реальное GPS-событие",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "dc87847e463454a5305b78d9086cf18c4f1ae5f6099f9ba433b184c70c4ad3b9"
+    },
+    {
+      "id": "sticker-border",
+      "world": "travel-scrapbook",
+      "category": "stickers",
+      "variant": "border",
+      "kind": "svg",
+      "path": "generated/stickers/sticker-border.svg",
+      "preview": "generated/stickers/sticker-border.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "sticker",
+        "border",
+        "cutout"
+      ],
+      "usage": "Наклейка на бумажный слой; один главный знак на кадр",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "376fcb61d06d2eead7fd4600515bc015ad6223e76eb7bd560827a94cb94b8be8"
+    },
+    {
+      "id": "frame-archival",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "archival",
+      "kind": "svg",
+      "path": "generated/frames/frame-archival.svg",
+      "preview": "generated/frames/frame-archival.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "archival",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "92f8ba363edb1daa5e05b89dfdec5c37b3bd1794d1a42c8e2eb0bcefac0f99ac"
+    },
+    {
+      "id": "frame-polaroid",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "polaroid",
+      "kind": "svg",
+      "path": "generated/frames/frame-polaroid.svg",
+      "preview": "generated/frames/frame-polaroid.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "polaroid",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "0e0fae15ab8718b6c68697c41bfdec0d53c4577c20308198b2df34373a1e6c2a"
+    },
+    {
+      "id": "frame-postage",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "postage",
+      "kind": "svg",
+      "path": "generated/frames/frame-postage.svg",
+      "preview": "generated/frames/frame-postage.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "postage",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "09920d0f1d30d0fe59d62e743c5f75bbe6b05ac68cfb745c84874b3ef196eb48"
+    },
+    {
+      "id": "frame-double-rule",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "double-rule",
+      "kind": "svg",
+      "path": "generated/frames/frame-double-rule.svg",
+      "preview": "generated/frames/frame-double-rule.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "double-rule",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "d97810546c91d01094d8468cda68999c60231c76f7fb4c0fb4d88ff2de8d6afa"
+    },
+    {
+      "id": "frame-torn",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "torn",
+      "kind": "svg",
+      "path": "generated/frames/frame-torn.svg",
+      "preview": "generated/frames/frame-torn.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "torn",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "07eb1a0c872c31ef2d81616ae0801db1a2030ace14fe3d3f1610a5b29a4790dd"
+    },
+    {
+      "id": "frame-film",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "film",
+      "kind": "svg",
+      "path": "generated/frames/frame-film.svg",
+      "preview": "generated/frames/frame-film.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "film",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "c6b5a5309e45fe61c44d8ddcc20615ec18e7b4730ba8ab867ddfc64ee5c85637"
+    },
+    {
+      "id": "frame-fieldnote",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "fieldnote",
+      "kind": "svg",
+      "path": "generated/frames/frame-fieldnote.svg",
+      "preview": "generated/frames/frame-fieldnote.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "fieldnote",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "e436dc63d0e68077b7706182b775d71373d563e4e37eb7db9b6f27f2c47ccdc0"
+    },
+    {
+      "id": "frame-museum",
+      "world": "travel-scrapbook",
+      "category": "frames",
+      "variant": "museum",
+      "kind": "svg",
+      "path": "generated/frames/frame-museum.svg",
+      "preview": "generated/frames/frame-museum.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "frame",
+        "museum",
+        "photo"
+      ],
+      "usage": "Рамка поверх фото; выравнивать фото по внутреннему окну",
+      "animation": "photo-lift 900ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "8e46cc6b1fecfb08bd13727cd91b2cbb2c6c98541201bf2b56d04bb0d04be613"
+    },
+    {
+      "id": "ticket-rail",
+      "world": "travel-scrapbook",
+      "category": "tickets",
+      "variant": "rail",
+      "kind": "svg",
+      "path": "generated/tickets/ticket-rail.svg",
+      "preview": "generated/tickets/ticket-rail.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "ticket",
+        "rail",
+        "paper"
+      ],
+      "usage": "Пустой билетный модуль; текст маршрута кладётся отдельным слоем",
+      "animation": "slide 850ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "d34bdae32c2d2d9bbfba0da1510bbd6239d1647dc5a5567fdb1530d7e5f5cd9f"
+    },
+    {
+      "id": "ticket-ferry",
+      "world": "travel-scrapbook",
+      "category": "tickets",
+      "variant": "ferry",
+      "kind": "svg",
+      "path": "generated/tickets/ticket-ferry.svg",
+      "preview": "generated/tickets/ticket-ferry.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "ticket",
+        "ferry",
+        "paper"
+      ],
+      "usage": "Пустой билетный модуль; текст маршрута кладётся отдельным слоем",
+      "animation": "slide 850ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "83958a382db03242038d44b07b1acd678a88878f56c444809e9109f4d9cee0bd"
+    },
+    {
+      "id": "ticket-road",
+      "world": "travel-scrapbook",
+      "category": "tickets",
+      "variant": "road",
+      "kind": "svg",
+      "path": "generated/tickets/ticket-road.svg",
+      "preview": "generated/tickets/ticket-road.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "ticket",
+        "road",
+        "paper"
+      ],
+      "usage": "Пустой билетный модуль; текст маршрута кладётся отдельным слоем",
+      "animation": "slide 850ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "e02e7ecab6195ab250c75ec88cbe50fa03c92bbb6e00ee080c7d88a26bea3343"
+    },
+    {
+      "id": "ticket-summit",
+      "world": "travel-scrapbook",
+      "category": "tickets",
+      "variant": "summit",
+      "kind": "svg",
+      "path": "generated/tickets/ticket-summit.svg",
+      "preview": "generated/tickets/ticket-summit.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "ticket",
+        "summit",
+        "paper"
+      ],
+      "usage": "Пустой билетный модуль; текст маршрута кладётся отдельным слоем",
+      "animation": "slide 850ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "9e19f793a3f267c73eff6285ae28218ff31b147ca76197b9c6cf4f4884f5dc55"
+    },
+    {
+      "id": "ticket-arrival",
+      "world": "travel-scrapbook",
+      "category": "tickets",
+      "variant": "arrival",
+      "kind": "svg",
+      "path": "generated/tickets/ticket-arrival.svg",
+      "preview": "generated/tickets/ticket-arrival.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "ticket",
+        "arrival",
+        "paper"
+      ],
+      "usage": "Пустой билетный модуль; текст маршрута кладётся отдельным слоем",
+      "animation": "slide 850ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "83958a382db03242038d44b07b1acd678a88878f56c444809e9109f4d9cee0bd"
+    },
+    {
+      "id": "ticket-passport",
+      "world": "travel-scrapbook",
+      "category": "tickets",
+      "variant": "passport",
+      "kind": "svg",
+      "path": "generated/tickets/ticket-passport.svg",
+      "preview": "generated/tickets/ticket-passport.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "ticket",
+        "passport",
+        "paper"
+      ],
+      "usage": "Пустой билетный модуль; текст маршрута кладётся отдельным слоем",
+      "animation": "slide 850ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "a23a5dfa806a00decbc73e4e6f557a86429042c9f1632168989f6e3f32137c01"
+    },
+    {
+      "id": "stamp-compass",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "compass",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-compass.svg",
+      "preview": "generated/stamps/stamp-compass.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "compass",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "e98a0bac8008da19937ce84fa0b9e2c517f2ce73e73949800eded7ed0fd05bdc"
+    },
+    {
+      "id": "stamp-mountain",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "mountain",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-mountain.svg",
+      "preview": "generated/stamps/stamp-mountain.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "mountain",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "2ff80ca0528fa30a8dbacf0321f37e51b0d001a5cc9fa3b1e10107a9bcd0e04e"
+    },
+    {
+      "id": "stamp-lake",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "lake",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-lake.svg",
+      "preview": "generated/stamps/stamp-lake.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "lake",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "fe01758f52240d82482ac5c3ffb31a0183e77eaea2cce73f1465376dc0fa84f1"
+    },
+    {
+      "id": "stamp-sun",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "sun",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-sun.svg",
+      "preview": "generated/stamps/stamp-sun.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "sun",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "73bf0f23213e9152b37a5b031d3022a0a83c27c24f927bc6a8a01f21a7445ef5"
+    },
+    {
+      "id": "stamp-tent",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "tent",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-tent.svg",
+      "preview": "generated/stamps/stamp-tent.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "tent",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "4eac04b94ef1132df1c9ad2182973469f94eecce0da9c8da5064801ac6a1ddeb"
+    },
+    {
+      "id": "stamp-camera",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "camera",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-camera.svg",
+      "preview": "generated/stamps/stamp-camera.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "camera",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "387a145f182ebfd62c4f92dc174a3618e6b0a52bfa1fe8da9435e76ce2e90287"
+    },
+    {
+      "id": "stamp-train",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "train",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-train.svg",
+      "preview": "generated/stamps/stamp-train.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "train",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "eb6709d42a86e5b294c6ea641a59a4c8765c9348b7294e1928d0bee5e3c0031b"
+    },
+    {
+      "id": "stamp-pin",
+      "world": "travel-scrapbook",
+      "category": "stamps",
+      "variant": "pin",
+      "kind": "svg",
+      "path": "generated/stamps/stamp-pin.svg",
+      "preview": "generated/stamps/stamp-pin.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "stamp",
+        "pin",
+        "ink"
+      ],
+      "usage": "Штамп события; использовать только когда событие есть в данных",
+      "animation": "stamp 650ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "2f2cba20ff69a37fba6d792ffe385f3df76275641f6078e478425eaf904557b0"
+    },
+    {
+      "id": "tape-linen",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "linen",
+      "kind": "svg",
+      "path": "generated/tapes/tape-linen.svg",
+      "preview": "generated/tapes/tape-linen.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "linen",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "e07535e9702da81ad5deb99091566c77b7f7a81826ee364122dd221c1a47efbe"
+    },
+    {
+      "id": "tape-stripe",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "stripe",
+      "kind": "svg",
+      "path": "generated/tapes/tape-stripe.svg",
+      "preview": "generated/tapes/tape-stripe.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "stripe",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "3e69fc657ebd44715d08f60579930a2f3e369f86d9e4e103932b727ce1fe0ebd"
+    },
+    {
+      "id": "tape-grid",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "grid",
+      "kind": "svg",
+      "path": "generated/tapes/tape-grid.svg",
+      "preview": "generated/tapes/tape-grid.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "grid",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "0e413a2d3f21db97249628747e8901d3f66f7db8e317362d70f590f8a3eb7093"
+    },
+    {
+      "id": "tape-dots",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "dots",
+      "kind": "svg",
+      "path": "generated/tapes/tape-dots.svg",
+      "preview": "generated/tapes/tape-dots.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "dots",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "bb937fcfa48a10c6141b2fe67a12248e8edc4c336b39dd90dfbf959dffc854a5"
+    },
+    {
+      "id": "tape-hatch",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "hatch",
+      "kind": "svg",
+      "path": "generated/tapes/tape-hatch.svg",
+      "preview": "generated/tapes/tape-hatch.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "hatch",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "eab85627788f0535ddaadf38bd0e5a199190ba39233597d38b57302aeeea0102"
+    },
+    {
+      "id": "tape-ledger",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "ledger",
+      "kind": "svg",
+      "path": "generated/tapes/tape-ledger.svg",
+      "preview": "generated/tapes/tape-ledger.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "ledger",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "88ebcb5e6df178cf6d94fbedcb662a13ad2a84e24a21ebf2d30e33f256cffc12"
+    },
+    {
+      "id": "tape-wave",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "wave",
+      "kind": "svg",
+      "path": "generated/tapes/tape-wave.svg",
+      "preview": "generated/tapes/tape-wave.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "wave",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "365cd5377b397dcb8d37059207415eba9ec800a67e600f9415492abdf22e56d2"
+    },
+    {
+      "id": "tape-check",
+      "world": "travel-scrapbook",
+      "category": "tapes",
+      "variant": "check",
+      "kind": "svg",
+      "path": "generated/tapes/tape-check.svg",
+      "preview": "generated/tapes/tape-check.svg",
+      "size": {
+        "width": 512,
+        "height": 140
+      },
+      "transparent": true,
+      "tags": [
+        "washi",
+        "check",
+        "adhesive"
+      ],
+      "usage": "Крепление фото или карты; допускается поворот ±8°",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "cd84da0d13187a90f284573b957f5a71ec83df1490bacc1ee9c28d52f5eeac90"
+    },
+    {
+      "id": "route-ink",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "ink",
+      "kind": "svg",
+      "path": "generated/routes/route-ink.svg",
+      "preview": "generated/routes/route-ink.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "ink",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "b6ffb4d57d1d28b6d945b15bab795f1f09fea36e1fec69f3b3b9fc09d55bcd23"
+    },
+    {
+      "id": "route-pencil",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "pencil",
+      "kind": "svg",
+      "path": "generated/routes/route-pencil.svg",
+      "preview": "generated/routes/route-pencil.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "pencil",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "75f1405a3313cbe85fe55c2a50819fa6d0cc2b9660b206f10bb4614e9a76a2e6"
+    },
+    {
+      "id": "route-stitched",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "stitched",
+      "kind": "svg",
+      "path": "generated/routes/route-stitched.svg",
+      "preview": "generated/routes/route-stitched.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "stitched",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "54e0cc806750ca57a8c555cc3fe0ba5be0026bc618dd52be0b59837ee1106a24"
+    },
+    {
+      "id": "route-double",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "double",
+      "kind": "svg",
+      "path": "generated/routes/route-double.svg",
+      "preview": "generated/routes/route-double.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "double",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "fc8ed302eca6a4fd38e8b128a1d786faec9d80cfe91143339da9a2c630d4c197"
+    },
+    {
+      "id": "route-dotted",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "dotted",
+      "kind": "svg",
+      "path": "generated/routes/route-dotted.svg",
+      "preview": "generated/routes/route-dotted.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "dotted",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "59c430fe254d2c11e349e207c044dc07b3eef4cedfad2c46d56153e9ffa16e14"
+    },
+    {
+      "id": "route-wash",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "wash",
+      "kind": "svg",
+      "path": "generated/routes/route-wash.svg",
+      "preview": "generated/routes/route-wash.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "wash",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "00d7e6c5e570ee7e2a285accc2ae5ff57b5558556afabf987afd03834e2638ee"
+    },
+    {
+      "id": "route-survey",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "survey",
+      "kind": "svg",
+      "path": "generated/routes/route-survey.svg",
+      "preview": "generated/routes/route-survey.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "survey",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "956b7817d22097f1217194adce2fe4d96cc7eb1bdda6cb0f96336edc1654c1fa"
+    },
+    {
+      "id": "route-field",
+      "world": "travel-scrapbook",
+      "category": "routes",
+      "variant": "field",
+      "kind": "svg",
+      "path": "generated/routes/route-field.svg",
+      "preview": "generated/routes/route-field.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "route",
+        "field",
+        "parametric"
+      ],
+      "usage": "Системный образец штриха; в сцене его геометрия заменяется реальным треком",
+      "animation": "ink-draw 2400ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "d6a1496604d63b2df4a23a0783ad1b89c24bac816ed4e976d0844822c9ec0965"
+    },
+    {
+      "id": "topo-01",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-1",
+      "kind": "svg",
+      "path": "generated/topography/topo-01.svg",
+      "preview": "generated/topography/topo-01.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "75ea40d78a0e1a417922917882306cfd432d4800a97914759927509e507322cf"
+    },
+    {
+      "id": "topo-02",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-2",
+      "kind": "svg",
+      "path": "generated/topography/topo-02.svg",
+      "preview": "generated/topography/topo-02.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "3bed26b0873f6d72b872391931bc2564b8ad242de039c3e44758eab15c997b26"
+    },
+    {
+      "id": "topo-03",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-3",
+      "kind": "svg",
+      "path": "generated/topography/topo-03.svg",
+      "preview": "generated/topography/topo-03.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "852b1adb592926cb38f704e9acf9ec2028c588a6824c3b36947af1bba49e1a5c"
+    },
+    {
+      "id": "topo-04",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-4",
+      "kind": "svg",
+      "path": "generated/topography/topo-04.svg",
+      "preview": "generated/topography/topo-04.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "37eb9949a80995157ff6cc49119625260a8e2041e9e4e18432e306b609fb924d"
+    },
+    {
+      "id": "topo-05",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-5",
+      "kind": "svg",
+      "path": "generated/topography/topo-05.svg",
+      "preview": "generated/topography/topo-05.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "64c8a6be481fa1f714f3a494a278eb284bf3ec71f3d721e0e5e1c96955645e67"
+    },
+    {
+      "id": "topo-06",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-6",
+      "kind": "svg",
+      "path": "generated/topography/topo-06.svg",
+      "preview": "generated/topography/topo-06.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "e2f71fa7031fb13218e28ed37b2d5fca55d8e6bd5124f94a6479d1190b3e9194"
+    },
+    {
+      "id": "topo-07",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-7",
+      "kind": "svg",
+      "path": "generated/topography/topo-07.svg",
+      "preview": "generated/topography/topo-07.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "852df51bc99a4a7bf8e28b5e58b3fb21dfaa4957385729f6b73c39d85bff5c57"
+    },
+    {
+      "id": "topo-08",
+      "world": "travel-scrapbook",
+      "category": "topography",
+      "variant": "contours-8",
+      "kind": "svg",
+      "path": "generated/topography/topo-08.svg",
+      "preview": "generated/topography/topo-08.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "topography",
+        "contour",
+        "decorative"
+      ],
+      "usage": "Декоративные изолинии; не выдавать за высоты реального маршрута",
+      "animation": "fade 600ms",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "453cb71aa2abade42cd1e84ad6f1281c23bbda9505c01ec6fc67f016bdf303bd"
+    },
+    {
+      "id": "paper-ruled",
+      "world": "travel-scrapbook",
+      "category": "paper-overlays",
+      "variant": "ruled",
+      "kind": "svg",
+      "path": "generated/paper-overlays/paper-ruled.svg",
+      "preview": "generated/paper-overlays/paper-ruled.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "paper",
+        "grid",
+        "ruled"
+      ],
+      "usage": "Прозрачный оверлей поверх бумажной текстуры",
+      "animation": "none",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "529190267d332f3344202fda689d5f9e97165d0b367256cd6a54a5599502b7db"
+    },
+    {
+      "id": "paper-ledger",
+      "world": "travel-scrapbook",
+      "category": "paper-overlays",
+      "variant": "ledger",
+      "kind": "svg",
+      "path": "generated/paper-overlays/paper-ledger.svg",
+      "preview": "generated/paper-overlays/paper-ledger.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "paper",
+        "grid",
+        "ledger"
+      ],
+      "usage": "Прозрачный оверлей поверх бумажной текстуры",
+      "animation": "none",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "deaf54c46eeb7d0de30ceca2942511c7e6fb65c82cff0359abbbf874b9c5f67f"
+    },
+    {
+      "id": "paper-dot-grid",
+      "world": "travel-scrapbook",
+      "category": "paper-overlays",
+      "variant": "dot-grid",
+      "kind": "svg",
+      "path": "generated/paper-overlays/paper-dot-grid.svg",
+      "preview": "generated/paper-overlays/paper-dot-grid.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "paper",
+        "grid",
+        "dot-grid"
+      ],
+      "usage": "Прозрачный оверлей поверх бумажной текстуры",
+      "animation": "none",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "6be9b8451bdba920680389cae70a9d3d1926f4b5b411ff31c6ba745a7d5e29c5"
+    },
+    {
+      "id": "paper-coordinate",
+      "world": "travel-scrapbook",
+      "category": "paper-overlays",
+      "variant": "coordinate",
+      "kind": "svg",
+      "path": "generated/paper-overlays/paper-coordinate.svg",
+      "preview": "generated/paper-overlays/paper-coordinate.svg",
+      "size": {
+        "width": 512,
+        "height": 512
+      },
+      "transparent": true,
+      "tags": [
+        "paper",
+        "grid",
+        "coordinate"
+      ],
+      "usage": "Прозрачный оверлей поверх бумажной текстуры",
+      "animation": "none",
+      "source": "procedural Route Story Asset Factory",
+      "license": "MIT (код проекта)",
+      "attribution": "не требуется",
+      "sha256": "a35c3ccd62fb711fba2dd1ace8ffb998bbb42910160f8a65eaf27d807ddc66fd"
+    },
+    {
+      "id": "paper-fiber",
+      "world": "travel-scrapbook",
+      "category": "textures",
+      "variant": "paper-fiber",
+      "kind": "png",
+      "path": "source/paper-fiber.png",
+      "preview": "source/paper-fiber.png",
+      "size": {
+        "width": 1254,
+        "height": 1254
+      },
+      "transparent": false,
+      "tags": [
+        "texture",
+        "paper-fiber",
+        "generated"
+      ],
+      "usage": "Фон страницы",
+      "animation": "fade 900ms",
+      "source": "generated with OpenAI imagegen for Route Story",
+      "prompt": "Warm ivory expedition paper with subtle fibers and foxing, flat repeatable scan, no objects or text",
+      "license": "проектный сгенерированный ассет",
+      "attribution": "не требуется",
+      "sha256": "0c6c05455930c37b3c6ce97386c25424f8b7fb90f57e5c9cbe6a923d3f7ca028"
+    },
+    {
+      "id": "watercolor-wash",
+      "world": "travel-scrapbook",
+      "category": "textures",
+      "variant": "watercolor-wash",
+      "kind": "png",
+      "path": "source/watercolor-wash.png",
+      "preview": "source/watercolor-wash.png",
+      "size": {
+        "width": 1254,
+        "height": 1254
+      },
+      "transparent": true,
+      "tags": [
+        "texture",
+        "watercolor-wash",
+        "generated"
+      ],
+      "usage": "Акварельный слой за маршрутом или фото",
+      "animation": "fade 900ms",
+      "source": "generated with OpenAI imagegen for Route Story",
+      "prompt": "Transparent lake-blue watercolor wash with a small rust accent, isolated, no text",
+      "license": "проектный сгенерированный ассет",
+      "attribution": "не требуется",
+      "sha256": "d195755b012f60ea8fe3adcafb9d69068312b5da09568ed13869f590bafe942b"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "01-cover",
+      "name": "Обложка",
+      "description": "Большой редакционный титр, маршрут и вход в материал",
+      "file": "demo/scenes/01-cover.svg",
+      "preview": "previews/scenes/01-cover.png",
+      "format": "9:16",
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layers": [
+        "paper-fiber",
+        "watercolor-wash",
+        "paper-ruled",
+        "tape-linen",
+        "route-real",
+        "stamp-compass",
+        "typography"
+      ],
+      "routeSource": "samples/day47.gpx",
+      "routeEvidence": "Демо: геометрия дороги на основе OSM, время в GPX смоделировано",
+      "photoCredits": "media/demo/credits.json",
+      "durationMs": 4200,
+      "source": "Route Story Asset Factory",
+      "sha256": "c512090cab4fd013e857e2b52e5efee73e57ee82f2a9073fed019094ef2e2fe1"
+    },
+    {
+      "id": "02-map",
+      "name": "Маршрут",
+      "description": "Геометрия пути из GPX на бумажной странице",
+      "file": "demo/scenes/02-map.svg",
+      "preview": "previews/scenes/02-map.png",
+      "format": "9:16",
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layers": [
+        "paper-fiber",
+        "paper-coordinate",
+        "topo-03",
+        "route-real",
+        "stamp-pin",
+        "typography"
+      ],
+      "routeSource": "samples/day47.gpx",
+      "routeEvidence": "Демо: геометрия дороги на основе OSM, время в GPX смоделировано",
+      "photoCredits": "media/demo/credits.json",
+      "durationMs": 4200,
+      "source": "Route Story Asset Factory",
+      "sha256": "2711654c6d86f0a86e43ce99fb378a79c997bedb4052d06d07f980f80f6c6ec0"
+    },
+    {
+      "id": "03-photo",
+      "name": "Фотография",
+      "description": "Полароидный кадр и короткая запись путешествия",
+      "file": "demo/scenes/03-photo.svg",
+      "preview": "previews/scenes/03-photo.png",
+      "format": "9:16",
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layers": [
+        "paper-fiber",
+        "watercolor-wash",
+        "tape-grid",
+        "photo-baikal-1",
+        "sticker-camera",
+        "typography"
+      ],
+      "routeSource": "samples/day47.gpx",
+      "routeEvidence": "Демо: геометрия дороги на основе OSM, время в GPX смоделировано",
+      "photoCredits": "media/demo/credits.json",
+      "durationMs": 4200,
+      "source": "Route Story Asset Factory",
+      "sha256": "8706edc2dd973e8779f09506b2f6da33488ab44bccbce1ea8f83d4e500606d5f"
+    },
+    {
+      "id": "04-elevation",
+      "name": "Рельеф",
+      "description": "Профиль высоты из GPX и декоративные изолинии",
+      "file": "demo/scenes/04-elevation.svg",
+      "preview": "previews/scenes/04-elevation.png",
+      "format": "9:16",
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layers": [
+        "paper-fiber",
+        "topo-07",
+        "elevation-real",
+        "ticket-summit",
+        "typography"
+      ],
+      "routeSource": "samples/day47.gpx",
+      "routeEvidence": "Демо: геометрия дороги на основе OSM, время в GPX смоделировано",
+      "photoCredits": "media/demo/credits.json",
+      "durationMs": 4200,
+      "source": "Route Story Asset Factory",
+      "sha256": "87fdb33a40c1343ffec85dfd4090536947db1d1ae98a82a932d26382a7fc4336"
+    },
+    {
+      "id": "05-arrival",
+      "name": "Прибытие",
+      "description": "Второй фотокадр, штамп и финиш маршрута",
+      "file": "demo/scenes/05-arrival.svg",
+      "preview": "previews/scenes/05-arrival.png",
+      "format": "9:16",
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layers": [
+        "paper-fiber",
+        "route-real",
+        "stamp-lake",
+        "photo-baikal-2",
+        "tape-wave",
+        "typography"
+      ],
+      "routeSource": "samples/day47.gpx",
+      "routeEvidence": "Демо: геометрия дороги на основе OSM, время в GPX смоделировано",
+      "photoCredits": "media/demo/credits.json",
+      "durationMs": 4200,
+      "source": "Route Story Asset Factory",
+      "sha256": "18c6e65ee17fddd1ceb21b7e9bde3b173b778bb7fe696123207928749c8bef96"
+    },
+    {
+      "id": "06-end",
+      "name": "Финальная страница",
+      "description": "Итог путешествия как собранная страница, готовая к следующему дню",
+      "file": "demo/scenes/06-end.svg",
+      "preview": "previews/scenes/06-end.png",
+      "format": "9:16",
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layers": [
+        "paper-fiber",
+        "watercolor-wash",
+        "frame-archival",
+        "ticket-arrival",
+        "route-real",
+        "sticker-lake",
+        "typography"
+      ],
+      "routeSource": "samples/day47.gpx",
+      "routeEvidence": "Демо: геометрия дороги на основе OSM, время в GPX смоделировано",
+      "photoCredits": "media/demo/credits.json",
+      "durationMs": 4200,
+      "source": "Route Story Asset Factory",
+      "sha256": "e16296520343fb6c82f1ca4e225134f8f559ad07eec8a6c8493700a4212eb150"
+    }
+  ],
+  "overviewPreview": "previews/demo-overview.png"
+}

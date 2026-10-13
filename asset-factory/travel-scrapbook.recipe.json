@@ -1,0 +1,51 @@
+{
+  "id": "travel-scrapbook",
+  "version": 1,
+  "name": "Travel Scrapbook",
+  "purpose": "Материальный тревел-дневник: чернила, бумага, билетные детали, фото и география реального места",
+  "palette": {
+    "paper": "#efe3c6",
+    "paperLight": "#f8f0dc",
+    "ink": "#2d3028",
+    "rust": "#a25a39",
+    "lake": "#6b969d",
+    "olive": "#788060",
+    "rule": "#a79b80"
+  },
+  "typography": {
+    "display": "Lora, Georgia, serif",
+    "body": "Inter, Segoe UI, sans-serif",
+    "handwritten": "Caveat, cursive",
+    "note": "Рукописный акцент только в коротких подписях; сцены остаются понятными при системных заменах"
+  },
+  "motion": {
+    "inkDrawMs": 2400,
+    "stampMs": 650,
+    "photoLiftMs": 900,
+    "pageHoldMs": 4200,
+    "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+    "reducedMotion": "без смещения и рисования; сохраняется порядок слоёв"
+  },
+  "demo": {
+    "route": "samples/day47.gpx",
+    "routeDisclosure": "Демо: геометрия дороги на основе OSM, время в GPX смоделировано",
+    "photos": ["media/demo/baikal-1.jpg", "media/demo/baikal-2.jpg"],
+    "photoCredits": "media/demo/credits.json",
+    "format": "9:16",
+    "sceneCount": 6
+  },
+  "rasterSources": [
+    {
+      "id": "paper-fiber",
+      "path": "assets/travel-scrapbook/source/paper-fiber.png",
+      "origin": "generated with OpenAI imagegen for Route Story",
+      "prompt": "Warm ivory expedition paper with subtle fibers and foxing, flat repeatable scan, no objects or text"
+    },
+    {
+      "id": "watercolor-wash",
+      "path": "assets/travel-scrapbook/source/watercolor-wash.png",
+      "origin": "generated with OpenAI imagegen for Route Story",
+      "prompt": "Transparent lake-blue watercolor wash with a small rust accent, isolated, no text"
+    }
+  ]
+}

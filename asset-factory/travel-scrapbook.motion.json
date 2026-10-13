@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "world": "travel-scrapbook",
+  "timeUnit": "ms",
+  "baseline": "CSS in assets/travel-scrapbook/motion.css",
+  "portTargets": ["GSAP", "Lottie"],
+  "motions": [
+    {
+      "id": "ink-draw",
+      "target": ".route-ink",
+      "delay": 280,
+      "duration": 2400,
+      "easing": "cubic-bezier(.22,1,.36,1)",
+      "keyframes": [{"at": 0, "pathReveal": 0}, {"at": 1, "pathReveal": 1}],
+      "lottieMapping": "shape Trim Paths End 0→100"
+    },
+    {
+      "id": "stamp-press",
+      "target": ".layer-stamps",
+      "delay": 1750,
+      "duration": 650,
+      "easing": "cubic-bezier(.18,1.4,.32,1)",
+      "keyframes": [
+        {"at": 0, "opacity": 0, "scale": 1.35},
+        {"at": 0.7, "opacity": 0.88, "scale": 0.96},
+        {"at": 1, "opacity": 0.88, "scale": 1}
+      ],
+      "lottieMapping": "Transform Opacity and Scale"
+    },
+    {
+      "id": "photo-lift",
+      "target": ".layer-photo",
+      "delay": 280,
+      "duration": 900,
+      "easing": "cubic-bezier(.22,1,.36,1)",
+      "keyframes": [{"at": 0, "opacity": 0, "y": 55, "scale": 0.97}, {"at": 1, "opacity": 1, "y": 0, "scale": 1}],
+      "lottieMapping": "Transform Position, Opacity and Scale"
+    },
+    {
+      "id": "tape-reveal",
+      "target": ".layer-tapes",
+      "delay": 1100,
+      "duration": 750,
+      "easing": "ease-out",
+      "keyframes": [{"at": 0, "opacity": 0, "y": -20}, {"at": 1, "opacity": 0.85, "y": 0}],
+      "lottieMapping": "Transform Position and Opacity"
+    },
+    {
+      "id": "page-change",
+      "target": ".slide",
+      "delay": 0,
+      "duration": 1200,
+      "easing": "cubic-bezier(.22,1,.36,1)",
+      "keyframes": [{"at": 0, "opacity": 0, "scale": 1.035, "y": 12}, {"at": 1, "opacity": 1, "scale": 1, "y": 0}],
+      "lottieMapping": "Composition Transform"
+    }
+  ],
+  "reducedMotion": "Render final keyframe immediately and retain layer order"
+}

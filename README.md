@@ -6,6 +6,8 @@
 
 **Живая версия:** https://sander419.github.io/route-story-engine/ · **Готовые ролики:** [`exports/`](exports)
 
+**Travel Scrapbook Asset Factory:** [каталог и инструкция](asset-factory/README.md) · [76 ассетов и манифест](assets/travel-scrapbook/manifest.json) · [демо шести сцен](assets/travel-scrapbook/demo/). Набор готов для подключения к движку; в экспорте MP4 он пока не используется.
+
 ## Показ за минуту: серия «День 47»
 
 1. Нажмите **«Серия: путешествие на 46 дней + новый день»** — загрузится демо-путешествие Самара → Иркутск (46 дней, 4 129 км).
