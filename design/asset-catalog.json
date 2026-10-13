@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "note": "Инвентаризация действующего приложения; внешние файлы не загружаются автоматически",
+  "assets": [
+    {
+      "id": "font-playfair-display", "kind": "font", "style": ["paper"], "path": "index.html",
+      "source": "Google Fonts", "license": "OFL по README; повторно проверить при локальной упаковке",
+      "commercialUse": "needs-file-review", "videoExport": "used-in-app", "attribution": "нет в кадре",
+      "checksum": null, "status": "existing-external"
+    },
+    {
+      "id": "font-oswald", "kind": "font", "style": ["night", "sat", "navigator"], "path": "index.html",
+      "source": "Google Fonts", "license": "OFL по README; повторно проверить при локальной упаковке",
+      "commercialUse": "needs-file-review", "videoExport": "used-in-app", "attribution": "нет в кадре",
+      "checksum": null, "status": "existing-external"
+    },
+    {
+      "id": "font-inter", "kind": "font", "style": ["paper", "night", "sat", "navigator"], "path": "index.html",
+      "source": "Google Fonts", "license": "OFL по README; повторно проверить при локальной упаковке",
+      "commercialUse": "needs-file-review", "videoExport": "used-in-app", "attribution": "нет в кадре",
+      "checksum": null, "status": "existing-external"
+    },
+    {
+      "id": "navigator-grid", "kind": "procedural-visual", "style": ["navigator"], "path": "src/navigator-grid.js",
+      "source": "Route Story", "license": "MIT проекта", "commercialUse": "yes", "videoExport": "yes",
+      "attribution": "не нужна", "checksum": null, "status": "implemented"
+    },
+    {
+      "id": "built-in-score", "kind": "procedural-audio", "style": ["paper", "night", "sat", "navigator"], "path": "src/audio.js",
+      "source": "Route Story", "license": "MIT проекта", "commercialUse": "yes", "videoExport": "yes",
+      "attribution": "не нужна", "checksum": null, "status": "implemented"
+    },
+    {
+      "id": "vector-map", "kind": "map-data", "style": ["paper", "night"], "path": "src/vector.js",
+      "source": "OpenFreeMap / OpenStreetMap", "license": "условия источника; атрибуция в кадре",
+      "commercialUse": "provider-terms", "videoExport": "provider-terms", "attribution": "в кадре",
+      "checksum": null, "status": "existing-external"
+    },
+    {
+      "id": "satellite-imagery", "kind": "map-imagery", "style": ["sat"], "path": "src/scene.js",
+      "source": "Esri World Imagery", "license": "условия провайдера требуют проверки для повторного использования",
+      "commercialUse": "provider-terms", "videoExport": "provider-terms", "attribution": "в кадре",
+      "checksum": null, "status": "existing-external"
+    }
+  ]
+}

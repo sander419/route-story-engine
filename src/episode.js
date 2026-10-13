@@ -307,6 +307,7 @@
       if (TR) ctx.clearRect(0, 0, W, H);
       else if (S.bgGrad) { const g = ctx.createLinearGradient(0, 0, W * 0.5, H); S.bgGrad.forEach((cc, i, a) => g.addColorStop(i / (a.length - 1), cc)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
       else { ctx.fillStyle = S.bg; ctx.fillRect(0, 0, W, H); }
+      if (LY.map && S.navigator) window.NavigatorGrid.draw(ctx, W, H, u);
       // карта — спокойный фон: без подписей и мелочи
       // на общих планах — только суша, вода и границы; дороги и мелкие реки появляются лишь вблизи
       const close = c.z >= 9.6;
@@ -396,6 +397,7 @@
       if (LY.hud && s.recipe === 'route-reveal' && s.follow && su >= s.move) {
         const F = s.follow, x = followX(s, su), sec = (v) => v * F.dur;
         const lab = (name, p0, a0) => { if (a0 <= 0.01) return; const wx = X(p0), wy = Y(p0), right = wx < W * 0.56;
+          if (wx < 32 * u || wx > W - 32 * u || wy < 32 * u || wy > H - 32 * u) return;
           ctx.save(); ctx.globalAlpha = a0; ctx.beginPath(); ctx.arc(wx, wy, 13 * u, 0, 6.2832); ctx.fillStyle = S.paper ? '#fbf3df' : '#ffffff'; ctx.fill(); ctx.lineWidth = 5 * u; ctx.strokeStyle = S.accent; ctx.stroke(); ctx.restore();
           T(ctx, name, wx + (right ? 34 : -34) * u, wy + 20 * u, { size: portrait ? 64 : 58, fam: S.fHead, weight: S.headW, align: right ? 'left' : 'right', alpha: a0, max: (right ? W - wx : wx) - 60 * u, shadowC: S.paper ? 'rgba(239,230,210,.95)' : 'rgba(4,8,18,.9)' }); };
         if (fromLabel) lab(fromLabel, todayPts[0], smooth(sec(x) / FADE) * (1 - smooth((sec(x) - 2.8) / FADE)));

@@ -84,6 +84,17 @@
       fHead: '"Oswald", "Arial Narrow", sans-serif', fBody: '"Inter", "Segoe UI", system-ui, sans-serif', headW: 700,
       scrim: [4, 8, 18], credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
     },
+    navigator: {
+      name: 'Навигатор',
+      bg: '#090e1a', bgGrad: ['#090e1a', '#0c1630', '#160d2c'], navigator: true,
+      ghost: 'rgba(67,231,255,.34)', ghostW: 5, ghostDash: [8, 16],
+      line: { stops: ['#43e7ff', '#f05de1'], glow: 'rgba(67,231,255,.4)', w: 10 },
+      head: '#e9f9ff', headHalo: 'rgba(240,93,225,.5)',
+      ink: '#e9f9ff', dim: 'rgba(185,227,245,.72)', accent: '#43e7ff',
+      panel: 'rgba(9,14,26,.78)', panelLine: 'rgba(67,231,255,.4)',
+      fHead: '"Oswald", "Arial Narrow", sans-serif', fBody: '"Inter", "Segoe UI", system-ui, sans-serif', headW: 700,
+      scrim: [9, 14, 26], credit: '',
+    },
     sat: {
       name: 'Спутник',
       bg: '#10150f',
@@ -302,6 +313,7 @@
         }
       }
       ctx.filter = 'none';
+      if (LY.map && S.navigator) window.NavigatorGrid.draw(ctx, W, H, u);
       if (LY.map && S.vec) window.VMap.draw(ctx, W, H, { cx: c.cx, cy: c.cy, z: c.z, rot: 0 }, ax, ay, { ...S.vec, font: S.fBody }, { fills: !TR && !S.layers, lines: true, labels: true }, o.lang, u);
       if (S.tint && !TR) {
         const tg = ctx.createLinearGradient(0, 0, W * 0.4, H);

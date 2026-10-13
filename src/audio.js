@@ -6,9 +6,16 @@
   // детерминированный шум (для «вжуха» и реверберации)
   function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
 
-  /* ---- встроенная музыка: тёплая тема в ре мажоре, 84 уд/мин, акценты по кадрам ----
+  /* ---- встроенная музыка: профиль выбирается вместе с визуальным стилем, акценты по кадрам ----
      cues: [{ t, recipe, dur }] — кадры серии (для тревел-трека можно передать пустой список) */
-  async function compose(duration, cues = [], seed = 7) {
+  const PROFILES = {
+    paper: { bpm: 84, chords: [[62, 66, 69], [57, 61, 64], [59, 62, 66], [55, 59, 62]], pad: 'triangle', arp: 'triangle', lowpass: [700, 1100, 2600], wet: 0.32, pulse: 0.22 },
+    night: { bpm: 116, chords: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], pad: 'sawtooth', arp: 'square', lowpass: [450, 900, 1800], wet: 0.14, pulse: 0.28 },
+    sat: { bpm: 72, chords: [[52, 55, 59], [48, 52, 55], [55, 59, 62], [50, 54, 57]], pad: 'sine', arp: 'triangle', lowpass: [500, 800, 1500], wet: 0.46, pulse: 0.12 },
+    navigator: { bpm: 124, chords: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 56, 59]], pad: 'sawtooth', arp: 'square', lowpass: [600, 1300, 2600], wet: 0.12, pulse: 0.3 },
+  };
+  async function compose(duration, cues = [], seed = 7, styleId = 'paper') {
+    const profile = PROFILES[styleId] || PROFILES.paper;
     const ctx = new OfflineAudioContext(2, Math.ceil(duration * SR), SR);
     const R = rng(seed);
     const master = ctx.createGain(); master.gain.value = 0.9;
@@ -17,27 +24,26 @@
     // реверберация: экспоненциальный шумовой хвост 2,6 с
     const ir = ctx.createBuffer(2, Math.floor(SR * 2.6), SR);
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < d.length; i++) d[i] = (R() * 2 - 1) * Math.pow(1 - i / d.length, 3.2); }
-    const verb = ctx.createConvolver(); verb.buffer = ir; const wet = ctx.createGain(); wet.gain.value = 0.32; verb.connect(wet).connect(master);
+    const verb = ctx.createConvolver(); verb.buffer = ir; const wet = ctx.createGain(); wet.gain.value = profile.wet; verb.connect(wet).connect(master);
     const bus = ctx.createGain(); bus.connect(master); bus.connect(verb);
     // финальное затухание
     master.gain.setValueAtTime(0.9, 0); master.gain.setValueAtTime(0.9, Math.max(0, duration - 2.6)); master.gain.linearRampToValueAtTime(0.0001, duration);
 
-    const beat = 60 / 84, bar = beat * 4;
+    const beat = 60 / profile.bpm, bar = beat * 4;
     const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
-    // ре мажор: D — A — Bm — G (по два такта)
-    const CHORDS = [[62, 66, 69], [57, 61, 64], [59, 62, 66], [55, 59, 62]];
+    const CHORDS = profile.chords;
     const pull = cues.find((c) => c.recipe === 'pullback');
     const pullT = pull ? pull.t : duration * 0.8;
     const revealT = (cues.find((c) => c.recipe === 'route-reveal' || c.recipe === 'journey-recap') || { t: Math.min(3, duration * 0.15) }).t;
 
     // мягкий фон-«пэд»: три расстроенных осциллятора на ноту через фильтр
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.4;
-    lp.frequency.setValueAtTime(700, 0); lp.frequency.linearRampToValueAtTime(1100, revealT + 2); lp.frequency.setValueAtTime(1100, pullT); lp.frequency.linearRampToValueAtTime(2600, Math.min(duration, pullT + 3));
+    lp.frequency.setValueAtTime(profile.lowpass[0], 0); lp.frequency.linearRampToValueAtTime(profile.lowpass[1], revealT + 2); lp.frequency.setValueAtTime(profile.lowpass[1], pullT); lp.frequency.linearRampToValueAtTime(profile.lowpass[2], Math.min(duration, pullT + 3));
     const padG = ctx.createGain(); padG.gain.value = 0.05; lp.connect(padG).connect(bus);
     for (let t0 = 0, k = 0; t0 < duration; t0 += bar * 2, k++) {
       const ch = CHORDS[k % 4], len = Math.min(bar * 2, duration - t0);
       for (const n of ch) for (const det of [-7, 0, 6]) {
-        const o = ctx.createOscillator(); o.type = det === 0 ? 'triangle' : 'sawtooth'; o.frequency.value = hz(n); o.detune.value = det;
+        const o = ctx.createOscillator(); o.type = det === 0 ? profile.pad : 'sawtooth'; o.frequency.value = hz(n); o.detune.value = det;
         const g = ctx.createGain(); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(det === 0 ? 0.5 : 0.22, t0 + 1.2); g.gain.setValueAtTime(det === 0 ? 0.5 : 0.22, t0 + len - 0.9); g.gain.linearRampToValueAtTime(0, t0 + len + 0.6);
         o.connect(g).connect(lp); o.start(t0); o.stop(t0 + len + 0.7);
       }
@@ -52,14 +58,14 @@
     // спокойный пульс (полутемп) — с момента, когда начинается путь
     for (let t = Math.ceil(revealT / (beat * 2)) * beat * 2; t < duration - 2; t += beat * 2) {
       const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
-      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(profile.pulse, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
       o.connect(g).connect(master); o.start(t); o.stop(t + 0.35);
     }
     // перебор на прорисовке пути и в финале
     const arp = (from, to) => {
       for (let t = Math.ceil(from / (beat / 2)) * (beat / 2), i = 0; t < Math.min(to, duration - 1.5); t += beat / 2, i++) {
         const k = Math.floor(t / (bar * 2)) % 4, ch = CHORDS[k], n = ch[i % 3] + 12 * (i % 6 < 3 ? 0 : 1);
-        const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = hz(n + 12);
+        const o = ctx.createOscillator(); o.type = profile.arp; o.frequency.value = hz(n + 12);
         const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
         o.connect(g).connect(bus); o.start(t); o.stop(t + 0.55);
       }
@@ -132,5 +138,5 @@
   }
   function stop() { try { if (src) src.stop(); } catch (e) { /* уже остановлен */ } src = null; }
 
-  window.RSAudio = { compose, fromFile, encodeInto, supported, playAt, stop, SR };
+  window.RSAudio = { compose, fromFile, encodeInto, supported, playAt, stop, SR, PROFILES };
 })();

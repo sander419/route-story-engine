@@ -22,7 +22,7 @@
   ).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
-  const swatch = { night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', sat: 'linear-gradient(135deg,#1d2b17,#4a5d2f 55%,#fde047 56%,#fb923c)' };
+  const swatch = { night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', sat: 'linear-gradient(135deg,#1d2b17,#4a5d2f 55%,#fde047 56%,#fb923c)', navigator: 'linear-gradient(135deg,#090e1a,#0c1630 55%,#43e7ff 56%,#f05de1)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
@@ -620,10 +620,10 @@
   async function audioFor(sc) {
     if (!sc || state.music === 'none' || !window.RSAudio) return null;
     const cues = (sc.plan ? sc.plan.beats : []).map((b) => ({ t: b.startSec, recipe: b.recipe, dur: b.durationSec }));
-    const key = state.music + '|' + sc.duration + '|' + cues.map((c) => c.recipe + c.t).join(',') + '|' + (musicFileBuf ? musicFileBuf.byteLength : 0);
+    const key = state.music + '|' + state.styleId + '|' + sc.duration + '|' + cues.map((c) => c.recipe + c.t).join(',') + '|' + (musicFileBuf ? musicFileBuf.byteLength : 0);
     if (key === audioKey && audioBuf) return audioBuf;
     if (state.music === 'own') { if (!musicFileBuf) return null; audioBuf = await window.RSAudio.fromFile(musicFileBuf, sc.duration); }
-    else audioBuf = await window.RSAudio.compose(sc.duration, cues);
+    else audioBuf = await window.RSAudio.compose(sc.duration, cues, 7, state.styleId);
     audioKey = key; return audioBuf;
   }
   async function syncAudio() {
