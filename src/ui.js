@@ -335,8 +335,33 @@
     }
     return { J, change };
   }
+  /* ---- лицо героя: знак, имя, цвет. У примеров оно задано заранее, у своего трека — из «Кто едет» ---- */
+  const HERO_GREEN = '#2fa84f', PKEY = 'route-story-profile';
+  const COLORS = [HERO_GREEN, '#e8590c', '#2f7fd6', '#f59f00', '#c2255c', '#0c9aa0'];
+  state.profile = (() => { try { return { name: '', mark: 'auto', color: null, next: '', ...(JSON.parse(localStorage.getItem(PKEY) || '{}')) }; } catch (e) { return { name: '', mark: 'auto', color: null, next: '' }; } })();
+  function profileFor(J, ctxSeg) {
+    if (J.schematic) return { name: '@wahrider', mark: 'unicycle', color: HERO_GREEN, next: '' };            // герой вайбатона: Барбос и его зелёный обод
+    if (J.id !== 'my') return { name: J.traveler || '', mark: 'bike', color: '#2f7fd6', next: '' };           // пример: вымышленный велопутешественник
+    const p = state.profile, v = ctxSeg && ctxSeg.avgKmh ? ctxSeg.avgKmh : 0;
+    return { name: p.name, color: p.color, next: p.next, mark: p.mark !== 'auto' ? p.mark : v > 0 && v < 7 ? 'walk' : v >= 7 && v < 45 ? 'bike' : 'dot' };
+  }
+  function saveProfile() { try { localStorage.setItem(PKEY, JSON.stringify(state.profile)); } catch (e) { /* без сохранения */ } rebuild(true); }
+  $('pName').value = state.profile.name; $('pNext').value = state.profile.next;
+  $('pName').oninput = () => { state.profile.name = $('pName').value.trim(); saveProfile(); };
+  $('pNext').oninput = () => { state.profile.next = $('pNext').value.trim(); saveProfile(); };
+  [...$('pMark').children].forEach((b) => { b.classList.toggle('on', b.dataset.v === state.profile.mark); b.onclick = () => { state.profile.mark = b.dataset.v; [...$('pMark').children].forEach((x) => x.classList.toggle('on', x === b)); saveProfile(); }; });
+  [null, ...COLORS].forEach((c) => {
+    const b = document.createElement('button'); b.type = 'button';
+    if (c) { b.style.background = c; b.title = c; b.setAttribute('aria-label', 'Цвет ' + c); } else { b.className = 'auto'; b.textContent = 'как в стиле'; }
+    b.classList.toggle('on', state.profile.color === c);
+    b.onclick = () => { state.profile.color = c; [...$('pColor').children].forEach((x) => x.classList.toggle('on', x === b)); saveProfile(); };
+    $('pColor').appendChild(b);
+  });
+
   function buildEpisode(w, h) {
-    const { J, change } = seriesInput();
+    const inp = seriesInput(), change = inp.change, lastSeg = [...inp.J.days].sort((a, b) => a.day - b.day).pop();
+    const J = { ...inp.J, profile: profileFor(inp.J, lastSeg) };
+    $('pHint').hidden = J.id === 'my';
     const res = window.Director.direct(J, state.etype, { aspect: state.fmt === 'v' ? '9:16' : '16:9' });
     state.lastEp = { res, change, J };
     renderSeriesPanel(res, change, J);

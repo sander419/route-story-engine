@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&family=Oswald:wght@500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=10130100">
+<link rel="stylesheet" href="style.css?v=10132011">
 </head>
 <body>
 <header class="top">
@@ -68,7 +68,21 @@
 
     <!-- шаг 2: история -->
     <div class="tab" id="t-story" hidden>
-      <p class="lead">Необязательно. С фото и одной фразой ролик становится личным: фото встают на весь экран, фраза — отдельным кадром.</p>
+      <div class="who">
+        <div class="f">Кто едет <small class="hint">задаётся один раз — знак, имя и цвет стоят в каждой серии</small></div>
+        <div class="two">
+          <label class="f">Имя или ник<input id="pName" maxlength="24" placeholder="Например: @wahrider"></label>
+          <label class="f">Куда дальше <input id="pNext" maxlength="28" placeholder="необязательно: Бухара"></label>
+        </div>
+        <div class="f">Знак на карте</div>
+        <div class="seg seg4" id="pMark">
+          <button data-v="auto" class="on">Сам подберёт</button><button data-v="unicycle">Уницикл</button><button data-v="bike">Велосипед</button><button data-v="walk">Пешком</button>
+        </div>
+        <div class="f">Цвет пути</div>
+        <div class="colors" id="pColor"></div>
+        <small class="hint" id="pHint" hidden>В примерах знак и цвет заданы заранее. Ваши настройки применятся к вашему треку.</small>
+      </div>
+      <p class="lead">Фото и фраза — необязательно. С ними ролик становится личным: фото встают на весь экран, фраза может стать первым кадром.</p>
       <div class="f">Фото дня (до 4)
         <input type="file" id="photos" accept="image/jpeg,image/png,image/webp" multiple>
         <div id="photoList"></div>
@@ -156,18 +170,18 @@
   </div>
 </main>
 
-<script src="vendor/mp4-muxer.min.js?v=10130100"></script>
-<script src="src/route.js?v=10130100"></script>
-<script src="src/vector.js?v=10130100"></script>
-<script src="src/navigator-grid.js?v=10130101"></script>
-<script src="src/scene.js?v=10130101"></script>
-<script src="src/journey.js?v=10130100"></script>
-<script src="src/director.js?v=10130100"></script>
-<script src="src/episode.js?v=10130102"></script>
-<script src="src/exif.js?v=10130100"></script>
-<script src="src/audio.js?v=10130101"></script>
-<script src="src/export.js?v=10130100"></script>
-<script src="src/layers-export.js?v=10130100"></script>
-<script src="src/ui.js?v=10130101"></script>
+<script src="vendor/mp4-muxer.min.js?v=10132011"></script>
+<script src="src/route.js?v=10132011"></script>
+<script src="src/vector.js?v=10132011"></script>
+<script src="src/navigator-grid.js?v=10132011"></script>
+<script src="src/scene.js?v=10132011"></script>
+<script src="src/journey.js?v=10132011"></script>
+<script src="src/director.js?v=10132011"></script>
+<script src="src/episode.js?v=10132011"></script>
+<script src="src/exif.js?v=10132011"></script>
+<script src="src/audio.js?v=10132011"></script>
+<script src="src/export.js?v=10132011"></script>
+<script src="src/layers-export.js?v=10132011"></script>
+<script src="src/ui.js?v=10132011"></script>
 </body>
 </html>

@@ -89,6 +89,9 @@
         }
       }
     });
+    // звуковая подпись серии: один и тот же короткий мотив в начале и в конце — по нему серию узнают
+    const sig = (t0, notes) => notes.forEach((m, i) => { const tt = t0 + i * 0.22; if (tt < 0 || tt > duration - 0.3) return; for (const [mul, amp, type] of [[1, 0.07, 'sine'], [2, 0.022, 'triangle']]) { const o = ctx.createOscillator(); o.type = type; o.frequency.value = hz(m) * mul; const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, tt); g.gain.exponentialRampToValueAtTime(amp, tt + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, tt + 1.5); o.connect(g).connect(bus); o.start(tt); o.stop(tt + 1.6); } });
+    sig(0.12, [74, 81, 86]); sig(duration - 2.9, [86, 81, 74]);
     return normalize(await ctx.startRendering(), 0.2);
   }
 

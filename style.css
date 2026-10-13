@@ -127,3 +127,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 @media (min-width:641px){ .stage{position:static} #cv{max-height:56vh} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* кто едет */
+.who{display:flex;flex-direction:column;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.seg4{grid-template-columns:repeat(4,1fr)}
+.seg4 button{padding:8px 4px;font-size:14px}
+.colors{display:flex;flex-wrap:wrap;gap:10px}
+.colors button{width:44px;height:44px;min-height:44px;border-radius:50%;padding:0;border:3px solid transparent;outline:1px solid var(--line)}
+.colors button.on{border-color:var(--ink)}
+.colors button.auto{width:auto;border-radius:999px;padding:0 14px;font-size:14px}
+@media (max-width:640px){.seg4{grid-template-columns:1fr 1fr}}

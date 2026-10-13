@@ -108,8 +108,28 @@
     if (kind !== 'mild' && kind !== 'heat' && kind !== 'frost') sub.push(Math.round(w.tMin) === Math.round(w.tMax) ? deg(w.tMax) : `${deg(w.tMin)} … ${deg(w.tMax)}`);
     if (!/wind/.test(kind) && wind >= 1) sub.push(`ветер ${wind} м/с`);
     if (kind !== 'rain' && kind !== 'snow') sub.push(w.precip >= 0.5 ? `осадки ${Math.round(w.precip * 10) / 10} мм` : 'без осадков');
-    return { head, sub: sub.join(' · '), kind, sev: r2(sev), wind: w.wind, dir: w.dir, headwind: w.head, precip: w.precip, snow, tz: w.tz, sunrise: w.sunrise, sunset: w.sunset, src: w.src || '' };
+    return { tMin: w.tMin, tMax: w.tMax, head, sub: sub.join(' · '), kind, sev: r2(sev), wind: w.wind, dir: w.dir, headwind: w.head, precip: w.precip, snow, tz: w.tz, sunrise: w.sunrise, sunset: w.sunset, src: w.src || '' };
   }
+  /* Главное дня — обещание первого кадра (принцип «одна серия — один вопрос и один ответ»).
+     Порядок = приоритет: первое подходящее становится крючком. Всё берётся из данных; не подошло ничего — крючка нет, серия начинается с названия маршрута. */
+  const plural = (n, f) => f[n % 10 === 1 && n % 100 !== 11 ? 0 : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 1 : 2];
+  const degT = (v) => (Math.round(v) > 0 ? '+' : Math.round(v) < 0 ? '−' : '') + Math.abs(Math.round(v)) + '°';
+  const kmR = (c) => Math.round(c.newKm).toLocaleString('ru-RU') + ' км';
+  const HOOKS = [
+    { id: 'headwind', when: (c) => c.weather && c.weather.kind === 'headwind', text: (c) => (c.movingH >= 1.5 ? `${Math.round(c.movingH)} ${plural(Math.round(c.movingH), ['час', 'часа', 'часов'])} против ветра` : `Встречный ветер ${Math.round(c.weather.wind)} м/с`) },
+    { id: 'snow', when: (c) => c.weather && c.weather.kind === 'snow', text: (c) => `${kmR(c)} в снег` },
+    { id: 'rain', when: (c) => c.weather && c.weather.kind === 'rain', text: (c) => `${kmR(c)} под дождём` },
+    { id: 'frost', when: (c) => c.weather && c.weather.kind === 'frost', text: (c) => `${kmR(c)} в мороз ${degT(c.weather.tMin)}` },
+    { id: 'heat', when: (c) => c.weather && c.weather.kind === 'heat', text: (c) => `${kmR(c)} в жару ${degT(c.weather.tMax)}` },
+    { id: 'climb', when: (c) => c.gain >= 700 || (c.gain >= 300 && c.gain / Math.max(1, c.newKm) >= 12), text: (c) => `Подъём на ${Math.round(c.gain).toLocaleString('ru-RU')} м` },
+    { id: 'milestone', when: (c) => !!c.milestoneKm, text: (c) => `Позади ${c.milestoneKm.toLocaleString('ru-RU')} км` },
+    { id: 'longest', when: (c) => c.daysCount >= 3 && c.newKm >= Math.max(...c.perDay) && c.newKm >= 40, text: (c) => `Самый длинный день: ${kmR(c)}` },
+    { id: 'hours', when: (c) => c.movingH >= 8, text: (c) => `${Math.round(c.movingH)} ${plural(Math.round(c.movingH), ['час', 'часа', 'часов'])} в пути` },
+    { id: 'newplace', when: (c) => c.arrival && (c.arrival.kind === 'country' || c.arrival.kind === 'chapter'), text: (c) => (c.arrival.kind === 'country' ? 'Новая страна: ' : 'Новая глава: ') + c.arrival.label },
+    { id: 'note', when: (c) => !!c.note, text: (c) => '«' + shortNote(c.note.text) + '»' },
+    { id: 'loop', when: (c) => !!c.seg.loop, text: (c) => `Круг в ${kmR(c)}` },
+  ];
+  function pickHook(c) { for (const h of HOOKS) if (h.when(c)) return { kind: h.id, text: h.text(c) }; return null; }
   function hoursText(h) { const m = Math.round(h * 60); return m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч ${String(m % 60).padStart(2, '0')} мин`; }
 
   function buildContext(J, episodeType, opts = {}) {
@@ -124,7 +144,7 @@
     const crossedK = Math.floor(S.totalKm / 1000) > Math.floor(prevTotal / 1000) ? Math.floor(S.totalKm / 1000) * 1000 : null;
     const dayMilestone = seg.day % 50 === 0 ? seg.day : null;   // «День 1» вехой не считаем: это просто начало
     const arrival = (J.checkpoints || []).find((c) => c.day === seg.day && c.kind !== 'milestone') || null;
-    return {
+    const ctx = {
       type: episodeType, aspect: opts.aspect || '9:16',
       journeyId: J.id, title: J.title, traveler: J.traveler || '',
       day: seg.day, date: seg.date || null, seg,
@@ -145,6 +165,8 @@
       recent: (J.episodes || []).slice(-(opts.memory || 4)),
       schematic: !!J.schematic, seasonLine: J.seasonLine || null,
     };
+    ctx.hook = J.schematic || episodeType === 'story-so-far' ? null : pickHook(ctx);
+    return ctx;
   }
 
   /* ================= Shot Recipes (решения; отрисовка — отдельно, в episode.js) ================= */
@@ -155,12 +177,12 @@
       eligible: (c) => c.daysCount === 1,
       base: () => ({ relevance: 1, novelty: 1, emotion: 0.4, visual: 0.6, milestone: 0 }),
       pref: () => 3.4,
-      params: (c) => ({ from: c.from, to: c.to, name: c.name, date: c.date, km: c.newKm }) },
+      params: (c) => ({ from: c.from, to: c.to, name: c.name, date: c.date, km: c.newKm, hook: c.hook ? c.hook.text : null }) },
     { id: 'day-card', types: ['new-viewer', 'returning-viewer'], beats: ['hook'], min: 2.6, max: 3.6, flex: true,
       eligible: (c) => c.daysCount >= 2,
       base: (c) => ({ relevance: 1, novelty: c.type === 'returning-viewer' ? 0.9 : 0.6, emotion: 0.2, visual: 0.4, milestone: c.dayMilestone ? 1 : 0 }),
       pref: (c) => 3,
-      params: (c) => ({ day: c.day, date: c.date, title: c.title, traveler: c.traveler, totalKm: c.prevTotalKm }) },
+      params: (c) => ({ day: c.day, date: c.date, title: c.title, traveler: c.traveler, totalKm: c.prevTotalKm, hook: c.hook ? c.hook.text : null }) },
     { id: 'progress-overview', beats: ['hook', 'context'], min: 3.5, max: 5.5, flex: true,
       eligible: (c) => c.daysCount >= 2 && c.type !== 'story-so-far',
       base: (c, beat) => ({ relevance: beat === 'context' ? 0.9 : 0.7, novelty: c.type === 'new-viewer' ? 0.8 : 0.2, emotion: 0.3, visual: 0.8, milestone: c.milestoneKm ? 0.6 : 0 }),
@@ -211,7 +233,7 @@
       pref: () => 3.6,
       params: (c) => ({ text: hoursText(c.movingH), hours: r2(c.movingH), avgKmh: r1(c.avgKmh) }) },
     { id: 'note-card', types: ['new-viewer', 'returning-viewer'], beats: ['moment', 'reflection'], min: 3.5, max: 6, flex: true,
-      eligible: (c) => !!c.note,
+      eligible: (c) => !!c.note && !(c.hook && c.hook.kind === 'note'),
       base: (c) => ({ relevance: 0.9, novelty: 0.8, emotion: 0.85, visual: 0.4, milestone: 0 }),
       pref: (c) => clamp(3 + c.noteWords * 0.3, 3.8, 6),
       params: (c) => ({ text: shortNote(c.note.text) }) },
@@ -239,7 +261,7 @@
       eligible: (c) => c.daysCount >= 2,
       base: (c) => ({ relevance: 1, novelty: 0.7, emotion: 0.7, visual: 1, milestone: c.milestoneKm ? 0.6 : 0 }),
       pref: () => 7,
-      params: (c) => ({ totalKm: c.totalKm, day: c.day, showFullRoute: true, showCurrentPosition: true }) },
+      params: (c) => ({ totalKm: c.totalKm, day: c.day, newKm: c.newKm, time: c.movingH >= 0.4 ? hoursText(c.movingH) : null, showFullRoute: true, showCurrentPosition: true }) },
     // один трек: финал — итог дня тремя числами, а не «путешествие продолжается»
     { id: 'day-summary', types: ['new-viewer', 'returning-viewer'], beats: ['outro'], min: 4, max: 5.5, flex: true,
       eligible: (c) => c.daysCount === 1,
@@ -250,7 +272,7 @@
       eligible: () => true,
       base: (c) => ({ relevance: 0.8, novelty: 0.4, emotion: 0.5, visual: 0.6, milestone: 0 }),
       pref: () => 4.2,
-      params: (c) => ({ totalKm: c.totalKm, day: c.day }) },
+      params: (c) => ({ totalKm: c.totalKm, day: c.day, newKm: c.newKm, time: c.movingH >= 0.4 ? hoursText(c.movingH) : null }) },
     // story-so-far
     { id: 'season-card', beats: ['hook'], types: ['story-so-far'], min: 3, max: 4, flex: true,
       eligible: () => true,
@@ -388,7 +410,7 @@
   function finish(shots, ctx, log, fallbackReason, fitNote) {
     let t = 0;
     const beats = shots.map((s) => { const b = { beat: s.beat, recipe: s.recipe, startSec: r2(t), durationSec: s.durationSec, params: s.params }; t += s.durationSec; return b; });
-    const seedSrc = JSON.stringify([ctx.journeyId, ctx.day, ctx.type, ctx.aspect, ctx.newKm, ctx.photos.map((m) => m.id), ctx.note && ctx.note.text, ctx.recent.map((e) => e.episodeId), ctx.from, ctx.to, ctx.waypoints.map((w) => w.name), ctx.movingH, ctx.maxEle, ctx.weather && ctx.weather.head]);
+    const seedSrc = JSON.stringify([ctx.journeyId, ctx.day, ctx.type, ctx.aspect, ctx.newKm, ctx.photos.map((m) => m.id), ctx.note && ctx.note.text, ctx.recent.map((e) => e.episodeId), ctx.from, ctx.to, ctx.waypoints.map((w) => w.name), ctx.movingH, ctx.maxEle, ctx.weather && ctx.weather.head, ctx.hook && ctx.hook.text]);
     const plan = {
       episodeId: `day-${ctx.day}-${ctx.type}`, journeyId: ctx.journeyId, episodeNumber: ctx.day, episodeType: ctx.type, aspect: ctx.aspect,
       seed: hash(seedSrc), durationSec: r2(t), fallback: fallbackReason || null, fitting: fitNote || '', beats,
@@ -423,6 +445,6 @@
     return { episodeId: plan.episodeId, episodeType: plan.episodeType, recipes: plan.beats.map((b) => b.recipe), byBeat, hookRecipe: byBeat.hook, momentRecipe: byBeat.moment, outroRecipe: byBeat.outro };
   }
 
-  const API = { summarize, addDay, buildContext, direct, validate, summaryOf, compressHistory, pickWaypoints, weatherLine, RECIPES, TYPES, DURATION, hash };
+  const API = { summarize, addDay, buildContext, direct, validate, summaryOf, compressHistory, pickWaypoints, weatherLine, pickHook, HOOKS, RECIPES, TYPES, DURATION, hash };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Director = API;
 })(typeof window !== 'undefined' ? window : globalThis);
