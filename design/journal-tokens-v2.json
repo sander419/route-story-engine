@@ -1,0 +1,1997 @@
+{
+  "schemaVersion": 1,
+  "status": "visual-candidate; V1 preserved; product photo still pending",
+  "units": {
+    "name": "u",
+    "referenceShortSidePx": 1080,
+    "uInPx": "min(W,H)/1080",
+    "toPx": "valueInU * uInPx",
+    "coordinateSystem": "top-left; boxes [x,y,width,height]; viewBox uses u"
+  },
+  "provenance": {
+    "rules": "sources/design-rules.yaml",
+    "rulesSha256": "dca099e181cde4752b1d19f980a337b520979df4ae4593650bbf2e80b13a0eff",
+    "rulesUpdated": "2026-10-13",
+    "task": "../docs/CODEX-TASK-1.md §3",
+    "fonts": [
+      {
+        "family": "Yeseva One",
+        "source": "Атлас\\Заметки\\Дизайн\\Typography Collection 2026\\fonts\\yeseva-one\\YesevaOne-Regular.woff2",
+        "sha256": "d2ca97709014177050d11f3e2d20a59a2600aede61233d588daf35be6b62261f",
+        "bytes": 36608,
+        "license": "sources/yeseva-one/LICENSE.txt"
+      },
+      {
+        "family": "Geologica",
+        "source": "Атлас\\Заметки\\Дизайн\\Typography Collection 2026\\fonts\\geologica\\Geologica[CRSV,SHRP,slnt,wght].woff2",
+        "sha256": "62da5f6faa8486ace2d073f8b0b07319c9137dd77e90ed86ea347e78a4c9d278",
+        "bytes": 120488,
+        "license": "sources/geologica/LICENSE.txt"
+      },
+      {
+        "family": "Marck Script",
+        "source": "Атлас\\Заметки\\Дизайн\\Typography Collection 2026\\fonts\\marck-script\\MarckScript-Regular.woff2",
+        "sha256": "65bcd4707cf384717e57da54336b076e81ba29b58a5056a9ec16f4f64cc394a3",
+        "bytes": 27276,
+        "license": "sources/marck-script/LICENSE.txt"
+      }
+    ],
+    "barbosSourceSha256": "34267cbd8829d3b7128a38dd14ebe04b4189583605a6f09132af61b33d1ce651",
+    "baseTokensSha256": "acbfdb13d95d420b38b196ab67fda53684ae8ae5d311a1d83ce6075fc0670340",
+    "assetSources": [
+      {
+        "path": "assets/travel-scrapbook/source/paper-fiber.png",
+        "sha256": "0c6c05455930c37b3c6ce97386c25424f8b7fb90f57e5c9cbe6a923d3f7ca028"
+      },
+      {
+        "path": "assets/travel-scrapbook/source/watercolor-wash.png",
+        "sha256": "d195755b012f60ea8fe3adcafb9d69068312b5da09568ed13869f590bafe942b"
+      },
+      {
+        "path": "assets/travel-scrapbook/generated/tapes/tape-linen.svg",
+        "sha256": "e07535e9702da81ad5deb99091566c77b7f7a81826ee364122dd221c1a47efbe"
+      },
+      {
+        "path": "assets/travel-scrapbook/generated/tapes/tape-ledger.svg",
+        "sha256": "88ebcb5e6df178cf6d94fbedcb662a13ad2a84e24a21ebf2d30e33f256cffc12"
+      },
+      {
+        "path": "assets/travel-scrapbook/generated/topography/topo-01.svg",
+        "sha256": "75ea40d78a0e1a417922917882306cfd432d4800a97914759927509e507322cf"
+      },
+      {
+        "path": "assets/travel-scrapbook/generated/icons/icon-compass.svg",
+        "sha256": "c6e91bf40384561e6d56f3ae5d0bf52f10490274757bcac9d134987aa0701679"
+      }
+    ]
+  },
+  "spacing": {
+    "scaleU": [
+      4,
+      8,
+      12,
+      16,
+      24,
+      32,
+      48,
+      64,
+      96
+    ],
+    "nestedOnlyU": [
+      2,
+      6,
+      10
+    ],
+    "groupingRatioMin": 2.0,
+    "withinGroupU": 32,
+    "betweenGroupsU": 64,
+    "componentPaddingU": 32,
+    "textGapU": 16
+  },
+  "typography": {
+    "ratio": 1.333,
+    "sizeScaleU": [
+      32,
+      44,
+      56,
+      76,
+      100,
+      136,
+      180
+    ],
+    "maxSizes": 7,
+    "trackingEm": {
+      "display": -0.025,
+      "caps": 0.05,
+      "normal": 0
+    },
+    "lineHeight": {
+      "display": 1.1,
+      "caption": 1.25,
+      "small": 1.45
+    },
+    "numericFeatures": [
+      "tnum",
+      "lnum"
+    ],
+    "styles": {
+      "display": {
+        "family": "Yeseva One",
+        "weight": 400,
+        "sizeU": 180,
+        "tracking": "display",
+        "lineHeight": "display",
+        "color": "ink",
+        "level": 1
+      },
+      "title": {
+        "family": "Yeseva One",
+        "weight": 400,
+        "sizeU": 136,
+        "tracking": "display",
+        "lineHeight": "display",
+        "color": "ink",
+        "level": 1
+      },
+      "place": {
+        "family": "Yeseva One",
+        "weight": 400,
+        "sizeU": 100,
+        "tracking": "display",
+        "lineHeight": "display",
+        "color": "ink",
+        "level": 2
+      },
+      "counter": {
+        "family": "Geologica",
+        "weight": 700,
+        "sizeU": 180,
+        "tracking": "normal",
+        "lineHeight": "display",
+        "color": "ink",
+        "level": 1,
+        "numeric": true
+      },
+      "counterCompact": {
+        "family": "Geologica",
+        "weight": 700,
+        "sizeU": 136,
+        "tracking": "normal",
+        "lineHeight": "display",
+        "color": "ink",
+        "level": 1,
+        "numeric": true
+      },
+      "caption": {
+        "family": "Geologica",
+        "weight": 400,
+        "sizeU": 44,
+        "tracking": "normal",
+        "lineHeight": "caption",
+        "color": "secondary",
+        "level": 2
+      },
+      "routeCaption": {
+        "family": "Geologica",
+        "weight": 500,
+        "sizeU": 56,
+        "tracking": "normal",
+        "lineHeight": "caption",
+        "color": "ink",
+        "level": 2
+      },
+      "note": {
+        "family": "Marck Script",
+        "weight": 400,
+        "sizeU": 76,
+        "tracking": "normal",
+        "lineHeight": "caption",
+        "color": "ink",
+        "level": 2
+      },
+      "unit": {
+        "family": "Geologica",
+        "weight": 500,
+        "sizeU": 44,
+        "tracking": "caps",
+        "lineHeight": "caption",
+        "color": "secondary",
+        "level": 2
+      },
+      "guide": {
+        "family": "Geologica",
+        "weight": 400,
+        "sizeU": 32,
+        "tracking": "caps",
+        "lineHeight": "small",
+        "color": "secondary",
+        "level": 3
+      }
+    },
+    "overflow": {
+      "policy": "measure with loaded fonts and actual tracking; wrap at word boundary; max 2 product lines total; use next lower sizeScaleU step; never horizontal compression or arbitrary font size",
+      "missingGlyph": "explicit tested fallback or hide field; never silent fallback"
+    },
+    "fontMetrics": {
+      "Yeseva One": {
+        "ascentEm": 0.915,
+        "descentEm": 0.24
+      },
+      "Geologica": {
+        "ascentEm": 0.975,
+        "descentEm": 0.275
+      },
+      "Marck Script": {
+        "ascentEm": 0.864,
+        "descentEm": 0.385
+      }
+    },
+    "canvasBaseline": "alphabetic; baseline = box.y + (box.height - ceil(ascentEm*sizeU) - ceil(descentEm*sizeU))/2 + ceil(ascentEm*sizeU); font bbox centered in allocation; lineHeight controls multiline advance only",
+    "canvasNumbers": {
+      "digitCellEm": 0.66,
+      "punctuationAdvanceEm": {
+        "+": 0.648,
+        ",": 0.2875
+      },
+      "svg": "tnum/lnum enabled as CSS; digits additionally centered in explicit fixed cells. Source Geologica tnum numeral 6 has 0.55u advance drift at 180u, so explicit cells guarantee stability.",
+      "canvas": "Canvas ctx.font alone does not enable tnum. Use digitCellEm*fontSize fixed digit cell, draw each digit centered in cell; punctuation uses punctuationAdvanceEm or measured advance. Align entire value to right. Verify on actual engine before declaring numeric rendering done."
+    }
+  },
+  "colors": {
+    "paper": "#f4e8cb",
+    "card": "#fff4d9",
+    "ink": "#203c36",
+    "secondary": "#59503d",
+    "accent": "#a33f28",
+    "green": "#274e45",
+    "cream": "#fff4d9",
+    "gold": "#d8a64b",
+    "blue": "#527e85",
+    "guide": "#877e64",
+    "desk": "#2f3a32"
+  },
+  "lines": {
+    "guideU": 2,
+    "boundaryU": 4,
+    "routeU": 12,
+    "profileU": 12,
+    "pencilU": 4
+  },
+  "stickers": {
+    "minShortSideU": 180,
+    "internalPaddingU": 32,
+    "allocationU": 244
+  },
+  "frames": {
+    "9x16": {
+      "widthU": 1080,
+      "heightU": 1920,
+      "marginsU": {
+        "left": 64,
+        "right": 64,
+        "top": 64,
+        "bottom": 64
+      },
+      "safeZones": {
+        "topRatio": 0.08,
+        "bottomRatio": 0.15,
+        "topU": 156,
+        "bottomU": 288,
+        "rounding": "ceil to spacing base 4u"
+      },
+      "contentBoxU": [
+        64,
+        220,
+        952,
+        1348
+      ],
+      "cropSquareBoxU": [
+        0,
+        420,
+        1080,
+        1080
+      ],
+      "central70BoxU": [
+        162,
+        288,
+        756,
+        1344
+      ]
+    },
+    "16x9": {
+      "widthU": 1920,
+      "heightU": 1080,
+      "marginsU": {
+        "left": 96,
+        "right": 96,
+        "top": 64,
+        "bottom": 64
+      },
+      "safeZones": {
+        "topRatio": 0,
+        "bottomRatio": 0,
+        "topU": 0,
+        "bottomU": 0,
+        "reason": "Reels exclusion applies only to vertical output; horizontal uses margins"
+      },
+      "contentBoxU": [
+        96,
+        64,
+        1728,
+        952
+      ],
+      "cropSquareBoxU": [
+        420,
+        0,
+        1080,
+        1080
+      ],
+      "central70BoxU": [
+        288,
+        162,
+        1344,
+        756
+      ]
+    }
+  },
+  "checks": {
+    "contrastTextMin": 4.5,
+    "contrastGraphicMin": 3.0,
+    "maxHierarchyLevels": 3,
+    "maxCenters": 1,
+    "maxGridDeviations": 1,
+    "grayscale": true,
+    "previewScale": 0.25,
+    "photoAspects": {
+      "9x16": 0.8,
+      "16x9": 1
+    },
+    "v1FilesPreserved": [
+      {
+        "path": "journal-tokens.json",
+        "sha256": "acbfdb13d95d420b38b196ab67fda53684ae8ae5d311a1d83ce6075fc0670340"
+      },
+      {
+        "path": "journal-layouts.md",
+        "sha256": "8fc7d652365f1b2f8c235e8ac514111cbfe8cc100b3f96a1e3051266eafd70e3"
+      },
+      {
+        "path": "layouts/01-cover-16x9.svg",
+        "sha256": "8e32b3a009d6527a2f3d8d593ecf1743aa52a82382130313c6ce09a5aabaf005"
+      },
+      {
+        "path": "layouts/01-cover-9x16.svg",
+        "sha256": "c2b8c818bc1e92a41f36f76e9c09ba52281d225f82860569770e9bca76e48f40"
+      },
+      {
+        "path": "layouts/02-road-16x9.svg",
+        "sha256": "04953e8ae6495fb95e517287c6aaebf4383167da5792b35cd4add30cff20827e"
+      },
+      {
+        "path": "layouts/02-road-9x16.svg",
+        "sha256": "cfc4e13adc43ff85f8052b108613453bd8e7fbccf44901ddd8c880c3e11552cd"
+      },
+      {
+        "path": "layouts/03-photo-16x9.svg",
+        "sha256": "89ae921667f26bae637eb62776a7babecd1036f795a87897b8ecbb0bdce7d48b"
+      },
+      {
+        "path": "layouts/03-photo-9x16.svg",
+        "sha256": "11f74862aace53d375f42233310d870a81c9984a6749ab01c23ba40cf2d4e205"
+      },
+      {
+        "path": "layouts/04-arrival-16x9.svg",
+        "sha256": "fea4b3fcf65b1c08aabc6481307c6b0e2d1883e2b1cf9296f1a1f8479109ec1e"
+      },
+      {
+        "path": "layouts/04-arrival-9x16.svg",
+        "sha256": "b730e827b04e4eaeda5f27322be8166d59b57bda39f58975ccf30da51157f548"
+      },
+      {
+        "path": "layouts/05-elevation-16x9.svg",
+        "sha256": "5518bce5e6a7f5e1900e829e3f48cede3aacdb4f9c010534e0b2e9912ac9247b"
+      },
+      {
+        "path": "layouts/05-elevation-9x16.svg",
+        "sha256": "f0e78dd13b87900c83b3edda85af9722303b5b3f9b02bdc506a806ab310f004a"
+      },
+      {
+        "path": "layouts/06-finale-16x9.svg",
+        "sha256": "f9c656184dd6db12c10986c9b6ecdb38b435ac42219b98e608e71f244a655f9d"
+      },
+      {
+        "path": "layouts/06-finale-9x16.svg",
+        "sha256": "c1b7e0e93047e83dd0bae5e67417504250411d9738ae4ce1cecb159d7d32a1d0"
+      },
+      {
+        "path": "layouts/01-cover-16x9.png",
+        "sha256": "de4f4e9052d233d3751a4d3901d8aede8f457187cbd25a6a343bfa28dd2479a1"
+      },
+      {
+        "path": "layouts/01-cover-9x16.png",
+        "sha256": "c44f361f1d573e7db9df29f28f1faf0e9905de81cd04049309ca44e3e92fa9fa"
+      },
+      {
+        "path": "layouts/02-road-16x9.png",
+        "sha256": "647cf1125a47c200efa432d1d28418ac596e0e5a798772d2898390cf47938d7f"
+      },
+      {
+        "path": "layouts/02-road-9x16.png",
+        "sha256": "3b6fdb7789bfcd55137283486bfc3cc7394994145d0d690e54375d0fd8905911"
+      },
+      {
+        "path": "layouts/03-photo-16x9.png",
+        "sha256": "b0f54c8c888dad57fa3769b5e59e5e3808131b6bd46ec5d334404455634894ff"
+      },
+      {
+        "path": "layouts/03-photo-9x16.png",
+        "sha256": "b3c5b86a99c90ad2132cddacb831b10efab1251860fe0ed37cbdf5f5dccb6719"
+      },
+      {
+        "path": "layouts/04-arrival-16x9.png",
+        "sha256": "b834a8eb1f55763c65c5d541aab1c959bea55cbcc39e7e13c6bb1580f7b85f6a"
+      },
+      {
+        "path": "layouts/04-arrival-9x16.png",
+        "sha256": "2f4d5d9f136c8d18298fb7404224eb6d452791fb20b24a6fd9755dce464dffe7"
+      },
+      {
+        "path": "layouts/05-elevation-16x9.png",
+        "sha256": "1b87209fb697c2c9b807282df1c3ba71163ebf49d8d303983d7539eec6e2c557"
+      },
+      {
+        "path": "layouts/05-elevation-9x16.png",
+        "sha256": "0a08c9dc1f450300d9b107fa7321d25b48d467c9150cb37ab390298b8998d389"
+      },
+      {
+        "path": "layouts/06-finale-16x9.png",
+        "sha256": "aa9696c3aa2bedf1c4ad1a60d3a00e3d149f13059b94e7bd472db74ec2e9eefe"
+      },
+      {
+        "path": "layouts/06-finale-9x16.png",
+        "sha256": "a35b5252c2abea2e02f31b069b46647824bd9666ee5e033f8aa0350264b1b7e7"
+      },
+      {
+        "path": "layouts/contact-sheet.png",
+        "sha256": "870814bd089bafbe2659a70b2f71aeb0d154e89d1afc6ddb604d0ca5f7f61d6b"
+      },
+      {
+        "path": "layouts/grayscale-25.png",
+        "sha256": "ac4247d71d9e8d0734acb7471a8ac7a13b0827222154efb899300d6a3606e53f"
+      }
+    ]
+  },
+  "exceptions": [
+    {
+      "id": "frame-type-scale",
+      "source": "CODEX-TASK-1.md design rules",
+      "reason": "YAML lists allowable ratio 1.333 but its reference scale is for UI. Exact rounded editorial sequence 32/44/56/76/100/136/180 is specified by project; ratios after rounding are not mathematically identical."
+    },
+    {
+      "id": "video-safe",
+      "source": "CODEX-TASK-1.md / docs/SHOW-RULES.md",
+      "reason": "8% top / 15% bottom are project video rules, absent from YAML. Rounded outward to 4u: top 156u instead of 153.6u."
+    },
+    {
+      "id": "canvas-geometry",
+      "reason": "Frame margins, box dimensions, line widths and palette are project decisions. Margins/gaps use existing spacing scale; sizes/positions are geometry on 4u grid, not extra spacing steps."
+    },
+    {
+      "id": "sticker-padding",
+      "source": "CODEX-TASK-1.md §3",
+      "reason": "Project explicitly requires minimum 180u art and 32u padding; overrides YAML card padding 16/24."
+    },
+    {
+      "id": "short-copy",
+      "reason": "45–90 character paragraph measure does not apply to short place names, metric labels and dates. Product captions only; no paragraphs."
+    },
+    {
+      "id": "cropping",
+      "reason": "Each aspect ratio has separate layout. Central focal object survives center square crop; peripheral caption may be lost. Do not automatically crop landscape to portrait; re-layout."
+    },
+    {
+      "id": "photo-not-supplied",
+      "reason": "No verified product photo selected. Gray photo rectangle is a wireframe slot. Photo contrast / gaze / horizon require actual input; caption is on opaque paper below the image."
+    },
+    {
+      "id": "candidate-barbos",
+      "reason": "Approved base candidate is resized without structural changes; this is not the final bordered sticker or map marker."
+    },
+    {
+      "id": "material-overlap",
+      "reason": "Overlap is physical layering inside a single collage group; it is not a gap between independent information groups. Shadows, torn edges, bindings and tape are decorative."
+    },
+    {
+      "id": "organic-edge",
+      "reason": "Paper tears, washes, textile grain and pencil curves are organic decoration; their paths need not follow the layout grid. Text allocations and block origins remain on 4u grid."
+    },
+    {
+      "id": "photo-study",
+      "reason": "Photo slot uses the approved Barbos render on a staged material background to show volume, not a travel photo. Marked example; replace with verified user photo for production."
+    },
+    {
+      "id": "stronger-scale",
+      "reason": "Uses existing 136/180u editorial steps for pronounced headline/counter hierarchy; no added font-size steps."
+    },
+    {
+      "id": "final-tonal-inversion",
+      "reason": "Dark green closing frame puts a bright receipt at the center; intentional tonal inversion rather than arbitrary palette change."
+    }
+  ],
+  "layouts": {
+    "01-cover-9x16": {
+      "frame": "9x16",
+      "blocks": {
+        "heading": [
+          164,
+          320,
+          752,
+          128
+        ],
+        "destination": [
+          164,
+          464,
+          752,
+          216
+        ],
+        "hero": [
+          344,
+          744,
+          440,
+          696
+        ],
+        "wash": [
+          96,
+          660,
+          920,
+          840
+        ],
+        "tape": [
+          232,
+          724,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "from",
+          "boxU": [
+            164,
+            320,
+            752,
+            128
+          ],
+          "example": "Самарканд",
+          "style": "place",
+          "bind": "route.startPlace",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "to",
+          "boxU": [
+            164,
+            464,
+            752,
+            216
+          ],
+          "example": "Бухара",
+          "style": "display",
+          "bind": "route.endPlace",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        }
+      ],
+      "focusBox": [
+        164,
+        464,
+        752,
+        216
+      ],
+      "focus": "Крупное название назначения и Барбос",
+      "leadRoom": "Barbos is not mirrored; space in front of the handlebar on the right.",
+      "condition": "route exists",
+      "rotation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single oblique tape on otherwise straight page."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single oblique tape on otherwise straight page."
+      },
+      "groupGaps": [
+        {
+          "a": "heading",
+          "b": "destination",
+          "axis": "y",
+          "minimumU": 16
+        },
+        {
+          "a": "destination",
+          "b": "hero",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "02-road-9x16": {
+      "frame": "9x16",
+      "blocks": {
+        "map": [
+          96,
+          416,
+          888,
+          848
+        ],
+        "routeCore": [
+          192,
+          592,
+          696,
+          544
+        ],
+        "names": [
+          164,
+          448,
+          752,
+          72
+        ],
+        "metric": [
+          96,
+          1328,
+          888,
+          228
+        ],
+        "tape": [
+          652,
+          392,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "names",
+          "boxU": [
+            164,
+            448,
+            752,
+            72
+          ],
+          "example": "Самарканд → Бухара",
+          "style": "routeCaption",
+          "bind": "route.startPlace + route.endPlace",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "distance",
+          "boxU": [
+            128,
+            1328,
+            664,
+            228
+          ],
+          "example": "+143,6",
+          "style": "counter",
+          "bind": "route.distanceKm",
+          "background": "card",
+          "align": "right",
+          "optional": false
+        },
+        {
+          "id": "unit",
+          "boxU": [
+            824,
+            1460,
+            160,
+            60
+          ],
+          "example": "КМ",
+          "style": "unit",
+          "bind": "unit.km",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        }
+      ],
+      "focusBox": [
+        192,
+        592,
+        696,
+        544
+      ],
+      "focus": "Жирная маршрутная линия с текущей точкой",
+      "leadRoom": "Current point at 68% map width; remaining right side is lead room; route samples are explicitly illustrative.",
+      "condition": "valid geographic track; counter computed from real track",
+      "rotation": {
+        "block": "tape",
+        "degrees": 3,
+        "pivot": "center",
+        "reason": "Single cloth tape holding a straight map sheet."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": 3,
+        "pivot": "center",
+        "reason": "Single cloth tape holding a straight map sheet."
+      },
+      "groupGaps": [
+        {
+          "a": "map",
+          "b": "metric",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "03-photo-9x16": {
+      "frame": "9x16",
+      "blocks": {
+        "polaroid": [
+          156,
+          396,
+          768,
+          1120
+        ],
+        "photo": [
+          188,
+          428,
+          704,
+          880
+        ],
+        "hero": [
+          352,
+          592,
+          376,
+          592
+        ],
+        "tape": [
+          392,
+          356,
+          288,
+          80
+        ],
+        "caption": [
+          188,
+          1340,
+          704,
+          96
+        ],
+        "date": [
+          188,
+          1452,
+          704,
+          56
+        ]
+      },
+      "texts": [
+        {
+          "id": "place",
+          "boxU": [
+            188,
+            1340,
+            704,
+            96
+          ],
+          "example": "Самарканд",
+          "style": "note",
+          "bind": "photo.place",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "date",
+          "boxU": [
+            188,
+            1452,
+            704,
+            56
+          ],
+          "example": "14.10.2026",
+          "style": "caption",
+          "bind": "photo.date",
+          "background": "card",
+          "align": "left",
+          "optional": true
+        }
+      ],
+      "focusBox": [
+        352,
+        592,
+        376,
+        592
+      ],
+      "focus": "Полароид с изображением",
+      "leadRoom": "Final photo needs focal point, level horizon and 5–10% headroom; render placeholder has no human gaze.",
+      "condition": "verified product photo supplied; approved Barbos render is a visual placeholder",
+      "rotation": {
+        "block": "polaroidGroup",
+        "degrees": -2.5,
+        "pivot": "polaroidCenter",
+        "reason": "One tilted collage group; all content moves together, not independent random rotations."
+      },
+      "gridDeviation": {
+        "block": "polaroidGroup",
+        "degrees": -2.5,
+        "pivot": "polaroidCenter",
+        "reason": "One tilted collage group; all content moves together, not independent random rotations."
+      },
+      "groupGaps": [
+        {
+          "a": "photo",
+          "b": "caption",
+          "axis": "y",
+          "minimumU": 32
+        },
+        {
+          "a": "caption",
+          "b": "date",
+          "axis": "y",
+          "minimumU": 16
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "04-arrival-9x16": {
+      "frame": "9x16",
+      "blocks": {
+        "title": [
+          164,
+          320,
+          752,
+          172
+        ],
+        "sticker": [
+          196,
+          556,
+          688,
+          688
+        ],
+        "date": [
+          164,
+          1308,
+          752,
+          56
+        ],
+        "tape": [
+          600,
+          536,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "place",
+          "boxU": [
+            164,
+            320,
+            752,
+            172
+          ],
+          "example": "Шылпык",
+          "style": "title",
+          "bind": "arrival.place",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "date",
+          "boxU": [
+            164,
+            1308,
+            752,
+            56
+          ],
+          "example": "14.10.2026",
+          "style": "caption",
+          "bind": "arrival.date",
+          "background": "card",
+          "align": "left",
+          "optional": true
+        }
+      ],
+      "focusBox": [
+        196,
+        556,
+        688,
+        688
+      ],
+      "focus": "Наклейка места и название",
+      "leadRoom": "Static composition; no asserted travel direction.",
+      "condition": "arrival/visit confirmed; Chilpyk sticker only for confirmed Chilpyk visit",
+      "rotation": {
+        "block": "tape",
+        "degrees": 4,
+        "pivot": "center",
+        "reason": "Single fixing tape; artwork and text remain upright."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": 4,
+        "pivot": "center",
+        "reason": "Single fixing tape; artwork and text remain upright."
+      },
+      "groupGaps": [
+        {
+          "a": "title",
+          "b": "sticker",
+          "axis": "y",
+          "minimumU": 64
+        },
+        {
+          "a": "sticker",
+          "b": "date",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "05-elevation-9x16": {
+      "frame": "9x16",
+      "blocks": {
+        "metric": [
+          164,
+          336,
+          752,
+          228
+        ],
+        "profile": [
+          96,
+          628,
+          888,
+          752
+        ],
+        "profileCore": [
+          192,
+          724,
+          696,
+          560
+        ],
+        "caption": [
+          164,
+          1444,
+          752,
+          72
+        ],
+        "tape": [
+          196,
+          604,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "height",
+          "boxU": [
+            164,
+            336,
+            520,
+            228
+          ],
+          "example": "+820",
+          "style": "counter",
+          "bind": "route.ascentM",
+          "background": "card",
+          "align": "right",
+          "optional": false
+        },
+        {
+          "id": "unit",
+          "boxU": [
+            716,
+            468,
+            160,
+            60
+          ],
+          "example": "М",
+          "style": "unit",
+          "bind": "unit.m",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "range",
+          "boxU": [
+            164,
+            1444,
+            752,
+            72
+          ],
+          "example": "0 → 143,6 км",
+          "style": "routeCaption",
+          "bind": "route.distanceKm",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        }
+      ],
+      "focusBox": [
+        192,
+        724,
+        696,
+        560
+      ],
+      "focus": "Профиль на бумаге",
+      "leadRoom": "Profile reading proceeds left to right; curve is illustrative, not elevation evidence.",
+      "condition": "usable elevation samples; no fabricated summit/pass event",
+      "rotation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single tape, straight profile axes."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single tape, straight profile axes."
+      },
+      "groupGaps": [
+        {
+          "a": "metric",
+          "b": "profile",
+          "axis": "y",
+          "minimumU": 64
+        },
+        {
+          "a": "profile",
+          "b": "caption",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "06-finale-9x16": {
+      "frame": "9x16",
+      "blocks": {
+        "receipt": [
+          128,
+          384,
+          824,
+          1056
+        ],
+        "metric": [
+          164,
+          576,
+          752,
+          228
+        ],
+        "next": [
+          164,
+          868,
+          752,
+          96
+        ],
+        "hero": [
+          196,
+          1056,
+          224,
+          352
+        ],
+        "compass": [
+          644,
+          1072,
+          244,
+          244
+        ],
+        "tape": [
+          232,
+          344,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "distance",
+          "boxU": [
+            164,
+            576,
+            552,
+            228
+          ],
+          "example": "143,6",
+          "style": "counter",
+          "bind": "route.distanceKm",
+          "background": "card",
+          "align": "right",
+          "optional": false
+        },
+        {
+          "id": "unit",
+          "boxU": [
+            748,
+            708,
+            160,
+            60
+          ],
+          "example": "КМ",
+          "style": "unit",
+          "bind": "unit.km",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "next",
+          "boxU": [
+            164,
+            868,
+            752,
+            96
+          ],
+          "example": "Дальше — Бухара",
+          "style": "note",
+          "bind": "route.nextPlace",
+          "background": "card",
+          "align": "left",
+          "optional": true
+        }
+      ],
+      "focusBox": [
+        164,
+        576,
+        752,
+        228
+      ],
+      "focus": "Итог на бумажном талоне",
+      "leadRoom": "Static composition; no asserted travel direction.",
+      "condition": "route exists",
+      "rotation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "One tilted tape. Dark closing scene is tonal inversion, not a second geometry deviation."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "One tilted tape. Dark closing scene is tonal inversion, not a second geometry deviation."
+      },
+      "groupGaps": [
+        {
+          "a": "metric",
+          "b": "next",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "01-cover-16x9": {
+      "frame": "16x9",
+      "blocks": {
+        "heading": [
+          452,
+          228,
+          752,
+          128
+        ],
+        "destination": [
+          452,
+          372,
+          752,
+          216
+        ],
+        "hero": [
+          1204,
+          220,
+          412,
+          652
+        ],
+        "wash": [
+          952,
+          100,
+          824,
+          864
+        ],
+        "tape": [
+          1120,
+          200,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "from",
+          "boxU": [
+            452,
+            228,
+            752,
+            128
+          ],
+          "example": "Самарканд",
+          "style": "place",
+          "bind": "route.startPlace",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "to",
+          "boxU": [
+            452,
+            372,
+            752,
+            216
+          ],
+          "example": "Бухара",
+          "style": "display",
+          "bind": "route.endPlace",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        }
+      ],
+      "focusBox": [
+        452,
+        372,
+        752,
+        216
+      ],
+      "focus": "Крупное название назначения и Барбос",
+      "leadRoom": "Barbos is not mirrored; space in front of the handlebar on the right.",
+      "condition": "route exists",
+      "rotation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single oblique tape on otherwise straight page."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single oblique tape on otherwise straight page."
+      },
+      "groupGaps": [
+        {
+          "a": "heading",
+          "b": "destination",
+          "axis": "y",
+          "minimumU": 16
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "02-road-16x9": {
+      "frame": "16x9",
+      "blocks": {
+        "map": [
+          288,
+          156,
+          1280,
+          704
+        ],
+        "routeCore": [
+          480,
+          292,
+          864,
+          480
+        ],
+        "names": [
+          452,
+          188,
+          960,
+          72
+        ],
+        "metric": [
+          1068,
+          576,
+          680,
+          260
+        ],
+        "tape": [
+          1248,
+          132,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "names",
+          "boxU": [
+            452,
+            188,
+            960,
+            72
+          ],
+          "example": "Самарканд → Бухара",
+          "style": "routeCaption",
+          "bind": "route.startPlace + route.endPlace",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "distance",
+          "boxU": [
+            1096,
+            608,
+            488,
+            172
+          ],
+          "example": "+143,6",
+          "style": "counterCompact",
+          "bind": "route.distanceKm",
+          "background": "card",
+          "align": "right",
+          "optional": false
+        },
+        {
+          "id": "unit",
+          "boxU": [
+            1616,
+            696,
+            100,
+            60
+          ],
+          "example": "КМ",
+          "style": "unit",
+          "bind": "unit.km",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        }
+      ],
+      "focusBox": [
+        480,
+        292,
+        864,
+        480
+      ],
+      "focus": "Жирная маршрутная линия с текущей точкой",
+      "leadRoom": "Current point at 68% map width; remaining right side is lead room; route samples are explicitly illustrative.",
+      "condition": "valid geographic track; counter computed from real track",
+      "rotation": {
+        "block": "tape",
+        "degrees": 3,
+        "pivot": "center",
+        "reason": "Single cloth tape holding a straight map sheet."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": 3,
+        "pivot": "center",
+        "reason": "Single cloth tape holding a straight map sheet."
+      },
+      "groupGaps": [],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "03-photo-16x9": {
+      "frame": "16x9",
+      "blocks": {
+        "polaroid": [
+          620,
+          132,
+          672,
+          872
+        ],
+        "photo": [
+          652,
+          164,
+          608,
+          608
+        ],
+        "hero": [
+          784,
+          260,
+          344,
+          544
+        ],
+        "tape": [
+          828,
+          92,
+          288,
+          80
+        ],
+        "caption": [
+          652,
+          804,
+          608,
+          96
+        ],
+        "date": [
+          652,
+          916,
+          608,
+          56
+        ]
+      },
+      "texts": [
+        {
+          "id": "place",
+          "boxU": [
+            652,
+            804,
+            608,
+            96
+          ],
+          "example": "Самарканд",
+          "style": "note",
+          "bind": "photo.place",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "date",
+          "boxU": [
+            652,
+            916,
+            608,
+            56
+          ],
+          "example": "14.10.2026",
+          "style": "caption",
+          "bind": "photo.date",
+          "background": "card",
+          "align": "left",
+          "optional": true
+        }
+      ],
+      "focusBox": [
+        784,
+        260,
+        344,
+        544
+      ],
+      "focus": "Полароид с изображением",
+      "leadRoom": "Final photo needs focal point, level horizon and 5–10% headroom; render placeholder has no human gaze.",
+      "condition": "verified product photo supplied; approved Barbos render is a visual placeholder",
+      "rotation": {
+        "block": "polaroidGroup",
+        "degrees": -2.5,
+        "pivot": "polaroidCenter",
+        "reason": "One tilted collage group; all content moves together, not independent random rotations."
+      },
+      "gridDeviation": {
+        "block": "polaroidGroup",
+        "degrees": -2.5,
+        "pivot": "polaroidCenter",
+        "reason": "One tilted collage group; all content moves together, not independent random rotations."
+      },
+      "groupGaps": [
+        {
+          "a": "photo",
+          "b": "caption",
+          "axis": "y",
+          "minimumU": 32
+        },
+        {
+          "a": "caption",
+          "b": "date",
+          "axis": "y",
+          "minimumU": 16
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "04-arrival-16x9": {
+      "frame": "16x9",
+      "blocks": {
+        "title": [
+          452,
+          220,
+          752,
+          172
+        ],
+        "sticker": [
+          948,
+          432,
+          480,
+          480
+        ],
+        "date": [
+          452,
+          456,
+          432,
+          56
+        ],
+        "tape": [
+          1108,
+          412,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "place",
+          "boxU": [
+            452,
+            220,
+            752,
+            172
+          ],
+          "example": "Шылпык",
+          "style": "title",
+          "bind": "arrival.place",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "date",
+          "boxU": [
+            452,
+            456,
+            432,
+            56
+          ],
+          "example": "14.10.2026",
+          "style": "caption",
+          "bind": "arrival.date",
+          "background": "card",
+          "align": "left",
+          "optional": true
+        }
+      ],
+      "focusBox": [
+        948,
+        432,
+        480,
+        480
+      ],
+      "focus": "Наклейка места и название",
+      "leadRoom": "Static composition; no asserted travel direction.",
+      "condition": "arrival/visit confirmed; Chilpyk sticker only for confirmed Chilpyk visit",
+      "rotation": {
+        "block": "tape",
+        "degrees": 4,
+        "pivot": "center",
+        "reason": "Single fixing tape; artwork and text remain upright."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": 4,
+        "pivot": "center",
+        "reason": "Single fixing tape; artwork and text remain upright."
+      },
+      "groupGaps": [
+        {
+          "a": "title",
+          "b": "date",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "05-elevation-16x9": {
+      "frame": "16x9",
+      "blocks": {
+        "metric": [
+          452,
+          188,
+          864,
+          228
+        ],
+        "profile": [
+          352,
+          480,
+          1280,
+          396
+        ],
+        "profileCore": [
+          480,
+          560,
+          1020,
+          260
+        ],
+        "caption": [
+          452,
+          940,
+          1016,
+          72
+        ],
+        "tape": [
+          452,
+          456,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "height",
+          "boxU": [
+            452,
+            188,
+            500,
+            228
+          ],
+          "example": "+820",
+          "style": "counter",
+          "bind": "route.ascentM",
+          "background": "card",
+          "align": "right",
+          "optional": false
+        },
+        {
+          "id": "unit",
+          "boxU": [
+            984,
+            320,
+            160,
+            60
+          ],
+          "example": "М",
+          "style": "unit",
+          "bind": "unit.m",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "range",
+          "boxU": [
+            452,
+            940,
+            1016,
+            72
+          ],
+          "example": "0 → 143,6 км",
+          "style": "routeCaption",
+          "bind": "route.distanceKm",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        }
+      ],
+      "focusBox": [
+        480,
+        560,
+        1020,
+        260
+      ],
+      "focus": "Профиль на бумаге",
+      "leadRoom": "Profile reading proceeds left to right; curve is illustrative, not elevation evidence.",
+      "condition": "usable elevation samples; no fabricated summit/pass event",
+      "rotation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single tape, straight profile axes."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "Single tape, straight profile axes."
+      },
+      "groupGaps": [
+        {
+          "a": "metric",
+          "b": "profile",
+          "axis": "y",
+          "minimumU": 64
+        },
+        {
+          "a": "profile",
+          "b": "caption",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    },
+    "06-finale-16x9": {
+      "frame": "16x9",
+      "blocks": {
+        "receipt": [
+          320,
+          192,
+          1280,
+          696
+        ],
+        "metric": [
+          452,
+          284,
+          840,
+          228
+        ],
+        "next": [
+          452,
+          576,
+          1016,
+          96
+        ],
+        "hero": [
+          1352,
+          500,
+          320,
+          504
+        ],
+        "compass": [
+          1148,
+          680,
+          244,
+          244
+        ],
+        "tape": [
+          420,
+          152,
+          288,
+          80
+        ]
+      },
+      "texts": [
+        {
+          "id": "distance",
+          "boxU": [
+            452,
+            284,
+            680,
+            228
+          ],
+          "example": "143,6",
+          "style": "counter",
+          "bind": "route.distanceKm",
+          "background": "card",
+          "align": "right",
+          "optional": false
+        },
+        {
+          "id": "unit",
+          "boxU": [
+            1164,
+            416,
+            128,
+            60
+          ],
+          "example": "КМ",
+          "style": "unit",
+          "bind": "unit.km",
+          "background": "card",
+          "align": "left",
+          "optional": false
+        },
+        {
+          "id": "next",
+          "boxU": [
+            452,
+            576,
+            1016,
+            96
+          ],
+          "example": "Дальше — Бухара",
+          "style": "note",
+          "bind": "route.nextPlace",
+          "background": "card",
+          "align": "left",
+          "optional": true
+        }
+      ],
+      "focusBox": [
+        452,
+        284,
+        840,
+        228
+      ],
+      "focus": "Итог на бумажном талоне",
+      "leadRoom": "Static composition; no asserted travel direction.",
+      "condition": "route exists",
+      "rotation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "One tilted tape. Dark closing scene is tonal inversion, not a second geometry deviation."
+      },
+      "gridDeviation": {
+        "block": "tape",
+        "degrees": -4,
+        "pivot": "center",
+        "reason": "One tilted tape. Dark closing scene is tonal inversion, not a second geometry deviation."
+      },
+      "groupGaps": [
+        {
+          "a": "metric",
+          "b": "next",
+          "axis": "y",
+          "minimumU": 64
+        }
+      ],
+      "exampleOnly": true,
+      "layers": [
+        "texture/base page",
+        "paper/wash/map",
+        "physical sticker or polaroid",
+        "tape/shadows",
+        "editable product text"
+      ],
+      "variant": "v2-material"
+    }
+  },
+  "variant": "v2-material",
+  "direction": "Дневник в пути · скевоморфизм",
+  "materials": {
+    "paperTextureOpacity": 0.64,
+    "paperTileU": 768,
+    "washOpacity": 0.58,
+    "topographyOpacity": 0.62,
+    "paperGrainOpacity": 0.13,
+    "paperEdgeJitterU": 4,
+    "spineWidthU": 64,
+    "bindingPitchU": 192,
+    "shadow": {
+      "dxU": 8,
+      "dyU": 16,
+      "blurU": 16,
+      "opacity": 0.22
+    },
+    "stickerBorderU": 12,
+    "tapeWidthU": 288,
+    "tapeHeightU": 80,
+    "gridStepU": 64,
+    "decorativeOverlap": "paper/tape/sticker may overlap; separate information groups must preserve 32/64u",
+    "canvasExport": "Bake material SVG filters to local raster layers before repeated drawImage export; preserve text as Canvas glyphs."
+  },
+  "examples": {
+    "routePointsNormalized": [
+      [
+        0.08,
+        0.9
+      ],
+      [
+        0.32,
+        0.75
+      ],
+      [
+        0.46,
+        0.38
+      ],
+      [
+        0.68,
+        0.4
+      ],
+      [
+        0.82,
+        0.12
+      ]
+    ],
+    "profilePointsNormalized": [
+      [
+        0,
+        1
+      ],
+      [
+        0.14,
+        0.7
+      ],
+      [
+        0.25,
+        0.8
+      ],
+      [
+        0.39,
+        0.34
+      ],
+      [
+        0.5,
+        0.5
+      ],
+      [
+        0.66,
+        0.12
+      ],
+      [
+        0.82,
+        0.35
+      ],
+      [
+        1,
+        0.18
+      ]
+    ],
+    "meaning": "Illustrative coordinates only; never used as route/elevation data."
+  }
+}

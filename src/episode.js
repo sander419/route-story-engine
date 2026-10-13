@@ -279,7 +279,7 @@
 
     const tilesAt = (t) => (S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : []);
     const allMediaIds = [...new Set(shots.flatMap((s) => s.params.mediaIds || []))];
-    const assetsReady = Promise.all(allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())));
+    let assetsReady = Promise.all(allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())));
 
     /* ---- типографика ---- */
     function T(ctx, str, x, y, a) {
@@ -370,6 +370,7 @@
       if (TR) ctx.clearRect(0, 0, W, H);
       else if (S.bgGrad) { const g = ctx.createLinearGradient(0, 0, W * 0.5, H); S.bgGrad.forEach((cc, i, a) => g.addColorStop(i / (a.length - 1), cc)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
       else { ctx.fillStyle = S.bg; ctx.fillRect(0, 0, W, H); }
+      if (J && !TR) J.draw(ctx, t, s, su, lt, TR); else {
       if (LY.map && S.navigator) window.NavigatorGrid.draw(ctx, W, H, u);
       // карта — спокойный фон: без подписей и мелочи
       // на общих планах — только суша, вода и границы; дороги и мелкие реки появляются лишь вблизи
@@ -478,10 +479,11 @@
         else if (a > 0.01 && WX.wind >= 3 && WX.dir != null) streaks(ctx, t, a * clamp(WX.wind / 7, 0.5, 1), WX.dir + 180, (260 + WX.wind * 55) * u, 34, (110 + WX.wind * 14) * u, col);
       }
       LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
+      }
       if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: S.dim, align: 'center', alpha: 0.75, shadow: false });
       const SIGM = MARK && MARK !== 'dot';
       if (LY.hud && (SIGM || NAME) && shots.length > 1 && t >= shots[0].t1 - 0.3) {
-        const sa = smooth((t - (shots[0].t1 - 0.3)) / 0.8), onPh = s.recipe === 'photo-reveal' || s.recipe === 'highlights-reel';
+        const sa = smooth((t - (shots[0].t1 - 0.3)) / 0.8), onPh = s.recipe === 'photo-reveal' || s.recipe === 'highlights-reel' || (J && J.isDark(s));
         const sy = H * (portrait ? 0.1 : 0.09), r = 36 * u; ctx.save(); ctx.globalAlpha = sa;
         if (SIGM) drawMark(ctx, MARK, mx + r, sy, r, MCOL, 0);
         ctx.restore();
@@ -637,7 +639,66 @@
       }
     }
 
-    return { draw, tilesAt, cam, duration, W, H, assetsReady, plan, events: [] };
+    /* ================= «Дневник»: страница вместо карты ================= */
+    let J = null;
+    if (S.journal && window.Journal) {
+      const loopDay = !!today.loop;
+      const route2T = () => (loopDay ? [fromLabel || toLabel, 'кольцо'].filter(Boolean).join(' · ') : [fromLabel, toLabel].filter(Boolean).join(' → '));
+      const famOf = (s) => window.Journal.FAM[s.recipe] || 'road';
+      const NEXT = () => (PF.next ? 'Дальше — ' + PF.next : 'Продолжение следует →');
+      const bridge = {
+        W, H, u, portrait, S, HAND, MARK, MCOL, NAME, drawMark, journey, today, days, maxKm, mediaById, img, DL, fmtN, daysWord, toLabel, vis,
+        get WX() { return WX; },
+        run: (s) => { const i = shots.indexOf(s), f = famOf(s); let a = i, b = i; while (a > 0 && famOf(shots[a - 1]) === f) a--; while (b < shots.length - 1 && famOf(shots[b + 1]) === f) b++; return { t0: shots[a].t0, t1: shots[b].t1 }; },
+        todaySet: () => ({ pts: todayPts, brk: todayBrk, cum: todayCum, today: true }),
+        allSets: () => dayPts.map((d) => ({ pts: d.pts, brk: d.brk, cum: d.day === today.day ? todayCum : null, today: d.day === today.day })),
+        reveal: (t) => todayReveal(t),
+        routeNames: () => route2T() || journey.title || '',
+        journeyName: () => journey.title || route2T() || '',
+        recapPoint: (s, lt, dur) => { const r = recapState(s, lt / dur), st = s.stops[r.k]; return st ? [st.cam.cx, st.cam.cy] : null; },
+        photoDate: (m, s) => (journey.schematic || s.recipe === 'highlights-reel' ? DL(m.day) : [DL(today.day), dateRu(today.date)].filter(Boolean).join(' · ')),
+        dateLine: (s, p) => (journey.schematic ? (journey.dayLabels && journey.dayLabels[p && p.day != null ? p.day : today.day]) || '' : dateRu(today.date)),
+        kindWord: (s, p) => (s.recipe === 'location-card' ? 'здесь' : p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие'),
+        arrivalLabel: (s, p) => (s.recipe === 'location-card' ? p.label || 'здесь' : p.label),
+        countryOf: (s, p) => (journey.dayNotes && journey.dayNotes[p && p.day != null ? p.day : today.day]) || today.country || null,
+        coverTexts: (s, p) => {
+          const route2 = route2T();
+          if (s.recipe === 'day-card') return p.hook ? { from: ['день ' + p.day, route2].filter(Boolean).join(' · '), to: p.hook, small: true } : { from: route2 || journey.title || '', to: 'День ' + p.day, small: false };
+          if (s.recipe === 'trip-title') {
+            const pair = p.from && p.to && p.from !== p.to && !loopDay, head = pair ? `${p.from} → ${p.to}` : p.to || p.from || p.name || journey.title || 'Маршрут';
+            if (p.hook) return { from: [dateRu(p.date), head].filter(Boolean).join(' · '), to: p.hook, small: true };
+            return pair ? { from: p.from, to: p.to, small: false } : { from: dateRu(p.date) || 'маршрут', to: head, small: false };
+          }
+          return { from: p.line || NAME || p.traveler || 'история путешествия', to: p.title || '', small: false };
+        },
+        metric: (s, p, t, lt, dur) => {
+          const route2 = route2T();
+          switch (s.recipe) {
+            case 'route-reveal': case 'camera-follow': { const fr = todayReveal(t), km = p.km * fr, ck = [clockAt(fr), tempAt(fr)].filter(Boolean).join(' · '); return { kicker: (single ? 'пройдено' : 'день ' + today.day) + (ck ? ' · ' + ck : ''), big: (single ? '' : '+') + fmtN(km, km < 100 ? 1 : 0) + ' км', sub: route2 || 'новый участок' }; }
+            case 'weather-card': return { kicker: 'погода в тот день', big: p.head, sub: [p.sub, p.src ? 'Погода: ' + p.src : ''].filter(Boolean).join(' · ') };
+            case 'time-on-road': return { kicker: 'в пути', big: p.text, sub: 'средняя скорость ' + fmtN(p.avgKmh, 1) + ' км/ч' };
+            case 'high-point': return { kicker: 'высшая точка дня', big: fmtN(p.ele) + ' м', sub: p.km != null ? `на ${fmtN(p.km)}-м километре` : '' };
+            case 'distance-counter': { const km = p.newKm * sine(lt / 1.4); return { kicker: 'за день', big: '+' + fmtN(km, km < 100 ? 1 : 0) + ' км', sub: 'всего ' + fmtN(p.totalKm) + ' км' }; }
+            case 'overview-to-detail': return { kicker: 'сегодня · день ' + today.day, big: today.date ? new Date(today.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' }) : 'новый день', sub: route2 };
+            case 'progress-overview': return { kicker: 'путь до сегодня', big: fmtN(p.totalKm) + ' км', sub: `${p.days} ${daysWord(p.days)}${origin ? ' · от ' + origin.label : ''}` };
+            case 'journey-recap': { const r = recapState(s, lt / dur), st = s.stops[r.k]; return st ? { kicker: DL(st.h.day), big: st.h.label, sub: (journey.dayNotes && journey.dayNotes[st.h.day]) || '' } : null; }
+            default: return null;
+          }
+        },
+        finale: (s, p) => {
+          if (s.recipe === 'day-summary') {
+            const head = loopDay ? route2T() || 'кольцо' : p.from && p.to && p.from !== p.to ? `${p.from} → ${p.to}` : p.to || p.from || p.name || 'итог';
+            return { kicker: head, big: fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', sub: [p.time, p.gain ? '+' + fmtN(p.gain) + ' м' : null, p.time || p.gain ? null : dateRu(p.date)].filter(Boolean).join(' · '), next: NEXT() };
+          }
+          const dayRes = p.newKm != null ? ['день ' + p.day, '+' + fmtN(p.newKm, p.newKm < 100 ? 1 : 0) + ' км', p.time].filter(Boolean).join(' · ') : 'день ' + p.day;
+          return { kicker: journey.schematic ? 'и путь продолжается' : dayRes, big: kmText(p.totalKm), sub: journey.schematic ? journey.totalKmNote || '' : '', next: NEXT() };
+        },
+      };
+      J = window.Journal.create(bridge);
+      const base = assetsReady; assetsReady = Promise.all([base, J.ready]);
+    }
+
+    return { draw, tilesAt, cam, duration, W, H, get assetsReady() { return assetsReady; }, plan, events: [] };
   }
 
   window.Episode = { createEpisodeScene };

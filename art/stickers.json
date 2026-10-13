@@ -1,0 +1,98 @@
+{
+ "files": {
+  "am-cascade": "stickers/am-cascade.svg",
+  "am-khor-virap": "stickers/am-khor-virap.svg",
+  "am-pomegranate": "stickers/am-pomegranate.svg",
+  "cn-great-wall": "stickers/cn-great-wall.svg",
+  "cn-lantern": "stickers/cn-lantern.svg",
+  "cn-temple-of-heaven": "stickers/cn-temple-of-heaven.svg",
+  "ge-alphabet-tower": "stickers/ge-alphabet-tower.svg",
+  "ge-peace-bridge": "stickers/ge-peace-bridge.svg",
+  "ge-qvevri": "stickers/ge-qvevri.svg",
+  "ir-azadi": "stickers/ir-azadi.svg",
+  "ir-boteh": "stickers/ir-boteh.svg",
+  "ir-si-o-se-pol": "stickers/ir-si-o-se-pol.svg",
+  "kg-burana": "stickers/kg-burana.svg",
+  "kg-komuz": "stickers/kg-komuz.svg",
+  "kg-tash-rabat": "stickers/kg-tash-rabat.svg",
+  "kz-baiterek": "stickers/kz-baiterek.svg",
+  "kz-dombyra": "stickers/kz-dombyra.svg",
+  "kz-yurt": "stickers/kz-yurt.svg",
+  "kz-zenkov": "stickers/kz-zenkov.svg",
+  "shared-meal": "stickers/shared-meal.svg",
+  "shared-mountain-pass": "stickers/shared-mountain-pass.svg",
+  "shared-rain": "stickers/shared-rain.svg",
+  "shared-repair": "stickers/shared-repair.svg",
+  "shared-tent": "stickers/shared-tent.svg",
+  "shared-train": "stickers/shared-train.svg",
+  "shared-water-bottle": "stickers/shared-water-bottle.svg",
+  "shared-wind": "stickers/shared-wind.svg",
+  "tj-hisor": "stickers/tj-hisor.svg",
+  "tj-rosette": "stickers/tj-rosette.svg",
+  "tj-somoni": "stickers/tj-somoni.svg",
+  "tr-galata": "stickers/tr-galata.svg",
+  "tr-maiden-tower": "stickers/tr-maiden-tower.svg",
+  "tr-tea-glass": "stickers/tr-tea-glass.svg",
+  "uz-ceramic-plate": "stickers/uz-ceramic-plate.svg",
+  "uz-chilpyk": "stickers/uz-chilpyk.svg",
+  "uz-kalta-minor": "stickers/uz-kalta-minor.svg",
+  "uz-registan": "stickers/uz-registan.svg",
+  "stamp-compass": "stickers/stamp-compass.svg"
+ },
+ "countryAliases": {
+  "kz": [
+   "Казахстан",
+   "Kazakhstan"
+  ],
+  "tr": [
+   "Турция",
+   "Türkiye",
+   "Turkey"
+  ],
+  "ge": [
+   "Грузия",
+   "Georgia"
+  ],
+  "am": [
+   "Армения",
+   "Armenia"
+  ],
+  "ir": [
+   "Иран",
+   "Iran"
+  ],
+  "uz": [
+   "Узбекистан",
+   "Uzbekistan"
+  ],
+  "kg": [
+   "Киргизия",
+   "Кыргызстан",
+   "Kyrgyzstan"
+  ],
+  "cn": [
+   "Китай",
+   "China"
+  ],
+  "tj": [
+   "Таджикистан",
+   "Tajikistan"
+  ]
+ },
+ "cultureByCountry": {
+  "kz": "kz-dombyra",
+  "tr": "tr-tea-glass",
+  "ge": "ge-qvevri",
+  "am": "am-pomegranate",
+  "ir": "ir-boteh",
+  "uz": "uz-ceramic-plate",
+  "kg": "kg-komuz",
+  "cn": "cn-lantern",
+  "tj": "tj-rosette"
+ },
+ "events": {
+  "wind": "shared-wind",
+  "rain": "shared-rain"
+ },
+ "rule": "Достопримечательность — только при подтверждённом визите (Шылпык). Для страны — культурный предмет как контекст страны, не как факт посещения объекта. События — только по данным: ветер ≥3 м/с, осадки ≥2 мм."
+}

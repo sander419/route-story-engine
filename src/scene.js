@@ -59,6 +59,17 @@
 
   /* ---------- стили ---------- */
   const STYLES = {
+    journal: {
+      name: 'Дневник',
+      bg: '#f4e8cb', journal: true, vec: null,
+      ghost: 'rgba(135,126,100,.5)', ghostW: 5, ghostDash: [4, 14],
+      line: { stops: ['#c9552f', '#a33f28'], glow: 'rgba(255,244,217,.9)', w: 9 },
+      head: '#fff4d9', headHalo: 'rgba(163,63,40,.35)',
+      ink: '#203c36', dim: 'rgba(32,60,54,.68)', accent: '#a33f28',
+      panel: 'rgba(255,244,217,.93)', panelLine: 'rgba(135,126,100,.55)',
+      fHead: '"Yeseva One", "RS Geologica", Georgia, serif', headW: 400, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
+      scrim: [244, 232, 203], paper: true, credit: '',
+    },
     paper: {
       name: 'Атлас',
       bg: '#efe6d2',

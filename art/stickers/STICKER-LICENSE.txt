@@ -1,0 +1,1 @@
+Original procedural SVG artwork created for Route Story. SVG paths and PNG renders are reusable and editable in this project and future user projects. Reference URLs describe subjects; their photos/text are not included or relicensed. Existing Commons assets retain their individual licenses in CREDITS.md.

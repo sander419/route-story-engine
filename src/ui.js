@@ -5,7 +5,7 @@
   const { createScene, STYLES } = window.RS;
 
   const state = {
-    route: null, journeyData: null, seriesBase: null, etype: 'returning-viewer', mode: 'track', styleId: 'paper', fmt: 'v', jcount: 99,
+    route: null, journeyData: null, seriesBase: null, etype: 'returning-viewer', mode: 'track', styleId: 'journal', fmt: 'v', jcount: 99,
     o: { title: '', subtitle: '', startName: '', endName: '', duration: 20, showSpeed: true, showEle: true, lang: 'ru', places: [], note: '', photos: [] },
   };
   const touched = {};
@@ -22,7 +22,7 @@
   ).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
-  const swatch = { night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', sat: 'linear-gradient(135deg,#1d2b17,#4a5d2f 55%,#fde047 56%,#fb923c)', navigator: 'linear-gradient(135deg,#090e1a,#0c1630 55%,#43e7ff 56%,#f05de1)' };
+  const swatch = { journal: 'linear-gradient(135deg,#f4e8cb,#e9d9ae 55%,#274e45 56%,#a33f28)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', sat: 'linear-gradient(135deg,#1d2b17,#4a5d2f 55%,#fde047 56%,#fb923c)', navigator: 'linear-gradient(135deg,#090e1a,#0c1630 55%,#43e7ff 56%,#f05de1)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
@@ -161,7 +161,7 @@
         const s = a.country && a.country === b.country ? a.country : [a.country, b.country].filter(Boolean).join(' → ');
         state.o.subtitle = s; $('subtitle').value = s;
       }
-      route.meta = { ...(route.meta || {}), from: state.demoDay ? null : a.place || null };
+      route.meta = { ...(route.meta || {}), from: state.demoDay ? null : a.place || null, country: b.country || a.country || null };
       syncDayMeta(route); rebuild(true);
       // серия: места по пути — одним запросом; режиссёр сам выберет до трёх самых значимых
       if (state.mode === 'series') {
@@ -239,7 +239,7 @@
     if (!isOwn() || state.route !== route || !route.meta) return;
     const days = [...state.seriesBase.days].sort((x, y) => x.day - y.day), last = days[days.length - 1];
     if (!last) return;
-    const upd = { ...last, from: route.meta.from || last.from || null, waypoints: route.meta.waypoints || last.waypoints || [], weather: route.meta.weather || last.weather || null };
+    const upd = { ...last, from: route.meta.from || last.from || null, waypoints: route.meta.waypoints || last.waypoints || [], weather: route.meta.weather || last.weather || null, country: route.meta.country || last.country || null };
     state.seriesBase = { ...state.seriesBase, days: state.seriesBase.days.map((d) => (d.day === last.day ? upd : d)) };
     saveOwn();
   }
@@ -295,7 +295,7 @@
     }
     if (r.t && r.stats.avg) { seg.movingH = Math.round((r.stats.moving / 3.6e6) * 100) / 100; seg.avgKmh = Math.round(r.stats.avg * 10) / 10; }
     if (r.t) { const K = 24; seg.tAt = Array.from({ length: K + 1 }, (_, k) => Math.round(window.RouteLib.at(r, (r.total * k) / K).t)); seg.lon0 = +r.lon[0].toFixed(3); }
-    if (r.meta) { seg.from = r.meta.from || null; seg.waypoints = r.meta.waypoints || []; if (r.meta.weather) seg.weather = r.meta.weather; }
+    if (r.meta) { seg.from = r.meta.from || null; if (r.meta.country) seg.country = r.meta.country; seg.waypoints = r.meta.waypoints || []; if (r.meta.weather) seg.weather = r.meta.weather; }
     // кольцо: финиш рядом со стартом
     seg.loop = window.RouteLib.hav({ lat: r.lat[0], lon: r.lon[0] }, { lat: r.lat[r.n - 1], lon: r.lon[r.n - 1] }) < Math.max(400, r.total * 0.06);
     return seg;
