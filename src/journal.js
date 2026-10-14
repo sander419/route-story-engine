@@ -292,10 +292,23 @@
       if (fams.has('road')) relLoads.push(window.Terrain.load(E.bboxToday(), { land: AP.land, water: AP.water }).then((T) => { terr.today = T; }));
       if (fams.has('jroad')) relLoads.push(window.Terrain.load(E.bboxAll(), { land: AP.land, water: AP.water }).then((T) => { terr.all = T; }));
     }
+    /* плоская карта (та же векторная, что была в «Атласе» и «Полуночи»): интерфейс как у Terrain — projector и render */
+    let flatCv = null;
+    const flatApi = {
+      projector: (T, cam) => { const k = Math.pow(2, cam.fz); return (x, y) => [cam.fax + (x - cam.cx) * k, cam.fay + (y - cam.cy) * k]; },
+      render: (T, cam, w, h) => {
+        if (!window.VMap) return null; if (!flatCv) flatCv = document.createElement('canvas'); if (flatCv.width !== w || flatCv.height !== h) { flatCv.width = w; flatCv.height = h; }
+        const g = flatCv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = AP.land; g.fillRect(0, 0, w, h);
+        const close = cam.fz >= 9.6, mix = (c, k) => window.Appearance.rgba(c, k);
+        window.VMap.draw(g, w, h, { cx: cam.cx, cy: cam.cy, z: cam.fz, rot: 0 }, cam.fax, cam.fay, { water: AP.water, waterLine: mix(AP.text, 0.28), park: mix('#ffffff', 0.16), urban: mix('#000000', 0.07), road: close ? mix(AP.text, 0.32) : null, rail: close ? mix(AP.text, 0.22) : null, border: mix(AP.accent, 0.55), label: AP.text, halo: mix(AP.bg, 0.8), font: BODY, noWaterways: cam.fz < 7.5 }, { fills: true, lines: true, labels: false }, 'ru', u);
+        return flatCv;
+      },
+    };
     function reliefView(ctx, jr, sets, tr, t, a, opts, c) {
-      const T = jr ? terr.all : terr.today; if (!T || !window.Terrain) return false;
+      const FL = !!opts.flat, T = FL ? { tex: { avg: AP.land } } : jr ? terr.all : terr.today; if (!T || (!FL && !window.Terrain)) return false;   // FL — плоская векторная карта (VMap) вместо 3D-рельефа
+      const MAP = FL ? flatApi : window.Terrain;
       const [mx, my, mw, mh] = box(c.map), nb = box(c.names), Z = opts.bleed;   // bleed: зона [x0,y0,x1,y1] в пикселях, где должен уместиться маршрут; карта рисуется на весь кадр
-      const iw = Z ? W + 2 * Math.abs((Z[0] + Z[2]) / 2 - W / 2) : mw - px(36), ih = Z ? H + 2 * Math.abs((Z[1] + Z[3]) / 2 - H / 2) : my + mh - px(46) - Math.max(my + px(18), nb[1] + nb[3] + px(14)), ix = Z ? (Z[0] + Z[2]) / 2 - iw / 2 : mx + px(18), iy = Z ? (Z[1] + Z[3]) / 2 - ih / 2 : Math.max(my + px(18), nb[1] + nb[3] + px(14));   // окно рельефа начинается под подписью маршрута
+      const iw = FL ? W : Z ? W + 2 * Math.abs((Z[0] + Z[2]) / 2 - W / 2) : mw - px(36), ih = FL ? H : Z ? H + 2 * Math.abs((Z[1] + Z[3]) / 2 - H / 2) : my + mh - px(46) - Math.max(my + px(18), nb[1] + nb[3] + px(14)), ix = FL ? 0 : Z ? (Z[0] + Z[2]) / 2 - iw / 2 : mx + px(18), iy = FL ? 0 : Z ? (Z[1] + Z[3]) / 2 - ih / 2 : Math.max(my + px(18), nb[1] + nb[3] + px(14));   // окно рельефа начинается под подписью маршрута
       const today = sets.find((s) => s.today) || sets[sets.length - 1], use = jr ? sets : [today];
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       for (const s of use) for (const p of s.pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
@@ -305,7 +318,8 @@
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
       const amp = opts.amp || 0, intro = 1 - smooth(clamp((opts.lt != null ? opts.lt : t) / 5, 0, 1)), fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
       const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: (opts.bleed ? 50 : 62) + 6 * easeOut(t / 14) - 22 * amp * intro, bearing: heading + 9 * Math.sin(t * 0.17) - 22 * amp * intro, fov: 38, fade: opts.bleed ? 0.2 : 0.05 };   // въезд: из высоты и сбоку — вниз и к маршруту, дальше медленный облёт
-      {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
+      if (FL) { const zw = Z[2] - Z[0], zh = Z[3] - Z[1]; cam.cx = cx; cam.cy = cy; cam.fax = (Z[0] + Z[2]) / 2; cam.fay = (Z[1] + Z[3]) / 2; cam.fz = Math.min(15, Math.max(3, Math.log2(Math.min(zw * 0.8 / Math.max(x1 - x0, 1e-6), zh * 0.8 / Math.max(y1 - y0, 1e-6))))) + 0.3 * smooth(opts.prog || 0); }
+      if (!FL) {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
         const smp = [], upto = !jr && hd ? hd.i : Infinity;
         for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
         if (hd) smp.push([hd.x, hd.y]);
@@ -316,10 +330,10 @@
         }
       }
       cam.dist *= 1 + 0.35 * amp * intro;
-      const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
-      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = Z ? AP.shade : (T.tex && T.tex.avg) || '#b4ba94'; if (Z) ctx.fillRect(0, 0, W, H); else ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // фон окна — средний цвет самой текстуры: край модели не виден   // подложка окна: по углам рельефа не видно светлого пятна
-      ctx.beginPath(); if (Z) ctx.rect(0, 0, W, H); else ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
-      const P = window.Terrain.projector(T, cam, iw, ih); const poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
+      const cv = MAP.render(T, cam, iw, ih); if (!cv) return false;
+      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = FL ? AP.land : Z ? AP.shade : (T.tex && T.tex.avg) || '#b4ba94'; if (Z || FL) ctx.fillRect(0, 0, W, H); else ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // фон окна — средний цвет самой текстуры: край модели не виден   // подложка окна: по углам рельефа не видно светлого пятна
+      ctx.beginPath(); if (Z || FL) ctx.rect(0, 0, W, H); else ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
+      const P = MAP.projector(T, cam, iw, ih); const poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       for (const s of sets) if (s !== today) { poly(s.pts, s.brk, null); if (E.journey.schematic) ctx.setLineDash([14 * u, 10 * u]); ctx.strokeStyle = 'rgba(244,232,203,.85)'; ctx.lineWidth = 7 * u; ctx.stroke(); ctx.strokeStyle = 'rgba(89,80,61,.85)'; ctx.lineWidth = 3.5 * u; ctx.stroke(); ctx.setLineDash([]); }
       if (hd) {
@@ -337,13 +351,19 @@
       text(ctx, 'AWS Terrain Tiles · высоты ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
       return true;
     }
+    const roadZone = () => (portrait ? [px(60), px(300), W - px(60), H - px(620)] : [px(60), px(230), px(1330), H - px(150)]);
+    function flatTiles() {   // плитки плоской карты для предзагрузки перед экспортом: камеры дороги по сегодняшнему маршруту и по всему пути
+      if (!window.VMap) return []; const Z = roadZone(), out = [];
+      for (const b of [E.bboxToday(), E.bboxAll()]) { if (!b) continue; const fz = Math.min(15, Math.max(3, Math.log2(Math.min((Z[2] - Z[0]) * 0.8 / Math.max(b.x1 - b.x0, 1e-6), (Z[3] - Z[1]) * 0.8 / Math.max(b.y1 - b.y0, 1e-6))))); for (const dz of [0, 0.3]) out.push(...window.VMap.tilesAt({ cx: (b.x0 + b.x1) / 2, cy: (b.y0 + b.y1) / 2, z: fz + dz, rot: 0 }, (Z[0] + Z[2]) / 2, (Z[1] + Z[3]) / 2, W, H)); }
+      return out;
+    }
     function roadScene(ctx, s, p, t, lt, dur, jr, rs) {
       const c = L.road, env = rs.env, a = env;
-      const zone = portrait ? [px(60), px(300), W - px(60), H - px(620)] : [px(60), px(230), px(1330), H - px(150)];   // сюда должен поместиться маршрут: не под заголовком и не под панелью
+      const zone = roadZone();   // сюда должен поместиться маршрут: не под заголовком и не под панелью
       const sets = jr ? E.allSets() : [E.todaySet()];
       const tr = jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);
       const ropts = { lt: 99, bleed: zone, mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
-      const ok = reliefView(ctx, jr, sets, tr, t, a, ropts, c);
+      const run = E.run(s), ok = (E.relief !== false && reliefView(ctx, jr, sets, tr, t, a, ropts, c)) || reliefView(ctx, jr, sets, tr, t, a, { ...ropts, flat: true, prog: (t - run.t0) / Math.max(0.1, run.t1 - run.t0) }, c);
       if (!ok) {
         const [mx, my, mw, mh] = box(c.map); drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, 0);
         ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip(); sketch(ctx, c.core, sets, tr, t, a, { ...ropts, deco: !jr }); ctx.restore();
@@ -500,7 +520,7 @@
       const dark = fam === 'fin';
       const run = E.run(s), rlt = t - run.t0, rdur = run.t1 - run.t0;   // общая огибающая семьи: страница не «мигает», пока идут кадры одной семьи подряд
       ctx.drawImage(pageCanvas(dark), 0, 0);
-      const env = run.t0 === 0 ? smooth(rlt / 0.5) : 1;   // страница не исчезает перед сменой разворота
+      const env = run.t0 === 0 ? smooth(rlt / 0.9) : 1;   // страница не исчезает перед сменой разворота
       const a = env, dy = (1 - easeOut(rlt / 0.7)) * px(36);
       ctx0 = ctx;
       switch (fam) {
@@ -530,7 +550,7 @@
       ctx.save(); ctx.globalAlpha *= 1 - smooth(dt / TURN); ctx.drawImage(turnCanvas, 0, 0); ctx.restore();
     }
     const packNeeded = () => (['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here']).concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
-    return { draw, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads]), isDark: s => FAM[s.recipe] !== 'fin', footerColor: s => FAM[s.recipe] === 'fin' ? AP.finalText : ['cover','photo'].includes(FAM[s.recipe]) ? AP.photoText : AP.text };
+    return { draw, flatTiles, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads, ...(E.relief ? [] : [Promise.all(flatTiles().map((q) => window.VMap.getTile(q.z, q.x, q.y).p))])]), isDark: s => FAM[s.recipe] !== 'fin', footerColor: s => FAM[s.recipe] === 'fin' ? AP.finalText : ['cover','photo'].includes(FAM[s.recipe]) ? AP.photoText : AP.text };
   }
 
   window.Journal = { create, FAM };

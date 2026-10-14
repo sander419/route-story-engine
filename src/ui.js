@@ -222,10 +222,10 @@
   renderMood();
 
   /* ---- что показывать в ролике ---- */
-  const SHOWS = [['photos', 'Фото'], ['phrase', 'Главная фраза'], ['notes', 'Заметки на маршруте'], ['places', 'Города по пути'], ['weather', 'Погода'], ['ele', 'Высота и профиль'], ['time', 'Время в пути'], ['flags', 'Флаг страны'], ['stickers', 'Стикеры'], ['relief', '3D-рельеф («Дневник»)']];
-  state.show = Object.fromEntries(SHOWS.map(([k]) => [k, true]));
+  const SHOWS = [['photos', 'Фото'], ['phrase', 'Главная фраза'], ['notes', 'Заметки на маршруте'], ['places', 'Города по пути'], ['weather', 'Погода'], ['ele', 'Высота и профиль'], ['time', 'Время в пути'], ['flags', 'Флаг страны'], ['stickers', 'Стикеры'], ['relief', '3D-рельеф вместо плоской карты']];
+  state.show = Object.fromEntries(SHOWS.map(([k]) => [k, k !== 'relief'])); state.relief = false;   // по умолчанию плоская карта; 3D-рельеф — по галочке
   SHOWS.forEach(([k, nm]) => {
-    const l = document.createElement('label'); l.className = 'c'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true; cb.dataset.k = k;
+    const l = document.createElement('label'); l.className = 'c'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = k !== 'relief'; cb.dataset.k = k;
     cb.onchange = () => { state.show[k] = cb.checked; state.relief = state.show.relief; t = 0; rebuild(); };
     l.append(cb, document.createTextNode(nm)); if (k === 'stickers' && !window.StyleIcons.legacyEnabled) l.hidden = true; $('shows').appendChild(l);
   });

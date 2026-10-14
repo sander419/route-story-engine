@@ -286,7 +286,7 @@
       return 1;
     }
 
-    const tilesAt = (t) => (S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : []);
+    const tilesAt = (t) => (S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : J && J.flatTiles && !(relief && showRelief) ? J.flatTiles() : []);
     const allMediaIds = [...new Set(shots.flatMap((s) => s.params.mediaIds || []))];
     const legacyIcons = window.StyleIcons.legacyEnabled;
     const wxId = wxPackId(WX), wxImg = wxId ? window.StyleIcons.image(styleId, wxId, S.accent) : null;
