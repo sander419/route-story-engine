@@ -37,6 +37,16 @@ const pin = await p.evaluate(() => { const xy = window.__pmapPins()[0], cv = doc
 if (pin) { await p.mouse.move(pin[0], pin[1]); await p.mouse.down(); await p.mouse.move((pin[0] + pin[2]) / 2, (pin[1] + pin[3]) / 2, { steps: 5 }); await p.mouse.move(pin[2], pin[3], { steps: 5 }); await p.mouse.up(); await p.waitForTimeout(800); }
 const after = await p.evaluate(() => window.__app.state.o.photos.map((q) => q.s));
 ok(pin && after[0] !== before[0], `фото №1 перетащено по треку: ${Math.round(before[0] / 100) / 10} → ${Math.round(after[0] / 100) / 10} км`);
+// «Что показывать»: выключаем фото, высоту и время в пути — этих кадров в плане быть не должно, знак по умолчанию — уницикл
+const sh = await p.evaluate(async () => {
+  const before = window.__app.state.lastEp.res.plan.beats.map((x) => x.recipe), mark = window.__app.state.lastEp.J.profile.mark;
+  for (const k of ['photos', 'ele', 'time']) { const cb = document.querySelector(`#shows input[data-k="${k}"]`); cb.checked = false; cb.dispatchEvent(new Event('change')); }
+  await new Promise((r) => setTimeout(r, 900)); const after = window.__app.state.lastEp.res.plan.beats.map((x) => x.recipe);
+  for (const k of ['photos', 'ele', 'time']) { const cb = document.querySelector(`#shows input[data-k="${k}"]`); cb.checked = true; cb.dispatchEvent(new Event('change')); }
+  await new Promise((r) => setTimeout(r, 900)); return { before, after, mark };
+});
+ok(sh.mark === 'unicycle', 'знак по умолчанию — уницикл: ' + sh.mark);
+ok(sh.before.includes('photo-reveal') && !sh.after.some((r) => ['photo-reveal', 'elevation-profile', 'time-on-road'].includes(r)), `выключенное не попадает в ролик: было ${sh.before.join(',')} → стало ${sh.after.join(',')}`);
 // кадры: обложка, раскрытие пути (заметки и фото на треке), прибытие, финал
 const shots = await p.evaluate(async () => {
   const sc = window.__app.scene; await sc.assetsReady; const beats = window.__app.state.lastEp.res.plan.beats;

@@ -255,7 +255,7 @@
 
     /* ---------- стикеры: страна — культурный предмет как контекст; события — только по данным ---------- */
     const countryIso = (name) => window.Flags.iso(name);   // общий модуль src/flags.js
-    const flagOf = (iso, kind) => window.Flags.img(iso, kind);
+    const flagOf = (iso, kind) => (E.showFlags ? window.Flags.img(iso, kind) : null);
     // флаг: бумажный, с белой каймой и скотчем — приклеен к углу карточки; x, y — центр, wU — ширина в u
     function pinFlag(ctx, iso, x, y, wU, rot, a) {
       const im = flagOf(iso, 'flag'); if (!im) return; const w = px(wU), h = (w * im.height) / im.width, b = px(10);
@@ -283,7 +283,8 @@
     }
     /* ---------- сцены ---------- */
     const heroBox = (b, a, dy, rot = 0) => {
-      if (E.MARK === 'unicycle' && art('barbos.webp')) fitImg(ctx0, art('barbos.webp'), b, a, rot, dy);
+      const uImg = E.uni() || art('barbos.webp');   // реалистичный рендер уницикла (art/unicycle-real.webp)
+      if (E.MARK === 'unicycle' && uImg) fitImg(ctx0, uImg, b, a, rot, dy);
       else if (E.MARK && E.MARK !== 'dot') { const [x, y, w, h] = box(b), r = Math.min(w, h) * 0.42; ctx0.save(); ctx0.globalAlpha *= a; ctx0.shadowColor = 'rgba(40,28,10,.3)'; ctx0.shadowBlur = 20 * u; ctx0.shadowOffsetY = 12 * u; E.drawMark(ctx0, E.MARK, x + w / 2, y + h / 2 + dy, r, E.MCOL, 0); ctx0.restore(); }
       else fitImg(ctx0, stickerImg('stamp-compass'), b, a, rot, dy);
     };
@@ -380,7 +381,8 @@
       tape(ctx, c.tape, 3, a, dy);
       const spec = E.metric(s, p, t, lt, dur); const ma = E.vis(lt, dur); const sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
       const mh2 = metricCard(ctx, c.metric, spec, ma * env, (1 - easeOut(lt / 0.6)) * px(24), -1, 11);
-      const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], ma * env, 6, 0);   // на уголке карточки, поверх текста не лежит
+      const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], ma * env, 6, 0);
+      else if (E.MARK === 'unicycle' && E.uni() && portrait && mh2) fitImg(ctx, E.uni(), [c.metric[0] + c.metric[2] - 250, c.metric[1] + mh2 / u - 40, 240, 300], ma * env, 5, (1 - easeOut(lt / 0.8)) * px(30));   // уницикл под карточкой километров, справа — не на тексте
     }
     function arrival(ctx, s, p, a, dy, lt) {
       const c = L.arrival, [tx, ty, tw, th] = box(c.title), pad = px(32);

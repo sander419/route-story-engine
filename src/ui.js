@@ -175,6 +175,15 @@
   }
   renderMood();
 
+  /* ---- что показывать в ролике ---- */
+  const SHOWS = [['photos', 'Фото'], ['phrase', 'Главная фраза'], ['notes', 'Заметки на маршруте'], ['places', 'Города по пути'], ['weather', 'Погода'], ['ele', 'Высота и профиль'], ['time', 'Время в пути'], ['flags', 'Флаг страны'], ['stickers', 'Стикеры'], ['relief', '3D-рельеф («Дневник»)']];
+  state.show = Object.fromEntries(SHOWS.map(([k]) => [k, true]));
+  SHOWS.forEach(([k, nm]) => {
+    const l = document.createElement('label'); l.className = 'c'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true; cb.dataset.k = k;
+    cb.onchange = () => { state.show[k] = cb.checked; state.relief = state.show.relief; t = 0; rebuild(); };
+    l.append(cb, document.createTextNode(nm)); $('shows').appendChild(l);
+  });
+
   /* ---- шаги под роликом ---- */
   function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'text', 'photo', 'look'].forEach((k) => { $('t-' + k).hidden = k !== id; }); if (id === 'photo') drawPmap(); }
   [...$('tabs').children].forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
@@ -434,12 +443,13 @@
   /* ---- лицо героя: знак, имя, цвет. У примеров оно задано заранее, у своего трека — из «Кто едет» ---- */
   const HERO_GREEN = '#2fa84f', PKEY = 'route-story-profile';
   const COLORS = [HERO_GREEN, '#e8590c', '#2f7fd6', '#f59f00', '#c2255c', '#0c9aa0'];
-  state.profile = (() => { try { return { name: '', mark: 'auto', color: null, next: '', ...(JSON.parse(localStorage.getItem(PKEY) || '{}')) }; } catch (e) { return { name: '', mark: 'auto', color: null, next: '' }; } })();
+  state.profile = (() => { try { return { name: '', mark: 'unicycle', color: null, next: '', ...(JSON.parse(localStorage.getItem(PKEY) || '{}')) }; } catch (e) { return { name: '', mark: 'unicycle', color: null, next: '' }; } })();
+  if (state.profile.mark === 'auto') state.profile.mark = 'unicycle';
   function profileFor(J, ctxSeg) {
     if (J.schematic) return { name: '@wahrider', mark: 'unicycle', color: HERO_GREEN, next: '' };            // герой вайбатона: Барбос и его зелёный обод
-    if (J.id !== 'my') return { name: J.traveler || '', mark: 'bike', color: '#2f7fd6', next: '' };           // пример: вымышленный велопутешественник
+    if (J.id !== 'my') return { name: J.traveler || '', mark: state.profile.mark || 'unicycle', color: state.profile.color, next: state.profile.next };   // пример: знак и цвет — как выбрал пользователь (по умолчанию уницикл)
     const p = state.profile, v = ctxSeg && ctxSeg.avgKmh ? ctxSeg.avgKmh : 0;
-    return { name: p.name, color: p.color, next: p.next, mark: p.mark !== 'auto' ? p.mark : v > 0 && v < 7 ? 'walk' : v >= 7 && v < 45 ? 'bike' : 'dot' };
+    return { name: p.name, color: p.color, next: p.next, mark: p.mark || 'unicycle' };
   }
   function saveProfile() { try { localStorage.setItem(PKEY, JSON.stringify(state.profile)); } catch (e) { /* без сохранения */ } rebuild(true); }
   $('pName').value = state.profile.name; $('pNext').value = state.profile.next;
@@ -454,9 +464,20 @@
     $('pColor').appendChild(b);
   });
 
+  function applyShow(J0) {   // выключенное в «Что показывать» убираем из данных: режиссёр просто не увидит этих кадров
+    const S2 = state.show, days = J0.days.map((d) => {
+      const x = { ...d };
+      if (!S2.weather) delete x.weather;
+      if (!S2.ele) { x.gain = 0; delete x.profile; delete x.maxEle; delete x.minEle; }
+      if (!S2.time) { x.movingH = 0; x.avgKmh = 0; }
+      if (!S2.places) x.waypoints = [];
+      return x;
+    });
+    return { ...J0, days, media: S2.photos ? J0.media : [], notes: S2.phrase ? J0.notes : [] };
+  }
   function buildEpisode(w, h) {
-    const inp = seriesInput(), change = inp.change, lastSeg = [...inp.J.days].sort((a, b) => a.day - b.day).pop();
-    const J = { ...inp.J, profile: profileFor(inp.J, lastSeg) };
+    const inp = seriesInput(), change = inp.change, J1 = applyShow(inp.J), lastSeg = [...J1.days].sort((a, b) => a.day - b.day).pop();
+    const J = { ...J1, profile: profileFor(J1, lastSeg) };
     $('pHint').hidden = J.id === 'my';
     // фрагмент — короткая серия про сегодняшний участок; вся дорога — сначала весь путь, потом участок; у героя по постам — только трейлер
     state.etype = J.schematic ? 'story-so-far' : state.kind === 'long' ? 'new-viewer' : 'returning-viewer'; $('etype').value = state.etype;
@@ -466,9 +487,9 @@
     renderSeriesPanel(res, change, J);
     const R = state.route && !state.routeIsDemo ? state.route : state.demoDay ? state.route : null, tot = R ? R.total : 0;
     const extra = {
-      trackNotes: (state.o.tnotes || []).filter((n) => n.text.trim()).map((n) => ({ f: n.f, text: n.text.trim() })),
-      photoPins: tot ? (state.o.photos || []).filter((p) => p.s != null).map((p) => ({ f: Math.min(1, Math.max(0, p.s / tot)), url: p.url })) : [],
-      stickers: (state.o.stickers || []).map((x) => x || null),
+      trackNotes: state.show.notes ? (state.o.tnotes || []).filter((n) => n.text.trim()).map((n) => ({ f: n.f, text: n.text.trim() })) : [],
+      photoPins: tot && state.show.photos ? (state.o.photos || []).filter((p) => p.s != null).map((p) => ({ f: Math.min(1, Math.max(0, p.s / tot)), url: p.url })) : [],
+      stickers: state.show.stickers ? (state.o.stickers || []).map((x) => x || null) : [], showFlags: state.show.flags, showRelief: state.show.relief,
     };
     return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, ...extra }, w, h);
   }

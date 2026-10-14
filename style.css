@@ -190,3 +190,7 @@ input[type=file]::file-selector-button:hover{border-color:var(--acc)}
 .stk button.on{border-color:var(--acc)}
 .stk img{display:block;width:100%;height:100%;object-fit:contain}
 @media (max-width:640px){.kind{grid-template-columns:1fr}.stk{grid-template-columns:repeat(5,1fr)}}
+/* что показывать в ролике */
+.shows{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-1) var(--space-3)}
+.shows .c{display:flex;align-items:center;gap:var(--space-2);min-height:40px;font-size:var(--text-sm);cursor:pointer}
+.shows input{width:20px;height:20px;accent-color:var(--acc)}

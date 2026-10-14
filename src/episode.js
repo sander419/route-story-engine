@@ -75,7 +75,7 @@
     return e;
   }
 
-  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, trackNotes = [], photoPins = [], stickers = [] }, W, H) {
+  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, trackNotes = [], photoPins = [], stickers = [], showFlags = true, showRelief = true }, W, H) {
     /* Лицо героя (не меняется от стиля к стилю): знак, цвет, имя. Стиль карты — одежда. */
     const S0 = window.RS.STYLES[styleId] || window.RS.STYLES.night, PF = journey.profile || {};
     const S = PF.color ? heroTint(S0, PF.color) : S0;
@@ -291,7 +291,8 @@
     const D = S.deco || {}, decoImg = {};
     ['brush', 'hud', 'glow', 'fog'].forEach((k) => { if (D[k]) decoImg[k] = img('art/pack/' + D[k] + '.webp'); });
     const ctryOfDay = (day) => (journey.dayNotes && journey.dayNotes[day != null ? day : today.day]) || today.country || null;
-    const flagsLoad = window.Flags ? window.Flags.preload([...new Set(plan.beats.map((b) => ctryOfDay(b.params && b.params.day)).filter(Boolean))]) : Promise.resolve();
+    const uniImg = img('art/unicycle-real.webp');   // реалистичный уницикл (рендер Codex по фото героя) — на кадрах «сколько проехал»
+    const flagsLoad = window.Flags && showFlags ? window.Flags.preload([...new Set(plan.beats.map((b) => ctryOfDay(b.params && b.params.day)).filter(Boolean))]) : Promise.resolve();
     // заметки на маршруте, отметки фото и стикеры настроения — от пользователя (шаги «Текст», «Фото», «Оформление»)
     const NOTES = [...trackNotes].sort((a, b) => a.f - b.f), PINS = photoPins.map((q) => ({ ...q, e: img(q.url) })), STKS = [0, 1, 2].map((i) => (stickers[i] ? img('art/pack/' + stickers[i] + '.webp') : null));
     const stk = (i) => (STKS[i] && STKS[i].ok ? STKS[i].img : null);
@@ -299,7 +300,7 @@
       const Lt = todayCum[todayCum.length - 1] * Math.min(1, Math.max(0, f)); let i = 1; while (i < todayCum.length - 1 && todayCum[i] < Lt) i++;
       const k = Math.min(1, Math.max(0, (Lt - todayCum[i - 1]) / Math.max(1e-12, todayCum[i] - todayCum[i - 1]))); return [lerp(todayPts[i - 1][0], todayPts[i][0], k), lerp(todayPts[i - 1][1], todayPts[i][1], k)];
     }
-    let assetsReady = Promise.all([...PINS.map((q) => q.e.p), ...STKS.filter(Boolean).map((e) => e.p), flagsLoad, ...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
+    let assetsReady = Promise.all([uniImg.p, ...PINS.map((q) => q.e.p), ...STKS.filter(Boolean).map((e) => e.p), flagsLoad, ...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
 
     /* ---- типографика ---- */
     function T(ctx, str, x, y, a) {
@@ -352,7 +353,7 @@
     }
     // флаг страны: бумажная карточка с белой каймой, лёгким наклоном и тенью — ставится рядом с названием; нет страны/файла — ничего
     function flagStamp(ctx, name, x, y, wPx, rot, a) {
-      const code = window.Flags && window.Flags.iso(name), im = code && window.Flags.img(code, 'flag'); if (!im || a <= 0.01) return false;
+      const code = showFlags && window.Flags && window.Flags.iso(name), im = code && window.Flags.img(code, 'flag'); if (!im || a <= 0.01) return false;
       const w = wPx, h = (w * im.height) / im.width, b = 7 * u;
       ctx.save(); ctx.globalAlpha *= a; ctx.translate(x, y); ctx.rotate((rot * Math.PI) / 180);
       ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 18 * u; ctx.shadowOffsetY = 8 * u; ctx.fillStyle = S.paper ? '#fbf7ee' : '#eef2f8'; ctx.fillRect(-w / 2 - b, -h / 2 - b, w + 2 * b, h + 2 * b);
@@ -384,7 +385,9 @@
     // стикер настроения: с тенью и лёгким наклоном, «выпрыгивает» при появлении
     function stickerAt(ctx, im, cx, cy, sz, rot, a, lt) {
       if (!im || a <= 0.01) return; const pop = 0.82 + 0.18 * sine(Math.min(1, (lt || 1) / 0.5)), k = im.width / im.height, w = (k >= 1 ? sz : sz * k) * pop, h = (k >= 1 ? sz / k : sz) * pop;
-      ctx.save(); ctx.globalAlpha = a; ctx.translate(cx, cy); ctx.rotate((rot * Math.PI) / 180); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 20 * u; ctx.shadowOffsetY = 10 * u; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore();
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(cx, cy); ctx.rotate((rot * Math.PI) / 180);
+      if (!S.paper) { ctx.shadowColor = 'rgba(255,255,255,.95)'; ctx.shadowBlur = 5 * u; for (const [ox, oy] of [[-3, 0], [3, 0], [0, -3], [0, 3]]) { ctx.shadowOffsetX = ox * u; ctx.shadowOffsetY = oy * u; ctx.drawImage(im, -w / 2, -h / 2, w, h); } }   // на тёмной карте — светлая обводка наклейки, иначе чёрное тонет
+      ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 20 * u; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 10 * u; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore();
     }
     // какие заметки видны при раскрытии пути tr: видна последняя пройденная, прежняя гаснет
     const noteAlpha = (i, tr) => { const n = NOTES[i], nx = NOTES[i + 1]; return smooth((tr - n.f) / 0.03) * (nx ? 1 - smooth((tr - nx.f) / 0.03) : 1); };
@@ -558,7 +561,7 @@
           poly(pastFlat, upto, pastBrk);
           if (journey.schematic) ctx.setLineDash([16 * u, 12 * u]);
           ctx.strokeStyle = S.line.glow; ctx.globalAlpha = 0.25 + 0.55 * glow; ctx.lineWidth = S.line.w * 2.2 * u; ctx.stroke();
-          ctx.globalAlpha = 0.85; ctx.strokeStyle = S.paper ? S.accent : 'rgba(225,235,255,.85)'; ctx.lineWidth = 4.5 * u; ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]);
+          ctx.globalAlpha = 0.9; ctx.strokeStyle = S.paper ? S.accent : 'rgba(225,235,255,.9)'; ctx.lineWidth = (c.z < 6 ? 8 : c.z < 8 ? 6.5 : 4.5) * u; ctx.stroke();   // на общем плане линия толще — тысячи км не теряются ctx.globalAlpha = 1; ctx.setLineDash([]);
           const o = pastFlat[0]; ctx.beginPath(); ctx.arc(X(o), Y(o), 9 * u, 0, 6.2832); ctx.fillStyle = S.paper ? S.accent : '#e8f0ff'; ctx.fill();
         }
         // сегодня
@@ -733,6 +736,7 @@
           lowerThird(ctx, a, dy, `${Math.abs(p.lat).toFixed(2)}° ${p.lat >= 0 ? 'с. ш.' : 'ю. ш.'} · ${Math.abs(p.lon).toFixed(2)}° ${p.lon >= 0 ? 'в. д.' : 'з. д.'}`, p.label || 'здесь', 'день ' + today.day);
           break;
         case 'distance-counter': {
+          if (uniImg.ok) stickerAt(ctx, uniImg.img, W - mx - (portrait ? 190 : 230) * u, H - (portrait ? 700 : 330) * u, (portrait ? 400 : 330) * u, 4, a, lt);
           const km = p.newKm * sine(lt / 1.4);
           lowerThird(ctx, a, dy, 'за день', '+' + fmtN(km, km < 100 ? 1 : 0) + ' км', 'всего ' + fmtN(p.totalKm) + ' км');
           break;
@@ -778,6 +782,7 @@
           break;
         }
         case 'pullback': case 'progress-poster': {
+          if (!stk(2) && uniImg.ok) stickerAt(ctx, uniImg.img, W - mx - (portrait ? 190 : 230) * u, H - (portrait ? 700 : 330) * u, (portrait ? 400 : 330) * u, 4, s.recipe === 'pullback' ? smooth((su - 0.3) / 0.18) : vis(lt, s.durationSec), Math.max(0, su - 0.3) * s.durationSec);
           if (stk(2)) stickerAt(ctx, stk(2), W - mx - (portrait ? 150 : 170) * u, portrait ? H * 0.3 : H * 0.3, (portrait ? 300 : 260) * u, 7, s.recipe === 'pullback' ? smooth((su - 0.62) / 0.18) : vis(lt, s.durationSec), lt);
           const pa = s.recipe === 'pullback' ? smooth((su - 0.3) / 0.18) * (1 - smooth((lt - (dur - 0.4)) / 0.4)) : a;   // итог появляется уже на отлёте камеры, без паузы
           const NEXT = PF.next ? 'дальше — ' + PF.next : 'продолжение следует →';
@@ -812,7 +817,7 @@
         reveal: (t) => todayReveal(t),
         wxPackId,
         routeNames: () => route2T() || journey.title || '',
-        relief, notes: NOTES, pins: PINS, noteAlpha, stk, ptAtF, bboxToday: () => bbox(todayPts), bboxAll: () => bbox(allPts), famsInPlan: () => shots.map(famOf),
+        relief: relief && showRelief, uni: () => (uniImg.ok ? uniImg.img : null), showFlags, notes: NOTES, pins: PINS, noteAlpha, stk, ptAtF, bboxToday: () => bbox(todayPts), bboxAll: () => bbox(allPts), famsInPlan: () => shots.map(famOf),
         journeyName: () => journey.title || route2T() || '',
         recapPoint: (s, lt, dur) => { const r = recapState(s, lt / dur), st = s.stops[r.k]; if (!st) return null; const pv = r.k > 0 ? s.stops[r.k - 1].cam : null, f = sine(r.f / 0.32); return pv ? [pv.cx + (st.cam.cx - pv.cx) * f, pv.cy + (st.cam.cy - pv.cy) * f] : [st.cam.cx, st.cam.cy]; },   // маркер скользит к следующей остановке вместе с камерой, а не прыгает
         photoDate: (m, s) => (journey.schematic || s.recipe === 'highlights-reel' ? DL(m.day) : [DL(today.day), dateRu(today.date)].filter(Boolean).join(' · ')),
