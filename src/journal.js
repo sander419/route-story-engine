@@ -323,7 +323,7 @@
     function photoScene(ctx, s, p, t, lt, dur) {
       const c = L.photo, ids = (p.mediaIds || []).filter((id) => E.mediaById[id]), n = ids.length; if (!n) return;
       const slot = dur / n; const k = Math.min(n - 1, Math.floor(lt / slot)), l2 = lt - k * slot, m = E.mediaById[ids[k]];
-      const aIn = easeOut(l2 / 0.6), aOut = 1 - smooth((l2 - (slot - 0.5)) / 0.5) * (k === n - 1 ? 1 : 0.0001), a = aIn * (k === n - 1 ? aOut : 1);
+      const aIn = easeOut(l2 / 0.6), aOut = 1 - smooth((l2 - (slot - 0.5)) / 0.5), a = aIn * aOut;   // каждое фото плавно уходит, смена без резкого скачка
       const dy = (1 - easeOut(l2 / 0.7)) * px(48), rot = (k % 2 ? 1 : -1) * 2;
       const [cx, cy, cw, chh] = box(c.card); drawCard(ctx, card(cw, chh, { seed: 20 + k, fill: '#fffaf0', edge: 1.5 }), cx, cy, cw, chh, a, rot, dy);
       ctx.save(); ctx.translate(cx + cw / 2, cy + chh / 2 + dy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-cw / 2, -chh / 2);
@@ -393,9 +393,9 @@
     function draw(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, fam = FAM[s.recipe] || 'road', p = s.params || {};
       const dark = fam === 'fin';
-      const page = pageCanvas(dark); ctx.drawImage(page, 0, 0);
-      // общая огибающая семьи: страница не «мигает», пока идут кадры одной семьи подряд
-      const run = E.run(s), rlt = t - run.t0, rdur = run.t1 - run.t0;
+      const run = E.run(s), rlt = t - run.t0, rdur = run.t1 - run.t0;   // общая огибающая семьи: страница не «мигает», пока идут кадры одной семьи подряд
+      if (dark && rlt < 0.6 && run.t0 > 0) { ctx.drawImage(pageCanvas(false), 0, 0); ctx.globalAlpha = smooth(rlt / 0.6); ctx.drawImage(pageCanvas(true), 0, 0); ctx.globalAlpha = 1; }   // тёмный финал проявляется поверх светлой страницы
+      else ctx.drawImage(pageCanvas(dark), 0, 0);
       const env = clamp(Math.min(smooth(rlt / 0.5), 1 - smooth((rlt - (rdur - 0.3)) / 0.3)), 0, 1);
       const a = env, dy = (1 - easeOut(rlt / 0.7)) * px(36);
       ctx0 = ctx;

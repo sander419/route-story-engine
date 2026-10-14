@@ -656,7 +656,7 @@
         routeNames: () => route2T() || journey.title || '',
         relief, bboxToday: () => bbox(todayPts), bboxAll: () => bbox(allPts), famsInPlan: () => shots.map(famOf),
         journeyName: () => journey.title || route2T() || '',
-        recapPoint: (s, lt, dur) => { const r = recapState(s, lt / dur), st = s.stops[r.k]; return st ? [st.cam.cx, st.cam.cy] : null; },
+        recapPoint: (s, lt, dur) => { const r = recapState(s, lt / dur), st = s.stops[r.k]; if (!st) return null; const pv = r.k > 0 ? s.stops[r.k - 1].cam : null, f = sine(r.f / 0.32); return pv ? [pv.cx + (st.cam.cx - pv.cx) * f, pv.cy + (st.cam.cy - pv.cy) * f] : [st.cam.cx, st.cam.cy]; },   // маркер скользит к следующей остановке вместе с камерой, а не прыгает
         photoDate: (m, s) => (journey.schematic || s.recipe === 'highlights-reel' ? DL(m.day) : [DL(today.day), dateRu(today.date)].filter(Boolean).join(' · ')),
         dateLine: (s, p) => (journey.schematic ? (journey.dayLabels && journey.dayLabels[p && p.day != null ? p.day : today.day]) || '' : dateRu(today.date)),
         kindWord: (s, p) => (s.recipe === 'location-card' ? 'здесь' : p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие'),
