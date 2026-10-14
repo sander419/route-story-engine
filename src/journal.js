@@ -124,11 +124,7 @@
     const art = (f) => { const e = load(ART + f); return e.ok ? e.img : null; };
     /* набор графики «приключение» (art/pack, 103 PNG из Obsidian → webp): подбирается по данным, не по вкусу */
     const pk = (cat, id) => art(`pack/${cat}/${id}.webp`);
-    const wxId = (w) => {   // код погоды WMO (худший за день) → картинка; нет кода — картинки нет
-      if (!w || w.code == null) return null; const c = w.code;
-      if (c >= 95) return 'storm'; if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow'; if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || w.precip >= 2) return 'rain';
-      if (c === 45 || c === 48) return 'forest-fog'; if (w.wind >= 5) return 'wind-leaves'; if (c === 0) return 'sun'; if (c === 1 || c === 2) return 'sun-rays'; return 'clouds';
-    };
+    const wxId = (w) => E.wxPackId(w);   // код погоды WMO → картинка; общая функция в episode.js
     const stickerImg = (key) => (info && info.files[key] ? art(info.files[key]) : null);
 
     /* ---------- текст ---------- */

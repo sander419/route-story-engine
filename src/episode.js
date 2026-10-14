@@ -62,6 +62,12 @@
     ctx.restore();
   }
   const imgCache = new Map();
+  /* код погоды WMO (худший за день) → картинка набора art/pack/wx; нет кода — картинки нет */
+  function wxPackId(w) {
+    if (!w || w.code == null) return null; const c = w.code;
+    if (c >= 95) return 'storm'; if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow'; if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || w.precip >= 2) return 'rain';
+    if (c === 45 || c === 48) return 'forest-fog'; if (w.wind >= 5) return 'wind-leaves'; if (c === 0) return 'sun'; if (c === 1 || c === 2) return 'sun-rays'; return 'clouds';
+  }
   function img(url) {
     let e = imgCache.get(url);
     if (!e) { e = { ok: false, img: null }; e.p = new Promise((res) => { const im = new Image(); im.onload = () => { e.ok = true; e.img = im; res(); }; im.onerror = () => res(); im.src = url; }); imgCache.set(url, e); }
@@ -279,7 +285,8 @@
 
     const tilesAt = (t) => (S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : []);
     const allMediaIds = [...new Set(shots.flatMap((s) => s.params.mediaIds || []))];
-    let assetsReady = Promise.all(allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())));
+    const wxId = wxPackId(WX), wxImg = wxId ? img('art/pack/wx/' + wxId + '.webp') : null, signImg = img('art/pack/sign/' + ['09', '10', '11', '12'][[...String(journey.id || journey.title || '')].reduce((h, ch) => h + ch.charCodeAt(0), 0) % 4] + '.webp');
+    let assetsReady = Promise.all([...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p]);
 
     /* ---- типографика ---- */
     function T(ctx, str, x, y, a) {
@@ -520,6 +527,7 @@
         }
         case 'weather-card':
           lowerThird(ctx, a, dy, 'погода в тот день', p.head, p.sub);
+          if (wxImg && wxImg.ok) { const sz = (portrait ? 340 : 300) * u, k = wxImg.img.width / wxImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 24 * u; ctx.drawImage(wxImg.img, W - mx - w2, H - (portrait ? 760 : 520) * u + dy, w2, h2); ctx.restore(); }
           if (p.src) T(ctx, 'Погода: ' + p.src, W - mx, H - (portrait ? 250 : 60) * u, { size: 18, weight: 500, color: S.dim, align: 'right', shadow: false, alpha: a * 0.8 });
           break;
         case 'time-on-road':
@@ -547,6 +555,7 @@
         }
         case 'checkpoint-arrival':
           lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : single ? (dateRu(today.date) || '') : 'день ' + today.day);
+          if (signImg.ok) { const sz = (portrait ? 420 : 380) * u, k = signImg.img.width / signImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a * sine(lt / 0.8); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 26 * u; ctx.drawImage(signImg.img, W - mx - w2, H - (portrait ? 860 : 640) * u + dy, w2, h2); ctx.restore(); }   // указатель — украшение момента прибытия, ничего не утверждает
           break;
         case 'photo-reveal': case 'highlights-reel': {
           const ids = (p.mediaIds || []).filter((id) => mediaById[id]), n = ids.length; if (!n) break;
@@ -653,6 +662,7 @@
         todaySet: () => ({ pts: todayPts, brk: todayBrk, cum: todayCum, today: true }),
         allSets: () => dayPts.map((d) => ({ pts: d.pts, brk: d.brk, cum: d.day === today.day ? todayCum : null, today: d.day === today.day })),
         reveal: (t) => todayReveal(t),
+        wxPackId,
         routeNames: () => route2T() || journey.title || '',
         relief, bboxToday: () => bbox(todayPts), bboxAll: () => bbox(allPts), famsInPlan: () => shots.map(famOf),
         journeyName: () => journey.title || route2T() || '',
