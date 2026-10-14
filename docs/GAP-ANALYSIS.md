@@ -13,7 +13,7 @@
 | Слои для монтажа: PNG-кадры ZIP, WebM с альфой | `src/layers-export.js` |
 | Режим «весь путь» по остановкам героя + склейка с треком дня | `src/journey.js`, `data/journey-wahrider.json` |
 | Фото автора по EXIF (GPS → время → порядок), «главное о дне» | `src/exif.js` |
-| Live URL, README, ролики 9:16 и 16:9 | GitHub Pages, `exports/` |
+| Live URL, README, ролики 9:16 и 16:9 | GitHub Pages; ролики делает сам продукт на маршруте жюри |
 
 ## Расхождения со стеком брифа — и решение
 

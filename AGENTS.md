@@ -10,7 +10,7 @@
 - smoke и own-journey нужен Playwright из `C:/Users/glina/route-story-spike` (Edge). Без него smoke не запустится.
 
 ## Кто что правит (два агента в одном репозитории)
-- Claude Code: `src/`, `index.html`, `style.css`, `tools/`, `exports/`.
+- Claude Code: `src/`, `index.html`, `style.css`, `tools/`.
 - Codex: `assets/`, `asset-factory/`, `design/`, `src/navigator-grid.js`, стиль «Навигатор» в `scene.js`, `audio.js`.
 - Незакоммиченное чужого агента не трогать и не включать в свои коммиты. Перед коммитом смотреть `git status`.
 
