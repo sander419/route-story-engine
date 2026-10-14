@@ -313,12 +313,17 @@
       if (a <= 0.01) return;
       const ink = onPhoto ? '#ffffff' : S.ink, dimC = onPhoto ? 'rgba(255,255,255,.85)' : S.dim, sh = onPhoto ? 'rgba(0,0,0,.7)' : null;
       const ts = portrait ? 108 : 128, ks = portrait ? 31 : 34, ss = portrait ? 40 : 44;
-      const base = H - (portrait ? 360 : 150) * u + dy, ty = base - (sub ? ss * 1.4 : 0) * u, ky = ty - ts * 0.9 * u;
+      const base = H - (portrait ? 400 : 150) * u + dy, ty = base - (sub ? ss * 1.4 : 0) * u, ky = ty - ts * 0.9 * u;   // 400u: ниже — зона кнопок и подписи Reels/Shorts (по рекомендациям платформ ~320–390 px)
       const maxW = portrait ? W - 2 * mx : W * 0.62;
       ctx.save(); ctx.globalAlpha = a;
       if (!onPhoto && !LT_NO_SCRIM) {   // мягкая подложка под титром вместо плашки
         const y0 = ky - 190 * u, g = ctx.createLinearGradient(0, y0, 0, H); const c = S.scrim.join(',');
         g.addColorStop(0, `rgba(${c},0)`); g.addColorStop(0.45, `rgba(${c},${S.paper ? 0.72 : 0.62})`); g.addColorStop(1, `rgba(${c},${S.paper ? 0.9 : 0.82})`);
+        ctx.fillStyle = g; ctx.fillRect(0, y0, W, H - y0);
+      }
+      if (onPhoto) {   // тёмная подложка под подписью: светлое фото не должно съедать белый текст
+        const y0 = ky - 300 * u, g = ctx.createLinearGradient(0, y0, 0, H);
+        g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,.72)');
         ctx.fillStyle = g; ctx.fillRect(0, y0, W, H - y0);
       }
       ctx.fillStyle = S.accent; ctx.fillRect(mx, ky - ks * 1.5 * u, 72 * u, 7 * u);
