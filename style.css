@@ -100,7 +100,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .hint{color:var(--dim);font-size:var(--text-xs)}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2)}
 .seg button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
-.styles{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)}
+.styles{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-2)}
 .styles button{padding:0;overflow:hidden;text-align:left;border-width:2px}
 .styles button.on{border-color:var(--acc)}
 .styles .sw{height:56px}
@@ -153,3 +153,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   #cv{max-height:calc(100vh - 150px);max-width:100%}
   .ctrl{max-width:100%}
 }
+
+/* выбор фото — как кнопка, а не серая заглушка браузера */
+input[type=file]{font-size:var(--text-sm);color:var(--dim);max-width:100%}
+input[type=file]::file-selector-button{font:inherit;font-weight:600;color:var(--ink);background:var(--card,#fff);border:1px solid var(--field);border-radius:var(--radius-md);padding:10px var(--space-4);margin-right:var(--space-3);cursor:pointer}
+input[type=file]::file-selector-button:hover{border-color:var(--acc)}
+.styles .sw{height:64px}
+.result #again{align-self:stretch;font-weight:600}

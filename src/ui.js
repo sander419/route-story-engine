@@ -700,7 +700,7 @@
     $('layersBox').hidden = state.xmode !== 'layers';
     $('export').textContent = exportLabel();
   }));
-  let layerUrls = [];
+  let layerUrls = [], keepResult = false;
   $('export').onclick = async () => {
     if (!ready()) return;
     const btn = $('export');
@@ -750,8 +750,10 @@
       objUrl = URL.createObjectURL(res.blob);
       const slug = slug0;
       const name = `${slug}-${state.fmt === 'v' ? '9x16' : '16x9'}.${res.ext}`;
-      $('result').innerHTML = `<video src="${objUrl}" controls playsinline></video><a href="${objUrl}" download="${name}">Скачать ${name}</a><small>${W}×${H}, ${(res.blob.size / 1048576).toFixed(1)} МБ, ${res.ext.toUpperCase()}</small>`;
+      const other = state.fmt === 'v' ? 'h' : 'v', keep = keepResult ? $('result').innerHTML : ''; keepResult = false;
+      $('result').innerHTML = keep + `<video src="${objUrl}" controls playsinline></video><a href="${objUrl}" download="${name}">Скачать ${name}</a><small>${W}×${H}, ${(res.blob.size / 1048576).toFixed(1)} МБ, ${res.ext.toUpperCase()}</small>` + (keep ? '' : `<button id="again" type="button">Сделать то же в ${other === 'h' ? '16:9 для YouTube' : '9:16 для Reels и Shorts'}</button>`);
       $('result').hidden = false;
+      const again = $('again'); if (again) again.onclick = () => { keepResult = true; [...$('fmt').children].find((x) => x.dataset.v === other).click(); setTimeout(() => $('export').click(), 900); again.remove(); };   // второй формат тем же маршрутом, первый файл остаётся на экране
       window.__lastExport = { url: objUrl, name, size: res.blob.size, codec: res.codec };
     } catch (e) {
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));

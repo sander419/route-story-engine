@@ -282,7 +282,7 @@
       text(ctx, from, hx, hy + hh * 0.72, { size: 100, fam: HEAD, weight: S.headW, color: C.ink, max: c.head[2], ls: -0.02, a });
       lines.forEach((ln, i) => text(ctx, ln, dx, first + i * lh, { size, fam: HEAD, weight: S.headW, color: C.green, max: c.dest[2], ls: -0.02, a }));
       if (E.NAME) text(ctx, E.NAME, dx, last + px(size) * 0.3 + px(44), { size: 56, fam: HAND, weight: 400, color: C.accent, max: c.dest[2], a: a * 0.95 });
-      const ciso = countryIso(E.countryOf(s, p));
+      const ciso = s.recipe === 'season-card' ? null : countryIso(E.countryOf(s, p));   // на обложке всего путешествия флага нет: стран несколько
       if (ciso && flagOf(ciso, 'flag')) pinFlag(ctx, ciso, bx + bw - px(70), by + px(10) + dy, 170, 6, a);
       else tape(ctx, [bx / u + bw / u * 0.58, by / u - 36, 288, 80], -4, a, dy);
       ctx0 = ctx;

@@ -384,7 +384,7 @@
         const py = 34 * u, top = ky - ks * 1.25 * u - py, bot = (sub ? base + ss * 0.3 * u : ty + ts * 0.22 * u) + py;
         plateT(ctx, mx - 44 * u, top, bw + 88 * u, bot - top);
       }
-      const fr = (portrait ? 150 : 105) * u, field = D.redField && !onPhoto ? { r: fr, x: mx + (withDigits(title) ? (portrait ? 430 : 470) * u : measureT(ctx, title, tA)) + fr * 0.15, y: ty - ts * 0.4 * u } : null;   // у счётчика ширина меняется по ходу — круг на постоянном месте, иначе прыгает
+      const fr = ts * 0.64 * u, field = D.redField && !onPhoto ? { r: fr, x: Math.min(W - mx - fr * 0.9, mx + (withDigits(title) ? (portrait ? 395 : 430) * u : measureT(ctx, title, tA)) + fr * 0.85), y: ty - ts * 0.36 * u } : null;   // красная «точка» после заголовка, по высоте строки; у счётчика — на постоянном месте
       if (field) { ctx.save(); ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.fillStyle = S.accent; ctx.fill(); ctx.restore(); }
       if ((!decoImg.brush || !decoImg.brush.ok) && !field) { ctx.fillStyle = S.accent; ctx.fillRect(mx, ky - ks * 1.5 * u, 72 * u, 7 * u); }
       withRedField(ctx, field, (col) => kickerT(ctx, kicker, mx, ky, { size: ks, max: maxW, shadow: !!onPhoto && !col, shadowC: sh, color: col || (field ? S.dim : onPhoto && S.paper ? '#ffffff' : S.accent) }));
@@ -653,7 +653,7 @@
         case 'checkpoint-arrival':
           lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : single ? (dateRu(today.date) || '') : 'день ' + today.day);
           flagStamp(ctx, ctryOfDay(p.day), mx + (portrait ? 120 : 100) * u, H - (portrait ? 740 : 540) * u + dy, (portrait ? 190 : 150) * u, -5, a * sine((lt - 0.3) / 0.7));   // над надзаголовком, слева — не заходит на указатель
-          if (signImg.ok) { const sz = (portrait ? 420 : 300) * u, k = signImg.img.width / signImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a * sine(lt / 0.8); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 26 * u; ctx.drawImage(signImg.img, W - mx - w2, H - (portrait ? 860 : 500) * u + dy, w2, h2); ctx.restore(); }   // указатель — украшение момента прибытия, ничего не утверждает
+          if (signImg.ok && !D.redField) { const sz = (portrait ? 420 : 300) * u, k = signImg.img.width / signImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a * sine(lt / 0.8); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 26 * u; ctx.drawImage(signImg.img, W - mx - w2, H - (portrait ? 860 : 500) * u + dy, w2, h2); ctx.restore(); }   // указатель — украшение момента прибытия, ничего не утверждает
           break;
         case 'photo-reveal': case 'highlights-reel': {
           const ids = (p.mediaIds || []).filter((id) => mediaById[id]), n = ids.length; if (!n) break;
