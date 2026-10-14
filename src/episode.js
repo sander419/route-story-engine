@@ -371,13 +371,14 @@
     }
 
     /* ================= кадр ================= */
+    const XFADE = 0.4; let xfCanvas = null;   // длительность перекрёстного затухания между кадрами карты
     function draw(ctx, t, opts) {
       const LY = (opts && opts.layers) || { map: true, route: true, hud: true };
       const TR = !!(opts && opts.transparent);
       t = clamp(t, 0, duration - 1e-4);
       const c = cam(t), k = Math.pow(2, c.z), left = c.cx * k - ax, top = c.cy * k - ay;
       const X = (p) => p[0] * k - left, Y = (p) => p[1] * k - top;
-      const { s, u: su, lt } = shotAt(t);
+      const { s, u: su, lt, i } = shotAt(t);
       ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
       if (TR) ctx.clearRect(0, 0, W, H);
       else if (S.bgGrad) { const g = ctx.createLinearGradient(0, 0, W * 0.5, H); S.bgGrad.forEach((cc, i, a) => g.addColorStop(i / (a.length - 1), cc)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
@@ -502,6 +503,15 @@
         if (NAME) T(ctx, NAME, mx + (SIGM ? r * 2 + 14 * u : 0), sy + 13 * u, { size: 38, weight: 700, alpha: sa, color: onPh ? '#ffffff' : S.ink, shadowC: onPh ? 'rgba(0,0,0,.7)' : undefined, max: W * 0.5 });
       }
       T(ctx, S.credit, W / 2, H - (S.paper ? 46 : 22) * u, { size: 15, weight: 500, color: S.dim, align: 'center', alpha: 0.55, shadow: false });
+      // перекрёстное затухание на стыке кадров карты: прошлый кадр медленно уходит, без резкой склейки
+      if (!TR && !J && !(opts && opts.noXfade) && i > 0 && lt < XFADE) {
+        const k = smooth(lt / XFADE), prevT = shots[i - 1].t1 - 1e-3;
+        if (!xfCanvas) xfCanvas = document.createElement('canvas');
+        if (xfCanvas.width !== W || xfCanvas.height !== H) { xfCanvas.width = W; xfCanvas.height = H; }
+        const xc = xfCanvas.getContext('2d'); xc.setTransform(1, 0, 0, 1, 0, 0); xc.clearRect(0, 0, W, H);
+        draw(xc, prevT, { ...opts, noXfade: true });
+        ctx.globalAlpha = 1 - k; ctx.drawImage(xfCanvas, 0, 0);
+      }
       ctx.restore();
     }
 

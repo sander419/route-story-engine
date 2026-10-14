@@ -36,7 +36,8 @@ for (const fmt of fmtArg.split(',')) for (const type of types) {
   const bounds = r.beats.map((x) => x[0]), nearB = (t) => bounds.some((s) => Math.abs(t - s) < 0.5 || Math.abs(t - (s + 0)) < 0.5);
   const spikes = []; for (let i = 2; i < d.length - 2; i++) { const nb = (d[i - 2] + d[i - 1] + d[i + 1] + d[i + 2]) / 4; if (d[i] > 2 && d[i] > nb * 3 + 0.3) spikes.push([+(i / 30).toFixed(2), +d[i].toFixed(2), +nb.toFixed(2)]); }
   // резкие смены: кадры, где смена картинки >12 ед. (почти полная замена) — склейка без перехода
-  const cuts = []; d.forEach((v, i) => { if (v > 12) cuts.push([+((i + 1) / 30).toFixed(2), +v.toFixed(1)]); });
+  // резкая склейка = короткий всплеск (1–2 кадра); серия из нескольких кадров — это плавный переход (наплыв), он допустим
+  const cuts = []; for (let i = 0; i < d.length;) { if (d[i] > 12) { let j = i; while (j < d.length && d[j] > 12) j++; if (j - i <= 2) cuts.push([+((i + 1) / 30).toFixed(2), +Math.max(...d.slice(i, j)).toFixed(1)]); i = j; } else i++; }
   const short = r.beats.filter((x) => x[1] < 2.2).map((x) => x[2] + ' ' + x[1] + 'с');
   console.log(`\n== ${type} ${fmt} ${style}: ${r.dur} с, плановых кадров ${r.beats.length}, валид ${JSON.stringify(r.valid)}`);
   console.log(' кадры:', r.beats.map((x) => `${x[0]}+${x[1]} ${x[2]}`).join(' | '));
