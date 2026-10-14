@@ -22,7 +22,7 @@
   ).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
-  const swatch = { journal: 'linear-gradient(135deg,#f4e8cb,#e9d9ae 55%,#274e45 56%,#a33f28)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)', navigator: 'linear-gradient(135deg,#090e1a,#0c1630 55%,#43e7ff 56%,#f05de1)' };
+  const swatch = { journal: 'linear-gradient(135deg,#f4e8cb,#e9d9ae 55%,#274e45 56%,#a33f28)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';

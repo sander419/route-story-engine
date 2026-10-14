@@ -81,7 +81,7 @@
       panel: 'rgba(247,236,211,.93)', panelLine: 'rgba(92,58,30,.55)',
       fHead: '"Yeseva One", "RS Geologica", Georgia, serif', headW: 400, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif', 
       scrim: [239, 230, 210], paper: true, credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
-      deco: { brush: 'banner/x12', brushInk: '#fffaf0' },   // надзаголовок на оранжевом мазке кисти
+      deco: { brush: 'banner/x12', brushInk: '#fffaf0', border: true, rose: true },   // надзаголовок на оранжевом мазке кисти
     },
     night: {
       name: 'Полночь',
@@ -95,7 +95,7 @@
       panel: 'rgba(8,12,20,.72)', panelLine: 'rgba(148,163,184,.28)',
       fHead: '"RS DINish", "RS Geologica", "Arial Narrow", sans-serif', headW: 700, fNum: '"RS DINish", "RS Geologica", sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
       scrim: [4, 8, 18], credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
-      deco: { brush: 'banner/04', brushInk: '#ffffff', plate: 'glass', glow: 'vfx/01' },   // стеклянная плашка под титром, тёплое свечение головы
+      deco: { brush: 'banner/04', brushInk: '#ffffff', plate: 'glass', glow: 'vfx/01', fog: 'fog/01' },   // стеклянная плашка под титром, тёплое свечение головы
     },
     editorial: {   // «Журнал V3»: токены выбранного направления (бумага #F1EEE6, чернила #222725, акцент #C23E28); векторная карта движка, без фото и ИИ-иллюстраций
       name: 'Журнал V3',
@@ -109,18 +109,6 @@
       fHead: '"RS Geologica", "Segoe UI", system-ui, sans-serif', headW: 700, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS DINish", "RS Geologica", system-ui, sans-serif',
       scrim: [241, 238, 230], paper: true, credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
       deco: { redField: true, paperInk: '#f1eee6' },   // красный круг V3: заголовок меняет цвет там, где его пересекает круг
-    },
-    navigator: {
-      name: 'Навигатор',
-      bg: '#090e1a', bgGrad: ['#090e1a', '#0c1630', '#160d2c'], navigator: true,
-      ghost: 'rgba(67,231,255,.34)', ghostW: 5, ghostDash: [8, 16],
-      line: { stops: ['#43e7ff', '#f05de1'], glow: 'rgba(67,231,255,.4)', w: 10 },
-      head: '#e9f9ff', headHalo: 'rgba(240,93,225,.5)',
-      ink: '#e9f9ff', dim: 'rgba(185,227,245,.72)', accent: '#43e7ff',
-      panel: 'rgba(9,14,26,.78)', panelLine: 'rgba(67,231,255,.4)',
-      fHead: '"RS DINish", "RS Geologica", "Arial Narrow", sans-serif', headW: 700, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
-      scrim: [9, 14, 26], credit: '',
-      deco: { plate: 'hud', hud: 'hud/01', glow: 'vfx/05' },   // титр в неоновой HUD-рамке, голубое кольцо на голове
     },
   };
 

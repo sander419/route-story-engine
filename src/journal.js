@@ -53,9 +53,7 @@
   }
   let info = null;
   const infoP = fetch(ART + 'stickers.json').then((r) => r.json()).then((j) => { info = j; }).catch(() => {});
-  let flags = {};   // флаги и гербы стран (Wikimedia Commons, общественное достояние): art/flags/flags.json
-  const flagsP = fetch(ART + 'flags/flags.json').then((r) => r.json()).then((j) => { flags = j; }).catch(() => {});   // сами файлы грузятся только для стран маршрута (см. packNeeded)
-  const READY = (extraFn) => Promise.all([infoP, flagsP]).then(() => Promise.all([load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p, ...extraFn().map((f) => load(ART + 'pack/' + f + '.webp').p)])).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
+  const READY = (extraFn) => Promise.all([infoP, window.Flags.ready()]).then(() => Promise.all([load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p, ...extraFn().map((f) => load(ART + 'pack/' + f + '.webp').p)])).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
 
   const rngOf = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
@@ -232,22 +230,8 @@
     }
 
     /* ---------- стикеры: страна — культурный предмет как контекст; события — только по данным ---------- */
-    let nameMap = null;   // название страны (ru и en, от Nominatim) → код ISO: словарь браузера Intl.DisplayNames по кодам из реестра флагов
-    function isoByName(n) {
-      if (!nameMap) {
-        nameMap = new Map();
-        try { for (const lang of ['ru', 'en']) { const dn = new Intl.DisplayNames([lang], { type: 'region' }); for (const iso of Object.keys(flags)) { const nm = dn.of(iso.toUpperCase()); if (nm) nameMap.set(nm.toLowerCase().replace(/ё/g, 'е'), iso); } } } catch (e) { /* без Intl — только страны из stickers.json */ }
-        const extra = { 'соединённые штаты америки': 'us', 'соединенные штаты америки': 'us', 'сша': 'us', 'россия': 'ru', 'великобритания': 'gb', 'соединённое королевство': 'gb', 'чехия': 'cz', 'мьянма (бирма)': 'mm', 'южная корея': 'kr', 'республика корея': 'kr', 'вьетнам': 'vn', 'турция': 'tr', 'türkiye': 'tr' };
-        for (const [k, v] of Object.entries(extra)) if (flags[v]) nameMap.set(k, v);
-      }
-      return nameMap.get(n.replace(/ё/g, 'е')) || null;
-    }
-    function countryIso(name) {
-      if (!name) return null; const n = String(name).trim().toLowerCase();
-      if (info) for (const [iso, names] of Object.entries(info.countryAliases)) if (names.some((x) => x.toLowerCase() === n)) return iso;
-      return isoByName(n);
-    }
-    const flagOf = (iso, kind) => { const f = iso && flags[iso] && flags[iso][kind]; return f ? art(f.file) : null; };
+    const countryIso = (name) => window.Flags.iso(name);   // общий модуль src/flags.js
+    const flagOf = (iso, kind) => window.Flags.img(iso, kind);
     // флаг: бумажный, с белой каймой и скотчем — приклеен к углу карточки; x, y — центр, wU — ширина в u
     function pinFlag(ctx, iso, x, y, wU, rot, a) {
       const im = flagOf(iso, 'flag'); if (!im) return; const w = px(wU), h = (w * im.height) / im.width, b = px(10);
@@ -264,7 +248,7 @@
     }
     function placeSticker(label, country) {
       if (/шылпык|chilpyk/i.test(label || '')) return 'uz-chilpyk';   // подтверждённое событие героя (пост 407)
-      const iso = countryIso(country); return iso ? info.cultureByCountry[iso] : 'stamp-compass';
+      const iso = countryIso(country); return (iso && info.cultureByCountry[iso]) || 'stamp-compass';   // страна без своего стикера (флаг есть у 249 стран, стикеры — у 9)
     }
     const weatherSticker = () => { const W0 = E.WX; if (!W0) return null; const id = wxId(W0); if (id && pk('wx', id)) return { pack: pk('wx', id) }; if (W0.precip >= 2) return info && info.events.rain; if (W0.wind >= 3) return info && info.events.wind; return null; };
 
@@ -504,9 +488,8 @@
         default: roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt });
       }
     }
-    const flagFiles = () => { const out = new Set(); for (const c of E.countriesInPlan()) { const iso = countryIso(c); if (iso && flags[iso]) Object.values(flags[iso]).forEach((x) => out.add('../' + x.file.replace(/\.webp$/, ''))); } return [...out]; };
-    const packNeeded = () => flagFiles().concat(['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here']).concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
-    return { draw, ready: Promise.all([READY(packNeeded), ...relLoads]), isDark: (s) => FAM[s.recipe] === 'fin' };
+    const packNeeded = () => (['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here']).concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
+    return { draw, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads]), isDark: (s) => FAM[s.recipe] === 'fin' };
   }
 
   window.Journal = { create, FAM };

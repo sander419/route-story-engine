@@ -38,7 +38,7 @@ const glitchy = walk(38.72, -9.14, 400, 30, 0.3, true, true); glitchy.splice(200
 const cases = [
   { id: 'geojson-sample', file: 'samples/short-section.geojson', style: 'journal', fmt: 'v', res: 'hd', note: 'формат GeoJSON, настройки по умолчанию (Full HD, 9:16)' },
   { id: 'csv-no-ele', file: 'samples/ride-no-elevation.csv', style: 'paper', fmt: 'h', res: 'sd', note: 'CSV без высоты, 16:9, второй стиль' },
-  { id: 'csv-navigator', file: 'samples/ride-no-elevation.csv', style: 'navigator', fmt: 'v', res: 'sd', note: 'стиль «Навигатор» вместе с погодой, часами, знаком и цветом героя' },
+  { id: 'csv-night', file: 'samples/ride-no-elevation.csv', style: 'night', fmt: 'v', res: 'sd', note: 'стиль «Полночь» вместе с погодой, часами, знаком и цветом героя' },
   { id: 'gpx-south-notime', text: gpx('Ушуайя — Толуин', [walk(-54.80, -68.30, 500, 90, 0.35, false, false)]), ext: '.gpx', style: 'navigator', fmt: 'v', res: 'sd', note: 'южное полушарие, без времени и высоты' },
   { id: 'gpx-gap', text: gpx('Два куска', [walk(48.85, 2.35, 300, 40, 0.3, true, true), walk(48.40, 3.20, 300, 40, 0.3, true, true, Date.UTC(2026, 5, 3, 9, 0, 0))]), ext: '.gpx', style: 'journal', fmt: 'h', res: 'sd', maxKm: 40, note: 'два сегмента с разрывом ~80 км, записано ~24 км' },
   { id: 'gpx-big', text: gpx('Большой трек', [walk(35.68, 139.70, 22000, 12, 0.5, true, true)], ' xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"'), ext: '.gpx', style: 'editorial', fmt: 'v', res: 'sd', note: '22 000 точек, расширения Garmin' },

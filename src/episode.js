@@ -288,8 +288,10 @@
     const wxId = wxPackId(WX), wxImg = wxId ? img('art/pack/wx/' + wxId + '.webp') : null, signImg = img('art/pack/sign/' + ['09', '10', '11', '12'][[...String(journey.id || journey.title || '')].reduce((h, ch) => h + ch.charCodeAt(0), 0) % 4] + '.webp');
     // оформление стиля (scene.js → deco): мазок кисти под надзаголовком, HUD-рамка, свечение головы — из набора art/pack
     const D = S.deco || {}, decoImg = {};
-    ['brush', 'hud', 'glow'].forEach((k) => { if (D[k]) decoImg[k] = img('art/pack/' + D[k] + '.webp'); });
-    let assetsReady = Promise.all([...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
+    ['brush', 'hud', 'glow', 'fog'].forEach((k) => { if (D[k]) decoImg[k] = img('art/pack/' + D[k] + '.webp'); });
+    const ctryOfDay = (day) => (journey.dayNotes && journey.dayNotes[day != null ? day : today.day]) || today.country || null;
+    const flagsLoad = window.Flags ? window.Flags.preload([...new Set(plan.beats.map((b) => ctryOfDay(b.params && b.params.day)).filter(Boolean))]) : Promise.resolve();
+    let assetsReady = Promise.all([flagsLoad, ...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
 
     /* ---- типографика ---- */
     function T(ctx, str, x, y, a) {
@@ -339,6 +341,15 @@
       if (!field) { draw(null); return; }
       ctx.save(); ctx.beginPath(); ctx.rect(-W, -H, 3 * W, 3 * H); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.clip('evenodd'); draw(null); ctx.restore();   // вне круга — обычный цвет (свечение текста на красное не лезет)
       ctx.save(); ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.clip(); draw(D.paperInk || '#ffffff'); ctx.restore();   // внутри круга — бумажный цвет
+    }
+    // флаг страны: бумажная карточка с белой каймой, лёгким наклоном и тенью — ставится рядом с названием; нет страны/файла — ничего
+    function flagStamp(ctx, name, x, y, wPx, rot, a) {
+      const code = window.Flags && window.Flags.iso(name), im = code && window.Flags.img(code, 'flag'); if (!im || a <= 0.01) return false;
+      const w = wPx, h = (w * im.height) / im.width, b = 7 * u;
+      ctx.save(); ctx.globalAlpha *= a; ctx.translate(x, y); ctx.rotate((rot * Math.PI) / 180);
+      ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 18 * u; ctx.shadowOffsetY = 8 * u; ctx.fillStyle = S.paper ? '#fbf7ee' : '#eef2f8'; ctx.fillRect(-w / 2 - b, -h / 2 - b, w + 2 * b, h + 2 * b);
+      ctx.shadowColor = 'transparent'; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.fillStyle = 'rgba(255,255,255,.10)'; ctx.fillRect(-w / 2, -h / 2, w, h * 0.5);
+      ctx.restore(); return true;
     }
     let LT_NO_SCRIM = false, mapCache = null, lastCam = null;
     const HAND = '"Marck Script", "RS Geologica", "Segoe Script", cursive';
@@ -456,6 +467,22 @@
         lastCam = c;
       }
       if (!TR && S.paper) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(240,214,160,.12)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; }
+      if (!TR && D.border) {   // картографическая рамка: двойная линия, засечки по краю, как на старой карте
+        const m = (portrait ? 34 : 30) * u; ctx.save(); ctx.strokeStyle = 'rgba(70,45,20,.55)'; ctx.lineWidth = 3 * u; ctx.strokeRect(m, m, W - 2 * m, H - 2 * m);
+        ctx.lineWidth = 1.2 * u; ctx.strokeRect(m + 9 * u, m + 9 * u, W - 2 * m - 18 * u, H - 2 * m - 18 * u);
+        ctx.lineWidth = 1.4 * u; ctx.beginPath(); for (let x = m + 9 * u; x <= W - m - 9 * u; x += 46 * u) { ctx.moveTo(x, m + 9 * u); ctx.lineTo(x, m + 20 * u); ctx.moveTo(x, H - m - 9 * u); ctx.lineTo(x, H - m - 20 * u); }
+        for (let y = m + 9 * u; y <= H - m - 9 * u; y += 46 * u) { ctx.moveTo(m + 9 * u, y); ctx.lineTo(m + 20 * u, y); ctx.moveTo(W - m - 9 * u, y); ctx.lineTo(W - m - 20 * u, y); } ctx.stroke(); ctx.restore();
+      }
+      if (!TR && D.rose && s.recipe !== 'photo-reveal' && s.recipe !== 'highlights-reel') {   // роза ветров в углу: север сверху (карта не вращается)
+        const r = (portrait ? 70 : 60) * u, cx = W - (portrait ? 140 : 130) * u, cy = (portrait ? 190 : 150) * u + (shots.length > 1 && t < shots[0].t1 ? 0 : 0);
+        ctx.save(); ctx.globalAlpha = 0.5 * Math.min(1, t / 0.8); ctx.translate(cx, cy); ctx.strokeStyle = '#4a2f18'; ctx.fillStyle = '#4a2f18'; ctx.lineWidth = 2 * u;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.2832); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, r * 0.72, 0, 6.2832); ctx.lineWidth = 1 * u; ctx.stroke();
+        for (let k = 0; k < 8; k++) { const ang = (k * Math.PI) / 4, L = k % 2 ? r * 0.62 : r * 1.0, w = k % 2 ? 0.16 : 0.24; ctx.beginPath(); ctx.moveTo(Math.sin(ang) * L, -Math.cos(ang) * L); ctx.lineTo(Math.sin(ang + w) * r * 0.2, -Math.cos(ang + w) * r * 0.2); ctx.lineTo(Math.sin(ang - w) * r * 0.2, -Math.cos(ang - w) * r * 0.2); ctx.closePath(); k % 2 ? ctx.stroke() : ctx.fill(); }
+        ctx.font = `700 ${r * 0.42}px ${S.fHead}`; ctx.textAlign = 'center'; ctx.fillText('С', 0, -r * 1.12); ctx.restore();
+      }
+      if (!TR && decoImg.fog && decoImg.fog.ok) {   // туман вдоль нижнего края
+        const im = decoImg.fog.img, fh = H * (portrait ? 0.2 : 0.26), fw = (fh * im.width * 0.92) / im.height, x0 = -((t * 14 * u) % fw); ctx.save(); ctx.globalAlpha = 0.34; for (let x = x0; x < W; x += fw) ctx.drawImage(im, im.width * 0.04, 0, im.width * 0.92, im.height, x, H - fh * 0.85, fw + 1, fh); ctx.restore();   // лента тумана ползёт медленно, подпись не закрывает
+      }
       if (!TR) { // мягкая виньетка вместо полос
         const g = ctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.75);
         g.addColorStop(0, `rgba(${S.scrim.join(',')},0)`); g.addColorStop(1, `rgba(${S.scrim.join(',')},${S.paper ? 0.45 : 0.6})`);
@@ -578,6 +605,7 @@
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
           if (p.hook) hookCard(ctx, a, dy, ['день ' + p.day, route2].filter(Boolean).join(' · '), p.hook, NAME);
           else hookCard(ctx, a, dy, route2 || journey.title, 'День ' + p.day, NAME);
+          flagStamp(ctx, ctryOfDay(p.day), W - mx - (portrait ? 110 : 120) * u, mx + (portrait ? 280 : 170) * u, (portrait ? 200 : 170) * u, 6, a);
           break;
         case 'trip-title': {
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
@@ -624,6 +652,7 @@
         }
         case 'checkpoint-arrival':
           lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : single ? (dateRu(today.date) || '') : 'день ' + today.day);
+          flagStamp(ctx, ctryOfDay(p.day), mx + (portrait ? 120 : 100) * u, H - (portrait ? 740 : 540) * u + dy, (portrait ? 190 : 150) * u, -5, a * sine((lt - 0.3) / 0.7));   // над надзаголовком, слева — не заходит на указатель
           if (signImg.ok) { const sz = (portrait ? 420 : 300) * u, k = signImg.img.width / signImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a * sine(lt / 0.8); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 26 * u; ctx.drawImage(signImg.img, W - mx - w2, H - (portrait ? 860 : 500) * u + dy, w2, h2); ctx.restore(); }   // указатель — украшение момента прибытия, ничего не утверждает
           break;
         case 'photo-reveal': case 'highlights-reel': {
