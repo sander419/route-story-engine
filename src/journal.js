@@ -269,10 +269,20 @@
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
       const fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
       const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.8 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.8 * follow), dist, pitch: 60 + 8 * easeOut(t / 14), bearing: heading + 7 * Math.sin(t * 0.32), fov: 38 };
+      {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
+        const smp = [], upto = !jr && hd ? hd.i : Infinity;
+        for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
+        if (hd) smp.push([hd.x, hd.y]);
+        for (let k = 0; k < 4; k++) {
+          const Pj = window.Terrain.projector(T, cam, iw, ih); let r = 1;
+          for (const q of smp) { const z = Pj(q[0], q[1]); if (!z) { r = 3; break; } r = Math.max(r, Math.abs(z[0] - iw / 2) / (iw * 0.48), Math.abs(z[1] - ih / 2) / (ih * 0.46)); }
+          if (r <= 1.02) break; cam.dist *= Math.min(1.8, r);
+        }
+      }
       const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
       ctx.save(); ctx.globalAlpha *= a; ctx.drawImage(cv, ix, iy);
       ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
-      const P = window.Terrain.projector(T, cam, iw, ih), poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
+      const P = window.Terrain.projector(T, cam, iw, ih); const poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       for (const s of sets) if (s !== today) { poly(s.pts, s.brk, null); if (E.journey.schematic) ctx.setLineDash([14 * u, 10 * u]); ctx.strokeStyle = 'rgba(244,232,203,.85)'; ctx.lineWidth = 7 * u; ctx.stroke(); ctx.strokeStyle = 'rgba(89,80,61,.85)'; ctx.lineWidth = 3.5 * u; ctx.stroke(); ctx.setLineDash([]); }
       if (hd) {

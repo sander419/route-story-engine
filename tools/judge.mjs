@@ -3,7 +3,7 @@
 // Запуск: node tools/judge.mjs            (сервер на 4180 уже поднят; адрес можно сменить: URL=https://... )
 // Результат: out/judge/*.mp4 + сводка в консоли. Код выхода 1, если хоть один случай не прошёл.
 import { createRequire } from 'node:module';
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 const require = createRequire('C:/Users/glina/route-story-spike/package.json');
 const { chromium } = require('playwright');
@@ -48,6 +48,10 @@ const cases = [
   { id: 'garbage', text: 'это не маршрут, просто текст\nвторая строка', ext: '.txt', expectError: true, note: 'мусорный файл — понятная ошибка, без падения' },
   { id: 'one-point', text: gpx('Одна точка', [[{ lat: 50, lon: 8, t: null, ele: null }]]), ext: '.gpx', expectError: true, note: 'одна точка — понятная ошибка' },
 ];
+if (process.env.JURY_DIR) {   // JURY_DIR=папка — вместо встроенных случаев прогнать чужие файлы из папки (по умолчанию «Дневник», 9:16, SD)
+  cases.length = 0;
+  for (const f of readdirSync(process.env.JURY_DIR)) if (/\.(gpx|csv|json|geojson|tcx|kml)$/i.test(f)) cases.push({ id: f.replace(/\W+/g, '_'), file: process.env.JURY_DIR + '/' + f, style: 'journal', fmt: 'v', res: 'sd', note: f });
+}
 const only = process.env.ONLY ? process.env.ONLY.split(',') : null;
 const results = [];
 

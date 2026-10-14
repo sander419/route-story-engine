@@ -18,7 +18,7 @@
   /* ---- какой кусок рельефа нужен: квадрат вокруг маршрута, не больше 4×4 плиток ---- */
   const mobile = () => { try { return matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 700; } catch (e) { return false; } };
   function region(b) {
-    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, half = Math.max(b.x1 - b.x0, b.y1 - b.y0, 0.06) * 0.8;
+    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, half = Math.max(b.x1 - b.x0, b.y1 - b.y0, 0.06) * 1.1;
     const x0 = cx - half, x1 = cx + half, y0 = cy - half, y1 = cy + half;
     for (let z = 12; z >= 2; z--) {
       const n = 2 ** z, ax = Math.floor((x0 / 256) * n), bx = Math.floor((x1 / 256) * n), ay = Math.floor((y0 / 256) * n), by = Math.floor((y1 / 256) * n);
