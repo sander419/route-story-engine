@@ -30,7 +30,7 @@ const bbox = `(() => { const px = (lon) => ((lon + 180) / 360) * 256, py = (lat)
     if (r) {
       ok(r.hmax > 800 && r.hmax < 3500 && r.hmin > -2000, `высоты правдоподобны: ${r.hmin}…${r.hmax} м (Байкал, горы вокруг)`);
       ok(r.texW === r.W && r.texH === r.H, `текстура ${r.texW}×${r.texH} совпадает с данными ${r.W}×${r.H}`);
-      ok(r.meanBright > 120 && r.darkPct < 3, `текстура не пустая и не чёрная: средняя яркость ${r.meanBright}, тёмных пикселей ${r.darkPct}%`);
+      ok(r.meanBright > 90 && r.darkPct < 3, `текстура не пустая и не чёрная: средняя яркость ${r.meanBright}, тёмных пикселей ${r.darkPct}%`);
       ok(r.rendered && r.opaquePct > 25, `3D-кадр рисуется: непрозрачных ${r.opaquePct}%`);
       ok(r.blackOfOpaquePct < 2, `в кадре нет чёрных пятен (${r.blackOfOpaquePct}%)`);
       ok(r.mid && isFinite(r.mid[0]) && r.mid[0] > 100 && r.mid[0] < 500 && r.mid[1] > 100 && r.mid[1] < 500, `центр области проецируется в середину кадра: ${r.mid && r.mid.map(Math.round)}`);

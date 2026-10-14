@@ -314,7 +314,7 @@
       const heading = len > e * 0.25 ? (Math.atan2(a1[0] - a0[0], -(a1[1] - a0[1])) * 180) / Math.PI : 0;   // линия уходит от зрителя
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
       const fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
-      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.8 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.8 * follow), dist, pitch: 60 + 8 * easeOut(t / 14), bearing: heading + 7 * Math.sin(t * 0.32), fov: 38 };
+      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 60 + 8 * easeOut(t / 14), bearing: heading + 7 * Math.sin(t * 0.32), fov: 38 };
       {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
         const smp = [], upto = !jr && hd ? hd.i : Infinity;
         for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
@@ -326,7 +326,7 @@
         }
       }
       const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
-      ctx.save(); ctx.globalAlpha *= a; { const bg = ctx.createLinearGradient(ix, iy, ix, iy + ih); bg.addColorStop(0, '#b9bf98'); bg.addColorStop(1, '#a3ab82'); ctx.fillStyle = bg; ctx.fillRect(ix, iy, iw, ih); } ctx.drawImage(cv, ix, iy);   // подложка окна: по углам рельефа не видно светлого пятна
+      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = (T.tex && T.tex.avg) || '#b4ba94'; ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // фон окна — средний цвет самой текстуры: край модели не виден   // подложка окна: по углам рельефа не видно светлого пятна
       ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
       const P = window.Terrain.projector(T, cam, iw, ih); const poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';

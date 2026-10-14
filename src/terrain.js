@@ -18,7 +18,7 @@
   /* ---- какой кусок рельефа нужен: квадрат вокруг маршрута, не больше 4×4 плиток ---- */
   const mobile = () => { try { return matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 700; } catch (e) { return false; } };
   function region(b) {
-    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, half = Math.max(b.x1 - b.x0, b.y1 - b.y0, 0.06) * 1.1;
+    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, half = Math.max(b.x1 - b.x0, b.y1 - b.y0, 0.06) * 1.3;
     const x0 = cx - half, x1 = cx + half, y0 = cy - half, y1 = cy + half;
     for (let z = 12; z >= 2; z--) {
       const n = 2 ** z, ax = Math.floor((x0 / 256) * n), bx = Math.floor((x1 / 256) * n), ay = Math.floor((y0 / 256) * n), by = Math.floor((y1 / 256) * n);
@@ -35,24 +35,27 @@
   function bake(T) {
     const W = T.W, Hh = T.H, H = T.heights, mpp = T.mpp, cv = document.createElement('canvas'); cv.width = W; cv.height = Hh; const g = cv.getContext('2d'), id = g.createImageData(W, Hh);
     const az = (315 * Math.PI) / 180, alt = (24 * Math.PI) / 180, ex = 2.0; let mn = 1e9, mx = -1e9; for (const v of H) { if (v < mn) mn = v; if (v > mx) mx = v; }
-    const span = Math.max(40, mx - Math.max(0, mn)), raw = [10, 20, 25, 50, 100, 200, 250, 500, 1000], want = span / 14; let step = raw.find((s) => s >= want) || 1000;
+    const span = Math.max(40, mx - Math.max(0, mn)), raw = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000], want = (T.lspan || span) / 14; let step = raw.find((s) => s >= want) || 1000;
+    const lspan = Math.max(30, T.lspan || span), flat = lspan < 700, lo = T.llo != null ? T.llo : Math.max(0, mn), tint = (h) => (flat ? clamp((h - lo) / lspan, -0.2, 1.4) * 1500 : h), exS = flat ? Math.max(2, T.exag * 1.3) : ex;   // на равнине подсветка склонов сильнее   // равнина: цвет по местному диапазону высот, иначе всё одного оттенка
+    let sr = 0, sg2 = 0, sb = 0;
     const at = (x, y) => H[clamp(y, 0, Hh - 1) * W + clamp(x, 0, W - 1)];
     for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x, h = H[i];
-      const dzdx = ((at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1))) / (8 * mpp) * ex;
-      const dzdy = ((at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1))) / (8 * mpp) * ex;
+      const dzdx = ((at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1))) / (8 * mpp) * exS;
+      const dzdy = ((at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1))) / (8 * mpp) * exS;
       const slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx), s = Math.max(0, Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - asp));
-      let c = h <= 0 ? [160, 186, 190] : ramp(h); const sh = 0.5 + 0.8 * s;
+      let c = h <= 0 ? [160, 186, 190] : ramp(tint(h)); const sh = 0.5 + 0.8 * s;
       let r = c[0] * sh, gg = c[1] * sh, b = c[2] * sh;
       if (h > 0 && (Math.floor(h / step) !== Math.floor(at(x + 1, y) / step) || Math.floor(h / step) !== Math.floor(at(x, y + 1) / step))) { r *= 0.80; gg *= 0.78; b *= 0.74; }   // контурная линия
+      sr += r; sg2 += gg; sb += b;
       const k = i * 4; id.data[k] = Math.min(255, r); id.data[k + 1] = Math.min(255, gg); id.data[k + 2] = Math.min(255, b); id.data[k + 3] = 255;
     }
-    g.putImageData(id, 0, 0); return cv;
+    g.putImageData(id, 0, 0); const nn = W * Hh; cv.avg = `rgb(${Math.round(Math.min(255, sr / nn))},${Math.round(Math.min(255, sg2 / nn))},${Math.round(Math.min(255, sb / nn))})`; return cv;
   }
 
   /* ---- загрузка: плитки → высоты → сетка → текстура ---- */
   async function load(b, opts = {}) {
-    const r = region(b); if (!r) return null; const key = keyOf(r) + '|' + (opts.exag || 4.5); if (cache.has(key)) return cache.get(key);
+    const r = region(b); if (!r) return null; const key = keyOf(r) + '|' + (opts.exag || 'auto'); if (cache.has(key)) return cache.get(key);
     const job = (async () => {
       const cv = document.createElement('canvas'); cv.width = r.nx * 256; cv.height = r.ny * 256; const g = cv.getContext('2d', { willReadFrequently: true });
       const jobs = []; let ok = 0;
@@ -60,8 +63,13 @@
       await Promise.all(jobs); if (ok < jobs.length * 0.6) return null;
       const W = cv.width, Hh = cv.height, px = g.getImageData(0, 0, W, Hh).data, heights = new Float32Array(W * Hh);
       for (let i = 0; i < W * Hh; i++) heights[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
-      const n = 2 ** r.z, ux = (256 / n) / 256, lat = latOf(r.cy), mPerUnit = WORLD_M * Math.cos((lat * Math.PI) / 180), exag = opts.exag || 4.5;
-      const T = { z: r.z, W, H: Hh, N: W, heights, mPerUnit, mpp: mPerUnit * ux, exag, hs: (exag / mPerUnit), x0: (r.ax * 256) / n, y0: (r.ay * 256) / n, wU: (W * ux), hU: (Hh * ux), cx: r.cx, cy: r.cy };
+      const n0 = 2 ** r.z, ux0 = (256 / n0) / 256, X0 = (r.ax * 256) / n0, Y0 = (r.ay * 256) / n0, ex0 = (b.x1 - b.x0) * 0.05 + 0.005, ey0 = (b.y1 - b.y0) * 0.05 + 0.005;
+      const gx0 = clamp(Math.floor(((b.x0 - ex0 - X0) / (256 / n0)) * 256), 0, W - 1), gx1 = clamp(Math.ceil(((b.x1 + ex0 - X0) / (256 / n0)) * 256), 0, W - 1), gy0 = clamp(Math.floor(((b.y0 - ey0 - Y0) / (256 / n0)) * 256), 0, Hh - 1), gy1 = clamp(Math.ceil(((b.y1 + ey0 - Y0) / (256 / n0)) * 256), 0, Hh - 1);
+      const smp = []; for (let y = gy0; y <= gy1; y += 2) for (let x = gx0; x <= gx1; x += 2) smp.push(heights[y * W + x]);
+      smp.sort((p1, p2) => p1 - p2); const hMn = smp.length ? smp[Math.floor(smp.length * 0.05)] : 0, hMx = smp.length ? smp[Math.floor(smp.length * 0.95)] : 100;   // перепад внутри маршрута без редких выбросов: по нему растягиваем вертикаль и раскраску
+      const hSpan = Math.max(1, hMx - Math.max(0, hMn)), n = 2 ** r.z, ux = (256 / n) / 256, lat = latOf(r.cy), mPerUnit = WORLD_M * Math.cos((lat * Math.PI) / 180);
+      const exag = opts.exag || (hSpan < 40 ? 22 : hSpan < 90 ? 16 : hSpan < 180 ? 11 : hSpan < 400 ? 7 : 4.5);   // чем площе местность, тем сильнее растягиваем вертикаль; на подписи кадра пишется настоящее число
+      const T = { z: r.z, W, H: Hh, N: W, heights, mPerUnit, mpp: mPerUnit * ux, exag, lspan: hSpan, llo: Math.max(0, hMn), hs: (exag / mPerUnit), x0: (r.ax * 256) / n, y0: (r.ay * 256) / n, wU: (W * ux), hU: (Hh * ux), cx: r.cx, cy: r.cy };
       T.tex = bake(T);
       let mn = 1e9, mx = -1e9; for (const v of heights) { if (v < mn) mn = v; if (v > mx) mx = v; } T.hmin = mn; T.hmax = mx;
       return T;
