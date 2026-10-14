@@ -1,14 +1,12 @@
-/* «Дневник» — стиль-страница (макет V2 «скевоморфный дневник» из design/journal-tokens-v2.json).
-   Без тайлов карты: настоящий трек рисуется чернильной линией на миллиметровке, данные — на рваных бумажных карточках,
-   фото — в полароиде со скотчем, место — стикером, герой — Барбос (стикер из утверждённого рендера) или знак героя.
-   Все координаты в u (u = min(W,H)/1080 px); отступы, шрифты и поля — из токенов V2. Ничего не выдумывается:
-   нет данных — нет блока. Подключается из episode.js: Journal.create(E).draw(...) вместо слоя карты. */
+/* «Дневник»: фильм о дороге. Единые поля и типографика, реальные высоты,
+   крупные фотографии и плавные переходы между главами. Все координаты в u.
+   Данные и сценарий приходят из episode.js; отсутствующие факты не добавляются. */
 (function () {
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
   const lerp = (a, b, t) => a + (b - a) * t;
   const smooth = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
   const easeOut = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
-  const C = { paper: '#eee6d4', card: '#fbf7ee', ink: '#1d3a40', secondary: '#5d5446', accent: '#c4552b', green: '#1f4e5a', gold: '#d66a34', blue: '#3f7480', desk: '#1b2a30', guide: '#8a8170' };   // палитра рамок-коллажей: бумага, бирюза, жжёный оранжевый
+  const C = { paper: '#f2f0e9', card: '#f2f0e9', ink: '#25332f', secondary: '#65716a', accent: '#bd552f', green: '#25332f', gold: '#bd552f', blue: '#718e91', desk: '#25332f', guide: '#abb4ab' };   // палитра рамок-коллажей: бумага, бирюза, жжёный оранжевый
   const ART = 'art/';
   const CELL = 0.66;   // ширина цифры в em: у всех цифр счётчика одна ячейка, число не «дрожит» (токены V2: typography.canvasNumbers)
 
@@ -16,7 +14,7 @@
   const LAY = {
     v: {
       cover: { head: [164, 320, 752, 128], dest: [164, 464, 752, 216], hero: [344, 744, 440, 696], wash: [96, 660, 920, 840], tape: [232, 724, 288, 80] },
-      road: { map: [96, 262, 888, 1002], core: [192, 430, 696, 700], names: [164, 294, 752, 72], metric: [96, 1292, 888, 0], tape: [652, 238, 288, 80], sticker: [716, 1160, 220, 220] },
+      road: { map: [54, 244, 972, 1012], core: [140, 390, 800, 740], names: [86, 266, 908, 72], metric: [54, 1292, 972, 0], tape: [652, 238, 288, 80], sticker: [716, 1160, 220, 220] },
       photo: { card: [156, 396, 768, 1120], win: [188, 428, 704, 880], cap: [188, 1340, 704, 96], date: [188, 1452, 704, 56], tape: [392, 356, 288, 80] },
       arrival: { title: [164, 320, 752, 172], sticker: [196, 556, 688, 688], date: [164, 1308, 752, 56], tape: [600, 536, 288, 80] },
       elev: { metric: [164, 336, 752, 0], prof: [96, 660, 888, 752], core: [192, 756, 696, 560], cap: [164, 1444, 752, 72], tape: [196, 636, 288, 80] },
@@ -25,7 +23,7 @@
     },
     h: {
       cover: { head: [190, 330, 760, 128], dest: [190, 474, 760, 216], hero: [1204, 220, 412, 652], wash: [952, 100, 824, 864], tape: [1120, 200, 288, 80] },   // карточка ниже — по центру рядом с коллажем
-      road: { map: [128, 150, 1120, 820], core: [230, 290, 920, 560], names: [190, 182, 980, 72], metric: [1284, 300, 560, 0], tape: [890, 126, 288, 80], sticker: [1560, 520, 200, 200] },
+      road: { map: [54, 172, 1250, 820], core: [150, 300, 1050, 560], names: [86, 198, 1180, 72], metric: [1350, 330, 510, 0], tape: [890, 126, 288, 80], sticker: [1560, 520, 200, 200] },
       photo: { card: [620, 132, 672, 872], win: [652, 164, 608, 608], cap: [652, 804, 608, 96], date: [652, 916, 608, 56], tape: [828, 92, 288, 80] },
       arrival: { title: [452, 220, 752, 172], sticker: [948, 432, 480, 480], date: [452, 456, 432, 56], tape: [1108, 412, 288, 80] },
       elev: { metric: [200, 140, 700, 0], prof: [140, 360, 1640, 600], core: [260, 460, 1400, 400], cap: [260, 900, 1400, 60], tape: [1300, 336, 288, 80] },
@@ -62,7 +60,7 @@
     const L = portrait ? LAY.v : LAY.h;
     const px = (v) => v * u;
     const box = (b) => b.map((v) => v * u);
-    const HEAD = S.fHead, NUM = S.fNum, BODY = S.fBody, HAND = E.HAND;
+    const HEAD = S.fBody, NUM = S.fNum, BODY = S.fBody, HAND = S.fBody;
 
     /* ---------- заготовленные слои (рисуем один раз, потом drawImage) ---------- */
     const cache = new Map();
@@ -70,58 +68,23 @@
 
     function pageCanvas(dark) {
       const key = 'page|' + dark; if (cache.has(key)) return cache.get(key);
-      const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
-      g.fillStyle = dark ? C.desk : C.paper; g.fillRect(0, 0, W, H);
-      const pat = paperPattern(g); if (pat) { g.save(); g.globalAlpha = dark ? 0.16 : 0.72; g.globalCompositeOperation = dark ? 'overlay' : 'multiply'; g.fillStyle = pat; g.fillRect(0, 0, W, H); g.restore(); }
-      if (!dark) {   // кофейные круги и потёртости: бумага, которая была в дороге
-        const rnd = rngOf(17 + Math.round(W)); g.save();
-        for (let k = 0; k < 1; k++) { const cx = W * (0.96 + 0.06 * rnd()), cy = H * (0.9 + 0.06 * rnd()), r = (portrait ? 170 : 140) * u * (0.85 + 0.3 * rnd());   // один круг, наполовину за краем страницы
-          g.lineWidth = 9 * u; g.strokeStyle = 'rgba(120,78,36,.07)'; g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.stroke(); g.lineWidth = 3 * u; g.strokeStyle = 'rgba(120,78,36,.09)'; g.beginPath(); g.arc(cx + 4 * u, cy + 3 * u, r * 0.97, 0.4, 5.6); g.stroke();
-          const rg = g.createRadialGradient(cx, cy, r * 0.2, cx, cy, r); rg.addColorStop(0, 'rgba(150,100,50,.05)'); rg.addColorStop(1, 'rgba(150,100,50,0)'); g.fillStyle = rg; g.fillRect(cx - r, cy - r, 2 * r, 2 * r); }
-        g.restore();
-      }
-      { const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, dark ? 'rgba(0,0,0,.45)' : 'rgba(70,45,15,.22)'); g.fillStyle = vg; g.fillRect(0, 0, W, H); }   // края страницы темнее — объём
-      // пологие линии рельефа — как на старой карте, еле заметно
-      g.save(); g.strokeStyle = dark ? 'rgba(255,244,217,.07)' : 'rgba(31,78,90,.09)'; g.lineWidth = 2 * u;
-      for (let k = 0; k < 7; k++) { g.beginPath(); const y0 = H * (0.1 + k * 0.14), amp = (14 + 10 * (k % 3)) * u; for (let x = -10; x <= W + 10; x += 24 * u) { const y = y0 + Math.sin(x / (210 * u) + k * 1.7) * amp; x < 0 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); }
-      g.restore();
-      // корешок: зелёная полоса с отверстиями под спираль
-      const sw = px(L.spine); g.fillStyle = dark ? '#1f3b34' : C.green; g.fillRect(0, 0, sw, H);
-      const gr = g.createLinearGradient(0, 0, sw, 0); gr.addColorStop(0, 'rgba(0,0,0,.28)'); gr.addColorStop(0.5, 'rgba(255,255,255,.04)'); gr.addColorStop(1, 'rgba(0,0,0,.34)'); g.fillStyle = gr; g.fillRect(0, 0, sw, H);
-      g.setLineDash([14 * u, 12 * u]); g.strokeStyle = 'rgba(244,232,203,.38)'; g.lineWidth = 2 * u; g.beginPath(); g.moveTo(sw * 0.72, 0); g.lineTo(sw * 0.72, H); g.stroke(); g.setLineDash([]);
-      for (let y = 96 * u; y < H; y += 192 * u) { g.beginPath(); g.arc(sw + 2 * u, y, 10 * u, 0, 6.2832); g.fillStyle = 'rgba(40,30,15,.28)'; g.fill(); g.beginPath(); g.arc(sw - 4 * u, y - 2 * u, 9 * u, 0, 6.2832); g.fillStyle = '#cfc7b0'; g.fill(); g.lineWidth = 2 * u; g.strokeStyle = 'rgba(0,0,0,.35)'; g.stroke(); }
-      const sh = g.createLinearGradient(sw, 0, sw + 26 * u, 0); sh.addColorStop(0, 'rgba(40,28,10,.28)'); sh.addColorStop(1, 'rgba(40,28,10,0)'); g.fillStyle = sh; g.fillRect(sw, 0, 26 * u, H);
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const g = cv.getContext('2d'); g.fillStyle = C.paper; g.fillRect(0, 0, W, H);
       cache.set(key, cv); return cv;
     }
 
     /* рваная карточка: неровный край, тень, фактура бумаги, по желанию — миллиметровка */
     function card(wPx, hPx, o = {}) {
-      const key = ['card', Math.round(wPx), Math.round(hPx), o.seed || 1, o.fill || C.card, o.grid ? 1 : 0, o.edge == null ? 4 : o.edge].join('|'); if (cache.has(key)) return cache.get(key);
-      const pad = Math.ceil(56 * u), cv = document.createElement('canvas'); cv.width = Math.ceil(wPx + 2 * pad); cv.height = Math.ceil(hPx + 2 * pad); const g = cv.getContext('2d');
-      const rnd = rngOf((o.seed || 1) * 7919 + Math.round(wPx) * 31 + Math.round(hPx)), j = (o.edge == null ? 4 : o.edge) * u, step = 26 * u;
-      const pts = [];
-      for (let x = 0; x < wPx; x += step) pts.push([x, (rnd() - 0.5) * 2 * j]);
-      for (let y = 0; y < hPx; y += step) pts.push([wPx + (rnd() - 0.5) * 2 * j, y]);
-      for (let x = wPx; x > 0; x -= step) pts.push([x, hPx + (rnd() - 0.5) * 2 * j]);
-      for (let y = hPx; y > 0; y -= step) pts.push([(rnd() - 0.5) * 2 * j, y]);
-      const path = () => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(pad + p[0], pad + p[1]) : g.moveTo(pad + p[0], pad + p[1]))); g.closePath(); };
-      g.save(); g.shadowColor = 'rgba(40,28,10,.34)'; g.shadowOffsetX = 10 * u; g.shadowOffsetY = 20 * u; g.shadowBlur = 26 * u; g.fillStyle = o.fill || C.card; path(); g.fill(); g.restore();
-      g.save(); path(); g.clip();
-      const pat = paperPattern(g, 0.8); if (pat) { g.globalAlpha = 0.5; g.globalCompositeOperation = 'multiply'; g.fillStyle = pat; g.fillRect(0, 0, cv.width, cv.height); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-      if (o.grid) { g.strokeStyle = 'rgba(135,126,100,.28)'; g.lineWidth = 2 * u; const gs = 64 * u; g.beginPath(); for (let x = pad + gs; x < pad + wPx; x += gs) { g.moveTo(x, pad); g.lineTo(x, pad + hPx); } for (let y = pad + gs; y < pad + hPx; y += gs) { g.moveTo(pad, y); g.lineTo(pad + wPx, y); } g.stroke(); }
-      const ed = g.createLinearGradient(pad, pad, pad + wPx, pad + hPx); ed.addColorStop(0, 'rgba(255,255,255,.35)'); ed.addColorStop(1, 'rgba(120,90,40,.10)'); g.fillStyle = ed; g.fillRect(pad, pad, wPx, hPx);
-      g.restore();
-      const out = { cv, pad }; cache.set(key, out); return out;
+      const key = ['card', Math.round(wPx), Math.round(hPx)].join('|'); if (cache.has(key)) return cache.get(key);
+      const cv = document.createElement('canvas'); cv.width = Math.ceil(wPx); cv.height = Math.ceil(hPx);
+      const g = cv.getContext('2d'); g.fillStyle = C.paper; g.fillRect(0, 0, wPx, hPx);
+      const out = { cv, pad: 0 }; cache.set(key, out); return out;
     }
     function drawCard(ctx, c, x, y, w, h, a = 1, rot = 0, dy = 0) {
-      ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate((rot * Math.PI) / 180); ctx.drawImage(c.cv, -w / 2 - c.pad, -h / 2 - c.pad); ctx.restore();
+      ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate(0); ctx.drawImage(c.cv, -w / 2 - c.pad, -h / 2 - c.pad); ctx.restore();
     }
     function tape(ctx, b, rot, a = 1, dy = 0) {
-      const [x, y, w, h] = box(b); ctx.save(); ctx.globalAlpha *= a * 0.92; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate((rot * Math.PI) / 180);
-      ctx.shadowColor = 'rgba(40,28,10,.22)'; ctx.shadowBlur = 8 * u; ctx.shadowOffsetY = 4 * u;
-      ctx.fillStyle = 'rgba(214,106,52,.82)'; ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); for (let k = 0; k <= 8; k++) ctx.lineTo(-w / 2 + (k % 2 ? 5 : 0) * u, -h / 2 + (h * k) / 8); ctx.lineTo(w / 2, h / 2); for (let k = 8; k >= 0; k--) ctx.lineTo(w / 2 - (k % 2 ? 5 : 0) * u, -h / 2 + (h * k) / 8); ctx.closePath(); ctx.fill();
-      ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(255,236,214,.30)'; ctx.lineWidth = 2 * u; ctx.beginPath(); for (let xx = -w / 2 + 16 * u; xx < w / 2; xx += 16 * u) { ctx.moveTo(xx, -h / 2); ctx.lineTo(xx, h / 2); } ctx.stroke();
-      ctx.restore();
+      // Декоративный скотч заменён свободным полем; вызовы сохраняют совместимость сцен.
     }
     function fitImg(ctx, im, b, a = 1, rot = 0, dy = 0, shadow = true, flip = false) {
       if (!im) return; const [x, y, w, h] = box(b), sc = Math.min(w / im.width, h / im.height), dw = im.width * sc, dh = im.height * sc;
@@ -166,7 +129,7 @@
     const NUMUNIT = /^([+−-]?\s*[\d\s ]+(?:[.,]\d+)?)\s*(км\/ч|км|мин|м|ч)?$/;
     /* карточка с главным числом: подпись, число (+единица), пояснение. Высота — по содержанию. */
     function metricCard(ctx, b, spec, a, dy, rot, seed) {
-      if (a <= 0.01 || !spec) return;
+      if (a <= 0.01 || !spec) return; rot = 0;
       const [x, y, w] = box(b), pad = px(32), kicker = spec.kicker ? String(spec.kicker).toUpperCase() : '', big = String(spec.big == null ? '' : spec.big), sub = spec.sub || '';
       const m = big.match(NUMUNIT), numStr = m ? m[1].replace(/\s+$/, '') : big, unit = m && m[2] ? m[2] : '';
       const wordy = !/\d/.test(big); const ctx2 = ctx; let size = px(wordy ? 100 : spec.size || L.counter); ctx2.save(); ctx2.font = `${S.numW || 700} ${size}px ${NUM}`;
@@ -223,8 +186,8 @@
         const x = left ? bx + px(16) + s0 / 2 + fr : bx + bw - px(16) - s0 / 2 - fr;
         const rows = Math.ceil(E.pins.length / 2), top = by + bh * ((Math.floor(i / 2) + 1) / (rows + 1)) - (s0 + fr * 3) / 2;
         ctx.save(); ctx.globalAlpha *= pa; ctx.strokeStyle = C.accent; ctx.lineWidth = px(3); ctx.setLineDash([px(8), px(7)]); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(x + (left ? 1 : -1) * (s0 / 2 + fr), top + (s0 + fr * 3) / 2); ctx.stroke(); ctx.restore();
-        ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, top + s0 / 2); ctx.rotate((-5 * Math.PI) / 180); ctx.translate(-x, -(top + s0 / 2));
-        ctx.shadowColor = 'rgba(40,28,10,.4)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 7 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(x - s0 / 2 - fr, top, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
+        ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, top + s0 / 2); ctx.rotate(0); ctx.translate(-x, -(top + s0 / 2));
+        ctx.shadowColor = 'rgba(25,35,30,.15)'; ctx.shadowBlur = 6 * u; ctx.shadowOffsetY = 2 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(x - s0 / 2 - fr, top, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
         const sc = Math.max(s0 / im.width, s0 / im.height); ctx.save(); ctx.beginPath(); ctx.rect(x - s0 / 2, top + fr, s0, s0); ctx.clip(); ctx.drawImage(im, x - (im.width * sc) / 2, top + fr + s0 / 2 - (im.height * sc) / 2, im.width * sc, im.height * sc); ctx.restore();
         ctx.restore(); tape(ctx, [(x - px(40)) / u, (top - px(16)) / u, 80, 34], -8, pa);
         ctx.save(); ctx.globalAlpha *= pa; ctx.beginPath(); ctx.arc(pt[0], pt[1], px(9), 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = px(5); ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore();
@@ -264,12 +227,9 @@
     const flagOf = (iso, kind) => (E.showFlags ? window.Flags.img(iso, kind) : null);
     // флаг: бумажный, с белой каймой и скотчем — приклеен к углу карточки; x, y — центр, wU — ширина в u
     function pinFlag(ctx, iso, x, y, wU, rot, a) {
-      const im = flagOf(iso, 'flag'); if (!im) return; const w = px(wU), h = (w * im.height) / im.width, b = px(10);
-      ctx.save(); ctx.globalAlpha *= a; ctx.translate(x, y); ctx.rotate((rot * Math.PI) / 180);
-      ctx.shadowColor = 'rgba(30,20,8,.35)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 8 * u; ctx.fillStyle = '#fbf7ee'; ctx.fillRect(-w / 2 - b, -h / 2 - b, w + 2 * b, h + 2 * b);
-      ctx.shadowColor = 'transparent'; ctx.drawImage(im, -w / 2, -h / 2, w, h);
-      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(-w / 2, -h / 2, w, h * 0.5);   // лёгкий блик бумаги
-      ctx.restore(); tape(ctx, [(x - px(wU * 0.3)) / u, (y - h / 2 - px(28)) / u, wU * 0.6, 56], rot - 4, a);
+      const im = flagOf(iso, 'flag'); if (!im) return;
+      const w = px(Math.min(wU, 72)), h = w * im.height / im.width;
+      ctx.save(); ctx.globalAlpha *= a; ctx.drawImage(im, x - w / 2, y - h / 2, w, h); ctx.restore();
     }
     // герб: печать-наклейка с тенью (только у стран, где он есть; у Турции официального герба нет)
     function stampEmblem(ctx, iso, x, y, sU, a) {
@@ -297,29 +257,21 @@
     let ctx0 = null;   // текущий контекст для heroBox
 
     function cover(ctx, s, p, a, dy, lt) {
-      const c = L.cover, [hx, hy, hw, hh] = box(c.head), [dx, dyy, dw, dh] = box(c.dest);
-      const ct = E.coverTexts(s, p), from = ct.from, to = ct.to, hook = ct.small;
-      const fcx = portrait ? W / 2 : px(1480), fcy = portrait ? px(1150) : px(560), fw = portrait ? W * 1.08 : px(900);   // в 16:9 — справа; под карточку уходит только край коллажа, не окно
+      const ct = E.coverTexts(s, p), x = px(86), top = portrait ? px(270) : px(280), tw = portrait ? 900 : 800;
+      text(ctx, 'ДОРОГА / ' + (E.journey.schematic ? 'ИСТОРИЯ' : 'ДЕНЬ ' + E.today.day), x, top - px(88), { size: 30, weight: 600, color: C.accent, ls: 0.1, a });
+      text(ctx, ct.from, x, top, { size: 48, weight: 400, max: tw, color: C.secondary, a });
+      let size = ct.small ? 100 : 150, lines;
+      while (!(lines = wrapLines(ctx, ct.to, 500, px(size), HEAD, px(tw), 3)) && size > 54) size -= 6;
+      const titleY = top + px(size + 40);
+      (lines || [ct.to]).forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.13), { size, weight: 500, fam: HEAD, max: tw, ls: -0.04, a }));
+      const by = titleY + px(90 + ((lines || [ct.to]).length - 1) * size * 1.13);
+      text(ctx, E.dateLine(s, p), x, by, { size: 34, color: C.secondary, max: tw, a });
       const sets = s.recipe === 'season-card' ? E.allSets() : [E.todaySet()];
-      const fr = sets.length && sets[0].pts && sets[0].pts.length > 1 ? framed(ctx, 'begins-here', fcx, fcy + dy * 0.5, fw, portrait ? -1.5 : 2, a, (g, x, y, w, h) => sketch(g, [(x + w * 0.1) / u, (y + h * 0.12) / u, (w * 0.8) / u, (h * 0.76) / u], sets, 1, lt, 1)) : null;
-      const wash = art('wash.webp'); if (wash && !fr) fitImg(ctx, wash, c.wash, a * 0.58, 0, dy * 0.4, false, portrait);
-      // назначение: крупно в одну строку; длинное — меньше и в две строки (читаемо, не мельчит)
-      let size = hook ? 100 : 180, lines = null;
-      for (const sz of hook ? [100] : [180, 136, 100]) { size = sz; lines = wrapLines(ctx, to, S.headW, px(sz), HEAD, px(c.dest[2]), sz >= 136 ? 1 : 2); if (lines) break; }
-      if (!lines) { lines = [to]; }
-      const lh = px(size) * 1.08, first = dyy + px(size) * 0.9, last = first + (lines.length - 1) * lh;
-      const pad = px(32), bx = Math.min(hx, dx) - pad, by = hy - pad, bw = Math.max(hw, dw) + 2 * pad, bh = last + px(size) * 0.3 + (E.NAME ? px(72) : 0) + pad - by;
-      drawCard(ctx, card(bw, bh, { seed: 3 }), bx, by, bw, bh, a, 0, dy);
-      text(ctx, from, hx, hy + hh * 0.72, { size: 100, fam: HEAD, weight: S.headW, color: C.ink, max: c.head[2], ls: -0.02, a });
-      lines.forEach((ln, i) => text(ctx, ln, dx, first + i * lh, { size, fam: HEAD, weight: S.headW, color: C.green, max: c.dest[2], ls: -0.02, a }));
-      if (E.NAME) text(ctx, E.NAME, dx, last + px(size) * 0.3 + px(44), { size: 56, fam: HAND, weight: 400, color: C.accent, max: c.dest[2], a: a * 0.95 });
-      const ciso = s.recipe === 'season-card' ? null : countryIso(E.countryOf(s, p));   // на обложке всего путешествия флага нет: стран несколько
-      if (ciso && flagOf(ciso, 'flag')) pinFlag(ctx, ciso, bx + bw - px(70), by + px(10) + dy, 170, 6, a);
-      else tape(ctx, [bx / u + bw / u * 0.58, by / u - 36, 288, 80], -4, a, dy);
-      ctx0 = ctx;
-      if (E.stk(0)) fitImg(ctx, E.stk(0), portrait ? [60, (fr ? fr.bottom / u : 1500) - 260, 330, 330] : [(fcx - fw * 0.62) / u, (fr ? fr.bottom / u : 900) - 250, 280, 280], a * easeOut((lt - 0.3) / 0.6), -6, dy + (1 - easeOut((lt - 0.3) / 0.7)) * px(30));   // стикер настроения
-      if (!fr) heroBox(c.hero, a, dy + (1 - easeOut(lt / 0.8)) * px(30), 0);
-      else if (E.MARK && E.MARK !== 'dot') heroBox(portrait ? [720, (fr.bottom / u) - 300, 280, 380] : [(fcx + fw * 0.3) / u, (fr.bottom / u) - 300, 240, 320], a, dy + (1 - easeOut(lt / 0.8)) * px(30), 4);   // знак героя — наклейкой на углу коллажа
+      const mapY = Math.max(850, by / u + 80);
+      const area = portrait ? [54, mapY, 972, Math.max(400, H / u - mapY - 260)] : [980, 230, 880, 660];
+      const c = { map: area, names: [area[0], area[1] - 100, area[2], 50] };
+      if (!reliefView(ctx, s.recipe === 'season-card', sets, 1, 0, a, { deco: false }, c)) sketch(ctx, [area[0] + 70, area[1] + 70, area[2] - 140, area[3] - 140], sets, 1, lt, a);
+      if (E.stk(0)) fitImg(ctx, E.stk(0), portrait ? [870, 1650, 110, 110] : [770, 770, 110, 110], a, 0, 0, false);
     }
 
     /* ---------- рельеф: настоящие высоты, 3D-вид с маршрутом поверх (Terrain), запасной вариант — эскиз ---------- */
@@ -340,7 +292,7 @@
       const heading = len > e * 0.25 ? (Math.atan2(a1[0] - a0[0], -(a1[1] - a0[1])) * 180) / Math.PI : 0;   // линия уходит от зрителя
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
       const fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
-      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 60 + 8 * easeOut(t / 14), bearing: heading + 7 * Math.sin(t * 0.32), fov: 38 };
+      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 60 + 8 * easeOut(t / 14), bearing: heading + 4 * Math.sin(t * 0.10), fov: 38 };
       {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
         const smp = [], upto = !jr && hd ? hd.i : Infinity;
         for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
@@ -365,10 +317,10 @@
       const mark = (pt, tri) => { const q = pt && P(pt[0], pt[1]); if (!q) return; if (tri) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - 34 * u); ctx.lineTo(q[0] + 26 * u, q[1] + 14 * u); ctx.lineTo(q[0] - 26 * u, q[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.stroke(); } else { const pulse = (t / 2) % 1; ctx.beginPath(); ctx.arc(q[0], q[1], (20 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = C.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha *= 1 - pulse; ctx.stroke(); ctx.globalAlpha /= Math.max(1e-3, 1 - pulse); ctx.beginPath(); ctx.arc(q[0], q[1], 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); } };
       mark(opts.mark, true); mark(opts.stop, false);
       if (hd) { const q = P(hd.x, hd.y); if (q) heroAt(ctx, q[0], q[1], 1, t, 0.9); }
-      if (!jr) trackDeco(ctx, (pp) => P(pp[0], pp[1]), tr, 1, [0, 0, iw, ih]);
+      if (!jr && opts.deco !== false) trackDeco(ctx, (pp) => P(pp[0], pp[1]), tr, 1, [0, 0, iw, ih]);
       ctx.restore();
-      ctx.save(); ctx.globalAlpha *= a; ctx.lineWidth = px(5); ctx.strokeStyle = C.ink; ctx.strokeRect(ix, iy, iw, ih); ctx.restore();
-      text(ctx, 'Рельеф: SRTM · AWS Terrain Tiles · вертикаль ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
+      ctx.save(); ctx.globalAlpha *= a; ctx.lineWidth = px(1); ctx.strokeStyle = 'rgba(37,51,47,.12)'; ctx.strokeRect(ix, iy, iw, ih); ctx.restore();
+      text(ctx, 'AWS Terrain Tiles · высоты ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
       return true;
     }
     function roadScene(ctx, s, p, t, lt, dur, jr, rs) {
@@ -400,34 +352,17 @@
       const spec = E.metric(s, p, t, lt, dur), sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
       const mh2 = metricCard(ctx, c.metric, spec, a, 0, -1, 11);
       const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], a, 6, 0);
-      else if (E.MARK === 'unicycle' && E.uni() && mh2) fitImg(ctx, E.uni(), [c.metric[0] + c.metric[2] - 250, c.metric[1] + mh2 / u + 14, 240, 300], a, 5, 0);   // уницикл под карточкой километров, справа — не на тексте
+      // На странице дороги знак путешественника остаётся только на маршруте.   // уницикл под карточкой километров, справа — не на тексте
     }
     function arrival(ctx, s, p, a, dy, lt) {
-      const c = L.arrival, [tx, ty, tw, th] = box(c.title), pad = px(32);
-      const label = E.arrivalLabel(s, p), country = E.countryOf(s, p), sk = placeSticker(label, country);
-      const [sx, sy, sw, sh] = box(c.sticker); const pb = [sx - px(24), sy - px(24), sw + px(48), sh + px(48)];
-      const SIGNS = ['09', '10', '11', '12'], sg = sk === 'stamp-compass' ? pk('sign', SIGNS[[...String(label)].reduce((h, ch) => h + ch.charCodeAt(0), 0) % SIGNS.length]) : null;   // нет символа страны — указатель вместо пустого компаса (декор, ничего не утверждает)
-      const pic = E.stk(1) || sg || stickerImg(sk), pop = (1 - easeOut(lt / 0.8)) * px(30);   // стикер настроения важнее указателя и символа страны
-      const fr = framed(ctx, 'compass-map', portrait ? W / 2 : px(1480), portrait ? sy + sh / 2 + px(110) + dy : px(560) + dy, portrait ? W * 1.1 : px(900), portrait ? 1.2 : -1.5, a, (g, x, y, w, h) => {
-        const wash = art('wash.webp'); if (wash) { g.save(); g.globalAlpha *= 0.45; g.drawImage(wash, x - w * 0.1, y + h * 0.2, w * 1.2, h * 0.6); g.restore(); }
-        if (pic) { const sc = Math.min((w * 0.78) / pic.width, (h * 0.8) / pic.height), dw = pic.width * sc, dh = pic.height * sc; g.save(); g.globalAlpha *= easeOut(lt / 0.7); g.shadowColor = 'rgba(30,20,8,.3)'; g.shadowBlur = 18 * u; g.shadowOffsetY = 10 * u; g.drawImage(pic, x + (w - dw) / 2, y + (h - dh) / 2 + pop, dw, dh); g.restore(); }
-      });
-      if (!fr) {
-        drawCard(ctx, card(pb[2], pb[3], { seed: 8, fill: '#f6e3b4', edge: 5 }), pb[0], pb[1], pb[2], pb[3], a, 1.5, dy);
-        fitImg(ctx, pic, c.sticker, a * easeOut(lt / 0.7), sg ? 0 : -2, dy + pop);
-      }
-      const cw = tw + 2 * pad, ch = th + 2 * pad; drawCard(ctx, card(cw, ch, { seed: 4 }), tx - pad, ty - pad, cw, ch, a, 0, dy);
-      text(ctx, label, tx, ty + th * 0.72, { size: 136, fam: HEAD, weight: S.headW, color: C.green, max: c.title[2], ls: -0.02, a });
-      const iso = countryIso(country);
-      if (iso) {
-        const fa = a * easeOut((lt - 0.3) / 0.6);
-        pinFlag(ctx, iso, tx + tw + pad - px(portrait ? 40 : 30), ty - pad + px(portrait ? 30 : 20) + dy, portrait ? 210 : 180, 7, fa);
-        if (fr) stampEmblem(ctx, iso, portrait ? W - px(210) : px(1480) + px(330), fr.bottom - px(portrait ? 170 : 130) + dy, portrait ? 230 : 190, fa);
-      } else tape(ctx, c.tape, -4, a, dy);
-      const date = [country && sk !== 'stamp-compass' ? country : '', E.dateLine(s, p)].filter(Boolean).join(' · ');
-      const dY = portrait && fr ? Math.max(box(c.date)[1], fr.bottom + px(24)) : box(c.date)[1];
-      const dcard = card(box(c.date)[2] + pad, px(56) + pad, { seed: 6 }); drawCard(ctx, dcard, box(c.date)[0] - pad / 2, dY - pad / 2, box(c.date)[2] + pad, px(56) + pad, a, 0, dy);
-      text(ctx, E.kindWord(s, p) + (date ? ' · ' + date : ''), box(c.date)[0], dY + px(40), { size: 44, weight: 400, color: C.secondary, max: c.date[2], a });
+      const label = E.arrivalLabel(s, p) || E.toLabel || E.routeNames();
+      const x = px(86), y = portrait ? px(480) : px(380), width = W / u - 172;
+      text(ctx, E.kindWord(s, p).toUpperCase(), x, y - px(100), { size: 30, color: C.accent, ls: .1, a });
+      let size = 140, lines;
+      while (!(lines = wrapLines(ctx, label, 500, px(size), HEAD, px(width), 3)) && size > 60) size -= 8;
+      (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.15), { size, fam: HEAD, weight: 500, max: width, a }));
+      text(ctx, E.dateLine(s, p), x, y + px(140 + (lines || [label]).length * size), { size: 36, color: C.secondary, max: width, a });
+      if (E.stk(1)) fitImg(ctx, E.stk(1), [W / u - 200, H / u - 300, 110, 110], a, 0, 0, false);
     }
     function photoScene(ctx, s, p, t, lt, dur, withPlace = false) {
       const c = L.photo, ids = (p.mediaIds || []).filter((id) => E.mediaById[id]), n = ids.length; if (!n) return;
@@ -436,37 +371,20 @@
       photoCard(ctx, s, E.mediaById[ids[k]], l2, slot, a, withPlace);
     }
     function photoCard(ctx, s, m, l2, slot, a, withPlace) {
-      const c = L.photo, k = 0, dy = 0, rot = -2;   // рамка лежит на месте, меняются фотография и подпись
-      const fid = 'polaroid', fimg = pk('frame', fid);
-      if (fimg) {
-        const side = withPlace && !portrait, fw = portrait ? W * 1.12 : px(side ? 1000 : 1240), fcy = portrait ? H * 0.47 : side ? px(520) : H * 0.46, fcx = side ? px(1340) : W / 2 + (portrait ? 0 : -px(40)), e = E.img(m.url), zoom = 1.02 + 0.05 * clamp(l2 / slot, 0, 1);
-        const fr = framed(ctx, fid, fcx, fcy + dy, fw, rot * 0.6, a, (g, x, y, w, h) => {
-          if (e.ok) { const im = e.img, sc = Math.max(w / im.width, h / im.height) * zoom; g.drawImage(im, x + (w - im.width * sc) / 2, y + (h - im.height * sc) / 2, im.width * sc, im.height * sc); }
-          if (m.credit) { g.save(); g.font = `500 ${px(22)}px ${BODY}`; g.fillStyle = 'rgba(255,255,255,.92)'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 6 * u; g.fillText(m.credit, x + px(14), y + h - px(14), w - px(28)); g.restore(); }
-        }, (g, w, h) => {
-          // Чистое поле слева от марки: подпись повёрнута вместе с бумажной рамкой.
-          g.save(); g.translate(w * 0.5, h * 0.79); g.rotate(-8 * Math.PI / 180);
-          const cap = m.caption || E.toLabel || '', max = w * 0.31; let size = px(46), lines = wrapLines(g, cap, 400, size, HAND, max, 2);
-          while (!lines && size > px(24)) { size *= 0.9; lines = wrapLines(g, cap, 400, size, HAND, max, 2); }
-          (lines || [cap]).forEach((ln, i, arr) => text(g, ln, 0, (i - (arr.length - 1) / 2) * size * 1.05, { size: size / u, fam: HAND, color: C.ink, max: max / u, align: 'center' }));
-          g.restore();
-        });
-        text(ctx, E.photoDate(m, s), fcx, fr.bottom + px(portrait ? 62 : 38), { size: portrait ? 42 : 34, weight: 500, color: C.secondary, max: 900, align: 'center', a });
-        return;
+      const e = E.img(m.url), side = withPlace && !portrait;
+      const b = portrait ? [54, 380, 972, 1000] : side ? [750, 190, 1116, 620] : [240, 190, 1440, 620];
+      const [x, y, w, h] = box(b);
+      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = '#d9ded7'; ctx.fillRect(x, y, w, h);
+      if (e.ok) {
+        const im = e.img, zoom = 1.015 + .025 * smooth(l2 / slot), sc = Math.max(w / im.width, h / im.height) * zoom;
+        ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); ctx.drawImage(im, x + (w - im.width * sc) / 2, y + (h - im.height * sc) / 2, im.width * sc, im.height * sc); ctx.restore();
       }
-      const [cx, cy, cw, chh] = box(c.card); drawCard(ctx, card(cw, chh, { seed: 20 + k, fill: '#fffaf0', edge: 1.5 }), cx, cy, cw, chh, a, rot, dy);
-      ctx.save(); ctx.translate(cx + cw / 2, cy + chh / 2 + dy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-cw / 2, -chh / 2);
-      const wx = box(c.win)[0] - cx, wy = box(c.win)[1] - cy, ww = box(c.win)[2], wh = box(c.win)[3];
-      ctx.globalAlpha *= a; ctx.beginPath(); ctx.rect(wx, wy, ww, wh); ctx.clip();
-      const e = E.img(m.url); if (e.ok) { const im = e.img, sc = Math.max(ww / im.width, wh / im.height) * (1.02 + 0.05 * clamp(l2 / slot, 0, 1)); ctx.drawImage(im, wx + (ww - im.width * sc) / 2, wy + (wh - im.height * sc) / 2, im.width * sc, im.height * sc); }
+      if (m.credit) text(ctx, m.credit, x + px(20), y + h - px(20), { size: 24, color: '#fff', max: b[2] - 40 });
+      const cap = m.caption || E.toLabel || '', max = w - px(32); let size = px(portrait ? 52 : 40), lines;
+      while (!(lines = wrapLines(ctx, cap, 400, size, BODY, max, 3)) && size > px(28)) size *= .9;
+      (lines || [cap]).forEach((ln, i) => text(ctx, ln, x, y + h + px(82) + i * size * 1.25, { size: size / u, max: max / u }));
+      text(ctx, E.photoDate(m, s), x, y + h + px(150) + ((lines || [cap]).length - 1) * size * 1.25, { size: 28, color: C.secondary, max: b[2] });
       ctx.restore();
-      ctx.save(); ctx.translate(cx + cw / 2, cy + chh / 2 + dy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-cw / 2, -chh / 2); ctx.globalAlpha *= a;
-      const capX = box(c.cap)[0] - cx, capY = box(c.cap)[1] - cy;
-      text(ctx, m.caption || E.toLabel || '', capX, capY + px(66), { size: 76, fam: HAND, weight: 400, color: C.ink, max: c.cap[2] });
-      text(ctx, E.photoDate(m, s), capX, box(c.date)[1] - cy + px(40), { size: 44, weight: 400, color: C.secondary, max: c.date[2] });
-      if (m.credit) text(ctx, m.credit, box(c.win)[0] - cx + px(16), box(c.win)[1] - cy + box(c.win)[3] - px(16), { size: 26, weight: 500, color: 'rgba(255,255,255,.92)', max: c.win[2] - 32 });
-      ctx.restore();
-      tape(ctx, c.tape, -3, a, dy);
     }
     function elevation(ctx, s, p, t, lt, dur, a, dy, layout = L.elev) {
       const c = layout, pr = p.profile; const [px0, py0, pw, ph] = box(c.prof);
@@ -506,44 +424,40 @@
       tape(ctx, [x / u + 120, y / u - 30, 288, 80], -4, a, dy);
     }
     function finale(ctx, s, p, t, lt, dur, a, dy) {
-      const c = L.fin, [rx, ry, rw, rh] = box(c.receipt);
-      const ln = pk('land', '02'); if (ln && portrait) { const bw = W, bh = Math.min(px(520), bw * ln.height / ln.width), by = H - bh; ctx.save(); ctx.globalAlpha *= a * 0.9; ctx.drawImage(ln, 0, by, bw, bh); ctx.restore(); }   // закат над хребтами — только на высоком кадре (9:16), «путешествие продолжается"
-      drawCard(ctx, card(rw, rh, { seed: 30, fill: '#f6ecd0', edge: 6 }), rx, ry, rw, rh, a, 0, dy);
-      const f = E.finale(s, p, t, lt, dur);
-      metricCard(ctx, c.metric, { kicker: f.kicker, big: f.big, sub: f.sub }, a, (1 - easeOut(lt / 0.6)) * px(24), 0, 31);
-      const [nx, ny, nw] = box(c.next);
-      ctx.save(); ctx.globalAlpha *= a; ctx.strokeStyle = C.accent; ctx.lineWidth = 3 * u; ctx.setLineDash([10 * u, 10 * u]); ctx.beginPath(); ctx.moveTo(nx, ny - px(12) + dy); ctx.lineTo(nx + nw, ny - px(12) + dy); ctx.stroke(); ctx.restore();
-      text(ctx, f.next, nx, ny + px(70), { size: 76, fam: HAND, weight: 400, color: C.accent, max: c.next[2], a });
-      const comp = E.stk(2) || stickerImg('stamp-compass'); if (comp) fitImg(ctx, comp, E.stk(2) ? [c.compass[0] - 30, c.compass[1] - 30, c.compass[2] + 60, c.compass[3] + 60] : c.compass, a, 8, dy);
-      if (E.MARK && (E.MARK !== 'dot')) { ctx0 = ctx; heroBox(c.hero, a, dy, -3); }   // без знака героя — один компас, без дубля
-      tape(ctx, c.tape, -4, a, dy);
+      const f = E.finale(s, p, t, lt, dur), x = px(86), y = portrait ? px(450) : px(300), width = portrait ? 908 : 1000;
+      text(ctx, s.recipe === 'day-summary' ? 'ПРОЙДЕНО ЗА ДЕНЬ' : 'ВСЕГО ЗА ПУТЕШЕСТВИЕ', x, y - px(95), { size: 30, color: C.accent, ls: .1, a });
+      text(ctx, f.kicker, x, y, { size: 46, max: width, color: C.secondary, a });
+      text(ctx, f.big, x, y + px(210), { size: portrait ? 180 : 200, fam: NUM, weight: 600, max: width, ls: -.04, a });
+      text(ctx, f.sub, x, y + px(310), { size: 44, max: width, color: C.secondary, a });
+      const sets = E.allSets(), b = portrait ? [160, 950, 760, 480] : [1230, 250, 500, 430];
+      if (sets.length && sets[0].pts.length > 1) sketch(ctx, b, sets, 1, 0, a * .7);
+      text(ctx, f.next, x, portrait ? px(1640) : px(900), { size: 48, max: W / u - 172, color: C.accent, a });
+      if (E.stk(2)) fitImg(ctx, E.stk(2), [W / u - 200, H / u - 300, 110, 110], a, 0, 0, false);
     }
 
     /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
     function pageHeader(ctx, s, p, dark, t) {
-      if (FAM[s.recipe] === 'cover' && t < 3) return;   // на обложке своя крупная надпись
-      const x0 = px(L.spine) + px(portrait ? 44 : 60), x1 = W - px(portrait ? 56 : 80), y = px(portrait ? 168 : 96), a = smooth((t - 0.3) / 0.6);
-      const ink = dark ? '#f1e6cf' : C.accent, sec = dark ? 'rgba(241,230,207,.75)' : C.secondary;
-      const left = E.journey.schematic ? (E.NAME || 'путь') : 'День ' + E.today.day, right = E.dateLine(s, p) || '';
-      text(ctx, left, x0, y, { size: portrait ? 64 : 56, fam: HAND, weight: 400, color: ink, a, max: 520 });
-      if (right) text(ctx, right, x1, y, { size: portrait ? 34 : 30, weight: 500, color: sec, align: 'right', a, max: 460 });
-      if (E.NAME && !E.journey.schematic) { ctx.save(); ctx.font = `400 ${px(portrait ? 64 : 56)}px ${HAND}`; const lw = ctx.measureText(left).width; ctx.restore(); text(ctx, '· ' + E.NAME, x0 + lw + px(16), y, { size: portrait ? 40 : 34, fam: HAND, weight: 400, color: sec, a, max: 380 }); }
-      ctx.save(); ctx.globalAlpha = a * 0.5; ctx.strokeStyle = dark ? 'rgba(241,230,207,.5)' : 'rgba(31,78,90,.35)'; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(x0, y + px(22)); ctx.lineTo(x1, y + px(22)); ctx.stroke(); ctx.restore();
+      const x = px(86), y = px(portrait ? 126 : 94), right = W - x;
+      text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 30, weight: 500, max: portrait ? 470 : 900, color: C.secondary });
+      text(ctx, E.journey.schematic ? 'ИСТОРИЯ ПУТИ' : 'ДЕНЬ ' + E.today.day, right, y, { size: 28, weight: 500, align: 'right', max: 390, color: C.accent });
+      ctx.save(); ctx.strokeStyle = 'rgba(37,51,47,.18)'; ctx.lineWidth = px(1); ctx.beginPath(); ctx.moveTo(x, y + px(34)); ctx.lineTo(right, y + px(34)); ctx.stroke(); ctx.restore();
     }
     /* ---------- кадр ---------- */
     function memories(ctx, s, p, t, lt, dur, a, dy, run) {
       const ph = run.shots.find((q) => q.recipe === 'photo-reveal' || q.recipe === 'highlights-reel');
-      if (!ph || !(ph.params.mediaIds || []).some((id) => E.mediaById[id])) { if (s.recipe === 'checkpoint-arrival' || s.recipe === 'location-card') arrival(ctx, s, p, a, dy, t - run.t0); return; }
-      // Прибытие и фото — один разворот: место остаётся над фотографиями до самого итога.
+      if (!ph || !(ph.params.mediaIds || []).some((id) => E.mediaById[id])) { arrival(ctx, s, p, a, dy, t - run.t0); return; }
       const ar = run.shots.find((q) => q.recipe === 'checkpoint-arrival' || q.recipe === 'location-card');
       photoScene(ctx, ph, ph.params, t, t - run.t0, run.t1 - run.t0, !!ar);
-      if (!ar) return;
-      const label = E.arrivalLabel(ar, ar.params), country = E.countryOf(ar, ar.params), iso = countryIso(country);
-      const x = px(164), y = portrait ? px(244) : px(390), w = portrait ? px(752) : px(560), h = px(portrait ? 140 : 150);
-      drawCard(ctx, card(w, h, { seed: 4 }), x, y, w, h, a, 0, dy);
-      text(ctx, label, x + px(32), y + h * 0.72 + dy, { size: portrait ? 100 : 76, fam: HEAD, weight: S.headW, color: C.green, max: (w - px(iso && E.showFlags ? 140 : 64)) / u, a });
-      if (iso) pinFlag(ctx, iso, x + w - px(10), y + px(10) + dy, portrait ? 150 : 120, 7, a);
-      if (E.stk(1)) fitImg(ctx, E.stk(1), portrait ? [730, 1180, 180, 180] : [1380, 700, 180, 180], a, 5);
+      const label = ar ? E.arrivalLabel(ar, ar.params) : portrait ? 'Моменты пути' : null;
+      const x = px(86), y = portrait ? px(290) : px(400), width = portrait ? 900 : 590;
+      if (label) {
+        let size = portrait ? 76 : 86, lines;
+        while (!(lines = wrapLines(ctx, label, 500, px(size), HEAD, px(width), portrait ? 1 : 3)) && size > 32) size -= 4;
+        (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.17), { size, fam: HEAD, weight: 500, max: width, a }));
+      }
+      const iso = ar && countryIso(E.countryOf(ar, ar.params));
+      if (iso && E.showFlags) pinFlag(ctx, iso, portrait ? W - px(110) : px(120), portrait ? px(330) : px(650), 64, 0, a);
+      if (E.stk(1)) fitImg(ctx, E.stk(1), portrait ? [870, 1690, 110, 110] : [500, 730, 110, 110], a, 0, 0, false);
     }
     function drawPage(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, fam = FAM[s.recipe] || 'road', p = s.params || {};
@@ -570,25 +484,17 @@
     const TURN = 1; let turnCanvas = null, turnAt = -1;
     function draw(ctx, t, s, su, lt, TR) {
       drawPage(ctx, t, s, su, lt, TR);
-      const run = E.run(s); let at = run.t0;
-      const dt = t - at; if (at <= 0 || dt < 0 || dt >= TURN) return;
-      // Предыдущая страница заморожена у границы: результат одинаков при проигрывании и перемотке.
+      const at = E.run(s).t0, dt = t - at;
+      if (at <= 0 || dt < 0 || dt >= TURN) return;
       if (!turnCanvas) { turnCanvas = document.createElement('canvas'); turnCanvas.width = W; turnCanvas.height = H; }
       if (turnAt !== at) {
-        const prevT = at - 0.0001, prev = E.at(prevT), g = turnCanvas.getContext('2d');
+        const prevT = at - .0001, prev = E.at(prevT), g = turnCanvas.getContext('2d');
         g.clearRect(0, 0, W, H); drawPage(g, prevT, prev.s, prev.u, prev.lt, TR); turnAt = at;
       }
-      const q = smooth(dt / TURN), spine = px(L.spine), edge = lerp(W, spine, q), fold = Math.sin(q * Math.PI) * Math.min(W * 0.18, px(180));
-      ctx.save(); ctx.beginPath(); ctx.rect(spine, 0, edge - spine, H); ctx.clip(); ctx.drawImage(turnCanvas, 0, 0); ctx.restore();
-      if (fold > 0.1) {
-        // Светлая оборотная сторона и тень у сгиба; корешок дневника остаётся на месте.
-        ctx.save(); const sh = ctx.createLinearGradient(edge, 0, edge + fold * 0.35, 0); sh.addColorStop(0, 'rgba(30,20,8,.28)'); sh.addColorStop(1, 'rgba(30,20,8,0)'); ctx.fillStyle = sh; ctx.fillRect(edge, 0, fold * 0.35, H);
-        const gr = ctx.createLinearGradient(edge - fold, 0, edge, 0); gr.addColorStop(0, '#c7baa2'); gr.addColorStop(0.3, C.card); gr.addColorStop(1, '#dfd4bd'); ctx.fillStyle = gr;
-        ctx.beginPath(); ctx.moveTo(edge, 0); ctx.lineTo(edge - fold, fold * 0.35); ctx.lineTo(edge - fold, H - fold * 0.35); ctx.lineTo(edge, H); ctx.closePath(); ctx.fill(); ctx.restore();
-      }
+      ctx.save(); ctx.globalAlpha *= 1 - smooth(dt / TURN); ctx.drawImage(turnCanvas, 0, 0); ctx.restore();
     }
     const packNeeded = () => (['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here']).concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
-    return { draw, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads]), isDark: (s) => FAM[s.recipe] === 'fin' };
+    return { draw, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads]), isDark: () => false };
   }
 
   window.Journal = { create, FAM };

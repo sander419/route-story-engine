@@ -7,11 +7,11 @@
   --radius-md:8px; --radius-lg:16px;
   --text-xs:12px; --text-sm:14px; --text-base:16px; --text-lg:19px;
   --lh-body:1.5; --lh-tight:1.4; --tracking-caps:.06em;
-  --bg:#0c1016; --card:#141a23; --line:#263042; --field:#64748b; --ink:#eef2f7; --dim:#93a3b8; --acc:#ffb454; --acc-ink:#1d1300; --ok:#4ade80; --no:#64748b; --err:#fda4af;
-  color-scheme:dark;
+  --bg:#f2f0e9; --card:#fcfbf7; --line:#dcded5; --field:#879289; --ink:#25332f; --dim:#65716a; --acc:#a94425; --acc-ink:#fff; --ok:#32734f; --no:#879289; --err:#b4233c;
+  color-scheme:light;
 }
 @media (prefers-color-scheme:light){
-  :root:not([data-theme="dark"]){--bg:#f4f1ea;--card:#fffdf8;--line:#e0d9ca;--field:#857d6e;--ink:#1d1710;--dim:#6b6253;--acc:#b02a0c;--acc-ink:#fff;--ok:#15803d;--no:#9a9282;--err:#be123c;color-scheme:light}
+  :root:not([data-theme="dark"]){--bg:#f2f0e9;--card:#fcfbf7;--line:#dcded5;--field:#879289;--ink:#25332f;--dim:#65716a;--acc:#a94425;--acc-ink:#fff;--ok:#15803d;--no:#9a9282;--err:#be123c;color-scheme:light}
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -67,7 +67,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .tab{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4)}
 .lead{margin:0;color:var(--dim);font-size:var(--text-sm)}
 
-.drop{border:2px dashed var(--field);border-radius:var(--radius-lg);padding:var(--space-6) var(--space-4);text-align:center;display:flex;flex-direction:column;gap:var(--space-1);cursor:pointer;transition:.15s}
+.drop{border:2px dashed var(--field);border-radius:var(--radius-lg);padding:var(--space-6) var(--space-4);text-align:center;display:flex;flex-direction:column;gap:var(--space-1);cursor:pointer;transition:background-color .15s,border-color .15s}
 .drop:hover,.drop.over{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent)}
 .drop input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .drop b{font-size:var(--text-lg)}
@@ -194,3 +194,28 @@ input[type=file]::file-selector-button:hover{border-color:var(--acc)}
 .shows{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-1) var(--space-3)}
 .shows .c{display:flex;align-items:center;gap:var(--space-2);min-height:40px;font-size:var(--text-sm);cursor:pointer}
 .shows input{width:20px;height:20px;accent-color:var(--acc)}
+
+/* Общий визуальный язык с роликом: тёплое поле, спокойные поверхности, один акцент. */
+.top{padding-top:24px;padding-bottom:24px;align-items:center}
+.brand{letter-spacing:-.04em;text-transform:none;font-family:'RS Geologica',sans-serif;font-size:24px;font-weight:600}
+.dot{width:10px;height:10px}
+.tag{margin-left:auto;max-width:480px;text-align:right}
+.stage{border:1px solid var(--line);border-radius:20px;background:#e7e9e1;padding:20px}
+#cv{border-radius:4px;box-shadow:0 3px 8px #0000000a,0 18px 48px #00000012;outline:1px solid #0000000d}
+.ctrl{padding-top:12px}
+.ctrl button{background:var(--card);border-color:var(--line)}
+.actions{padding:20px;border-radius:16px}
+.tab{padding:24px;gap:20px}
+.tabs{background:transparent;border:0;padding:0;gap:4px}
+.tabs button{min-height:52px;border-radius:10px}
+.tabs button.on{background:var(--ink);color:#fff}
+.tabs button i{border:0;background:#ffffff24}
+.drop{background:var(--bg);border-width:1px;padding:32px 16px}
+.kind button{border-width:1px}
+.kind button.on{box-shadow:inset 0 0 0 1px var(--acc);background:#bd552f08}
+button{transition:background-color .15s,border-color .15s,transform .15s}
+button:active:not(:disabled){transform:scale(.96)}
+.styles .sw{height:76px}
+@media(min-width:1000px){.app{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}.stage{padding:24px}#cv{max-height:calc(100vh - 210px)}}
+@media(max-width:640px){.top{padding-top:16px;padding-bottom:16px}.tag{margin-left:0;text-align:left}.stage{padding:12px;border-radius:16px;position:static}#cv{max-height:40vh}.tab{padding:16px;gap:16px}.actions{padding:16px}.ctrl{padding-top:4px}.tabs button{min-height:64px}}
+@media(prefers-reduced-motion:reduce){button:active:not(:disabled){transform:none}}

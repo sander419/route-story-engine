@@ -30,13 +30,13 @@
   const keyOf = (r) => `${r.z}/${r.ax}/${r.ay}/${r.nx}x${r.ny}`;
 
   /* ---- цвет по высоте, тень, контуры — одной бумажной палитрой «дневника» ---- */
-  const RAMP = [[0, [150, 178, 128]], [300, [176, 192, 134]], [900, [204, 192, 140]], [1800, [192, 158, 108]], [2800, [158, 132, 110]], [4000, [140, 130, 124]], [5000, [238, 236, 232]], [7000, [252, 252, 250]]];   // природные цвета: зелень низин → охра склонов → серый камень → снег
+  const RAMP = [[0, [156, 175, 161]], [300, [174, 185, 165]], [900, [193, 194, 174]], [1800, [185, 179, 162]], [2800, [169, 169, 159]], [4000, [186, 188, 181]], [5000, [228, 229, 221]], [7000, [247, 247, 241]]]; // спокойная природная палитра
   const ramp = (h) => { if (h <= RAMP[0][0]) return RAMP[0][1]; for (let i = 1; i < RAMP.length; i++) if (h <= RAMP[i][0]) { const a = RAMP[i - 1], b = RAMP[i], t = (h - a[0]) / (b[0] - a[0]); return [a[1][0] + (b[1][0] - a[1][0]) * t, a[1][1] + (b[1][1] - a[1][1]) * t, a[1][2] + (b[1][2] - a[1][2]) * t]; } return RAMP[RAMP.length - 1][1]; };
   function bake(T) {
     const W = T.W, Hh = T.H, H = T.heights, mpp = T.mpp, cv = document.createElement('canvas'); cv.width = W; cv.height = Hh; const g = cv.getContext('2d'), id = g.createImageData(W, Hh);
-    const az = (315 * Math.PI) / 180, alt = (24 * Math.PI) / 180, ex = 2.0; let mn = 1e9, mx = -1e9; for (const v of H) { if (v < mn) mn = v; if (v > mx) mx = v; }
+    const az = (315 * Math.PI) / 180, alt = (42 * Math.PI) / 180, ex = 1.0; let mn = 1e9, mx = -1e9; for (const v of H) { if (v < mn) mn = v; if (v > mx) mx = v; }
     const span = Math.max(40, mx - Math.max(0, mn)), raw = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000], want = (T.lspan || span) / 14; let step = raw.find((s) => s >= want) || 1000;
-    const lspan = Math.max(30, T.lspan || span), flat = lspan < 700, lo = T.llo != null ? T.llo : Math.max(0, mn), tint = (h) => (flat ? clamp((h - lo) / lspan, -0.2, 1.4) * 1500 : h), exS = flat ? Math.max(2, T.exag * 1.3) : ex;   // на равнине подсветка склонов сильнее   // равнина: цвет по местному диапазону высот, иначе всё одного оттенка
+    const lspan = Math.max(30, T.lspan || span), flat = lspan < 700, lo = T.llo != null ? T.llo : Math.max(0, mn), tint = (h) => (flat ? clamp((h - lo) / lspan, -0.2, 1.4) * 1500 : h), exS = flat ? Math.max(1, T.exag * 0.5) : ex;   // на равнине подсветка склонов сильнее   // равнина: цвет по местному диапазону высот, иначе всё одного оттенка
     let sr = 0, sg2 = 0, sb = 0;
     // вода: в данных высот озеро и море — ровная гладь; ищем связные участки, где высота не меняется ни на сантиметр, крупнее ~0,3 % области
     const water = new Uint8Array(W * Hh); {
@@ -55,9 +55,9 @@
       const dzdx = ((at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1))) / (8 * mpp) * exS;
       const dzdy = ((at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1))) / (8 * mpp) * exS;
       const slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx), s = Math.max(0, Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - asp));
-      const wet = water[i] || h <= 0; let c = wet ? [118, 166, 184] : ramp(tint(h)); const sh = 0.5 + 0.8 * s;
+      const wet = water[i] || h <= 0; let c = wet ? [128, 165, 174] : ramp(tint(h)); const sh = 0.78 + 0.30 * s;
       let r = c[0] * sh, gg = c[1] * sh, b = c[2] * sh;
-      if (h > 0 && (Math.floor(h / step) !== Math.floor(at(x + 1, y) / step) || Math.floor(h / step) !== Math.floor(at(x, y + 1) / step))) { r *= 0.80; gg *= 0.78; b *= 0.74; }   // контурная линия
+      if (h > 0 && (Math.floor(h / step) !== Math.floor(at(x + 1, y) / step) || Math.floor(h / step) !== Math.floor(at(x, y + 1) / step))) { r *= 0.96; gg *= 0.96; b *= 0.96; }   // контурная линия
       sr += r; sg2 += gg; sb += b;
       const k = i * 4; id.data[k] = Math.min(255, r); id.data[k + 1] = Math.min(255, gg); id.data[k + 2] = Math.min(255, b); id.data[k + 3] = 255;
     }
@@ -79,7 +79,7 @@
       const smp = []; for (let y = gy0; y <= gy1; y += 2) for (let x = gx0; x <= gx1; x += 2) smp.push(heights[y * W + x]);
       smp.sort((p1, p2) => p1 - p2); const hMn = smp.length ? smp[Math.floor(smp.length * 0.05)] : 0, hMx = smp.length ? smp[Math.floor(smp.length * 0.95)] : 100;   // перепад внутри маршрута без редких выбросов: по нему растягиваем вертикаль и раскраску
       const hSpan = Math.max(1, hMx - Math.max(0, hMn)), n = 2 ** r.z, ux = (256 / n) / 256, lat = latOf(r.cy), mPerUnit = WORLD_M * Math.cos((lat * Math.PI) / 180);
-      const exag = opts.exag || (hSpan < 40 ? 22 : hSpan < 90 ? 16 : hSpan < 180 ? 11 : hSpan < 400 ? 7 : 4.5);   // чем площе местность, тем сильнее растягиваем вертикаль; на подписи кадра пишется настоящее число
+      const exag = opts.exag || (hSpan < 90 ? 5 : hSpan < 400 ? 3 : 2);   // чем площе местность, тем сильнее растягиваем вертикаль; на подписи кадра пишется настоящее число
       const T = { z: r.z, W, H: Hh, N: W, heights, mPerUnit, mpp: mPerUnit * ux, exag, lspan: hSpan, llo: Math.max(0, hMn), hs: (exag / mPerUnit), x0: (r.ax * 256) / n, y0: (r.ay * 256) / n, wU: (W * ux), hU: (Hh * ux), cx: r.cx, cy: r.cy };
       T.tex = bake(T);
       let mn = 1e9, mx = -1e9; for (const v of heights) { if (v < mn) mn = v; if (v > mx) mx = v; } T.hmin = mn; T.hmax = mx;
@@ -105,7 +105,7 @@ in vec3 p; in vec3 n; in vec2 t; uniform mat4 m; out vec3 vn; out vec2 vt; out f
       g.attachShader(pr, sh(g.FRAGMENT_SHADER, `#version 300 es
 precision highp float; in vec3 vn; in vec2 vt; in float vw; uniform sampler2D tex; uniform vec2 res; uniform float dist; out vec4 o;
 void main(){
-  vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.68+0.55*d);
+  vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.84+0.22*d);
   if(abs(vn.y)<0.001){ c=texture(tex,vt).rgb*0.42; c=mix(c,vec3(0.30,0.24,0.18),0.45); }
   float edgeP=min(min(vt.x,1.0-vt.x),min(vt.y,1.0-vt.y)); float a=abs(vn.y)<0.001?1.0:smoothstep(0.0,0.05,edgeP);   // край рельефа растворяется в фон окна, без резкой диагонали
   o=vec4(c*a,a);

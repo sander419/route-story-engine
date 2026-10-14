@@ -22,7 +22,7 @@
   ).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
-  const swatch = { journal: 'linear-gradient(135deg,#f4e8cb,#e9d9ae 55%,#274e45 56%,#a33f28)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)' };
+  const swatch = { journal: 'linear-gradient(135deg,#f2f0e9 0%,#f2f0e9 40%,#9cafaa 40%,#9cafaa 78%,#bd552f 78%)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
@@ -521,8 +521,8 @@
         c0.seg.tAt ? fact(true, 'Время суток и часы', 'свет меняется по ходу дня, часы в титре') : fact(false, 'Время суток и часы', noTime),
         c0.movingH >= 0.4 ? fact(true, 'Время в пути и скорость', `${Math.floor(c0.movingH)} ч ${String(Math.round((c0.movingH % 1) * 60)).padStart(2, '0')} мин · ${String(c0.avgKmh).replace('.', ',')} км/ч`) : fact(false, 'Время в пути и скорость', noTime),
         c0.profile ? fact(true, 'Высота', `набор +${fmt(c0.gain)} м${used('elevation-profile') ? ', профиль в ролике' : ' — день ровный, кадр не нужен'}`) : fact(false, 'Высота', 'в файле нет высоты'),
-        c0.photos.length ? fact(true, 'Фото', `${c0.photos.length} — на весь экран`) : fact(false, 'Фото', 'не добавлены — шаг «История»'),
-        c0.note ? fact(true, 'Фраза дня', `«${c0.note.text}»`) : fact(false, 'Фраза дня', 'не добавлена — шаг «История»'),
+        c0.photos.length ? fact(true, 'Фото', `${c0.photos.length} — в ролике`) : fact(false, 'Фото', 'не добавлены — шаг «Фото»'),
+        c0.note ? fact(true, 'Фраза дня', `«${c0.note.text}»`) : fact(false, 'Фраза дня', 'не добавлена — шаг «Текст»'),
       ].join('');
     $('etypeBox').hidden = !!J.schematic || J.days.length < 2;   // выбор «для кого серия» имеет смысл только для путешествия из нескольких дней
     const v = window.Director.validate(res.plan, J);
