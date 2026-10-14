@@ -216,14 +216,18 @@
     }
     function trackDeco(ctx, proj, tr, a, box) {
       if (!E.notes.length && !E.pins.length) return; const [bx, by, bw, bh] = box;
-      E.pins.forEach((q) => {
+      E.pins.forEach((q, i) => {
         if (!q.e.ok) return; const pa = a * smooth((tr - q.f) / 0.03), pt = proj(E.ptAtF(q.f)); if (!pt || pa <= 0.01) return;
-        const im = q.e.img, s0 = px(portrait ? 96 : 84), fr = px(9), x = pt[0], top = pt[1] - px(30) - s0 - fr * 2;
+        // Две боковые колонки: фото не лежат на треке, точное место сохраняет выноска.
+        const im = q.e.img, s0 = px(portrait ? 96 : 84), fr = px(9), left = i % 2 === 0;
+        const x = left ? bx + px(16) + s0 / 2 + fr : bx + bw - px(16) - s0 / 2 - fr;
+        const rows = Math.ceil(E.pins.length / 2), top = by + bh * ((Math.floor(i / 2) + 1) / (rows + 1)) - (s0 + fr * 3) / 2;
+        ctx.save(); ctx.globalAlpha *= pa; ctx.strokeStyle = C.accent; ctx.lineWidth = px(3); ctx.setLineDash([px(8), px(7)]); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(x + (left ? 1 : -1) * (s0 / 2 + fr), top + (s0 + fr * 3) / 2); ctx.stroke(); ctx.restore();
         ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, top + s0 / 2); ctx.rotate((-5 * Math.PI) / 180); ctx.translate(-x, -(top + s0 / 2));
         ctx.shadowColor = 'rgba(40,28,10,.4)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 7 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(x - s0 / 2 - fr, top, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
         const sc = Math.max(s0 / im.width, s0 / im.height); ctx.save(); ctx.beginPath(); ctx.rect(x - s0 / 2, top + fr, s0, s0); ctx.clip(); ctx.drawImage(im, x - (im.width * sc) / 2, top + fr + s0 / 2 - (im.height * sc) / 2, im.width * sc, im.height * sc); ctx.restore();
         ctx.restore(); tape(ctx, [(x - px(40)) / u, (top - px(16)) / u, 80, 34], -8, pa);
-        ctx.save(); ctx.globalAlpha *= pa; ctx.beginPath(); ctx.arc(x, pt[1], px(9), 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = px(5); ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.globalAlpha *= pa; ctx.beginPath(); ctx.arc(pt[0], pt[1], px(9), 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = px(5); ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore();
       });
       E.notes.forEach((n, i) => {
         const na = a * E.noteAlpha(i, tr), pt = proj(E.ptAtF(n.f)); if (!pt || na <= 0.01) return;
@@ -238,7 +242,8 @@
       });
     }
     function sketch(ctx, coreBox, sets, tr, t, a, opts = {}) {
-      const F = fitPts(sets.flatMap((s) => [s.pts]), coreBox), today = sets.find((s) => s.today) || sets[sets.length - 1];
+      const fitBox = opts.deco && E.pins.length ? [coreBox[0] + coreBox[2] * 0.22, coreBox[1], coreBox[2] * 0.56, coreBox[3]] : coreBox;
+      const F = fitPts(sets.flatMap((s) => [s.pts]), fitBox), today = sets.find((s) => s.today) || sets[sets.length - 1];
       for (const s of sets) {
         if (s === today) continue;
         const st = stroke(ctx, s.pts, s.brk, F, null, 4 * u, C.guide, E.journey.schematic ? [14 * u, 10 * u] : null, a * 0.75); if (st) st.end();
@@ -342,7 +347,7 @@
         if (hd) smp.push([hd.x, hd.y]);
         for (let k = 0; k < 4; k++) {
           const Pj = window.Terrain.projector(T, cam, iw, ih); let r = 1;
-          for (const q of smp) { const z = Pj(q[0], q[1]); if (!z) { r = 3; break; } r = Math.max(r, Math.abs(z[0] - iw / 2) / (iw * 0.48), Math.abs(z[1] - ih / 2) / (ih * 0.46)); }
+          for (const q of smp) { const z = Pj(q[0], q[1]); if (!z) { r = 3; break; } r = Math.max(r, Math.abs(z[0] - iw / 2) / (iw * (!jr && E.pins.length ? 0.30 : 0.48)), Math.abs(z[1] - ih / 2) / (ih * 0.46)); }
           if (r <= 1.02) break; cam.dist *= Math.min(1.8, r);
         }
       }
