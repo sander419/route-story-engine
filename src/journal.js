@@ -8,7 +8,7 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const smooth = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
   const easeOut = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
-  const C = { paper: '#f4e8cb', card: '#fff4d9', ink: '#203c36', secondary: '#59503d', accent: '#a33f28', green: '#274e45', gold: '#d8a64b', blue: '#527e85', desk: '#2f3a32', guide: '#877e64' };
+  const C = { paper: '#eee6d4', card: '#fbf7ee', ink: '#1d3a40', secondary: '#5d5446', accent: '#c4552b', green: '#1f4e5a', gold: '#d66a34', blue: '#3f7480', desk: '#1b2a30', guide: '#8a8170' };   // палитра рамок-коллажей: бумага, бирюза, жжёный оранжевый
   const ART = 'art/';
   const CELL = 0.66;   // ширина цифры в em: у всех цифр счётчика одна ячейка, число не «дрожит» (токены V2: typography.canvasNumbers)
 
@@ -24,7 +24,7 @@
       counter: 180, spine: 64,
     },
     h: {
-      cover: { head: [452, 228, 752, 128], dest: [452, 372, 752, 216], hero: [1204, 220, 412, 652], wash: [952, 100, 824, 864], tape: [1120, 200, 288, 80] },
+      cover: { head: [452, 330, 752, 128], dest: [452, 474, 752, 216], hero: [1204, 220, 412, 652], wash: [952, 100, 824, 864], tape: [1120, 200, 288, 80] },   // карточка ниже — по центру рядом с коллажем
       road: { map: [288, 156, 1280, 704], core: [480, 292, 864, 480], names: [452, 188, 960, 72], metric: [1068, 576, 680, 0], tape: [1248, 132, 288, 80], sticker: [1560, 520, 200, 200] },
       photo: { card: [620, 132, 672, 872], win: [652, 164, 608, 608], cap: [652, 804, 608, 96], date: [652, 916, 608, 56], tape: [828, 92, 288, 80] },
       arrival: { title: [452, 220, 752, 172], sticker: [948, 432, 480, 480], date: [452, 456, 432, 56], tape: [1108, 412, 288, 80] },
@@ -53,7 +53,9 @@
   }
   let info = null;
   const infoP = fetch(ART + 'stickers.json').then((r) => r.json()).then((j) => { info = j; }).catch(() => {});
-  const READY = (extra = []) => Promise.all([infoP, load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p, ...extra.map((f) => load(ART + 'pack/' + f + '.webp').p)]).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
+  let flags = {};   // флаги и гербы стран (Wikimedia Commons, общественное достояние): art/flags/flags.json
+  const flagsP = fetch(ART + 'flags/flags.json').then((r) => r.json()).then((j) => { flags = j; return Promise.all(Object.values(j).flatMap((f) => Object.values(f).map((x) => load(ART + x.file).p))); }).catch(() => {});
+  const READY = (extra = []) => Promise.all([infoP, flagsP, load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p, ...extra.map((f) => load(ART + 'pack/' + f + '.webp').p)]).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
 
   const rngOf = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
@@ -72,9 +74,17 @@
       const key = 'page|' + dark; if (cache.has(key)) return cache.get(key);
       const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
       g.fillStyle = dark ? C.desk : C.paper; g.fillRect(0, 0, W, H);
-      const pat = paperPattern(g); if (pat) { g.save(); g.globalAlpha = dark ? 0.12 : 0.64; g.globalCompositeOperation = dark ? 'overlay' : 'multiply'; g.fillStyle = pat; g.fillRect(0, 0, W, H); g.restore(); }
+      const pat = paperPattern(g); if (pat) { g.save(); g.globalAlpha = dark ? 0.16 : 0.72; g.globalCompositeOperation = dark ? 'overlay' : 'multiply'; g.fillStyle = pat; g.fillRect(0, 0, W, H); g.restore(); }
+      if (!dark) {   // кофейные круги и потёртости: бумага, которая была в дороге
+        const rnd = rngOf(17 + Math.round(W)); g.save();
+        for (let k = 0; k < 1; k++) { const cx = W * (0.96 + 0.06 * rnd()), cy = H * (0.9 + 0.06 * rnd()), r = (portrait ? 170 : 140) * u * (0.85 + 0.3 * rnd());   // один круг, наполовину за краем страницы
+          g.lineWidth = 9 * u; g.strokeStyle = 'rgba(120,78,36,.07)'; g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.stroke(); g.lineWidth = 3 * u; g.strokeStyle = 'rgba(120,78,36,.09)'; g.beginPath(); g.arc(cx + 4 * u, cy + 3 * u, r * 0.97, 0.4, 5.6); g.stroke();
+          const rg = g.createRadialGradient(cx, cy, r * 0.2, cx, cy, r); rg.addColorStop(0, 'rgba(150,100,50,.05)'); rg.addColorStop(1, 'rgba(150,100,50,0)'); g.fillStyle = rg; g.fillRect(cx - r, cy - r, 2 * r, 2 * r); }
+        g.restore();
+      }
+      { const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, dark ? 'rgba(0,0,0,.45)' : 'rgba(70,45,15,.22)'); g.fillStyle = vg; g.fillRect(0, 0, W, H); }   // края страницы темнее — объём
       // пологие линии рельефа — как на старой карте, еле заметно
-      g.save(); g.strokeStyle = dark ? 'rgba(255,244,217,.07)' : 'rgba(163,63,40,.11)'; g.lineWidth = 2 * u;
+      g.save(); g.strokeStyle = dark ? 'rgba(255,244,217,.07)' : 'rgba(31,78,90,.09)'; g.lineWidth = 2 * u;
       for (let k = 0; k < 7; k++) { g.beginPath(); const y0 = H * (0.1 + k * 0.14), amp = (14 + 10 * (k % 3)) * u; for (let x = -10; x <= W + 10; x += 24 * u) { const y = y0 + Math.sin(x / (210 * u) + k * 1.7) * amp; x < 0 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); }
       g.restore();
       // корешок: зелёная полоса с отверстиями под спираль
@@ -97,7 +107,7 @@
       for (let x = wPx; x > 0; x -= step) pts.push([x, hPx + (rnd() - 0.5) * 2 * j]);
       for (let y = hPx; y > 0; y -= step) pts.push([(rnd() - 0.5) * 2 * j, y]);
       const path = () => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(pad + p[0], pad + p[1]) : g.moveTo(pad + p[0], pad + p[1]))); g.closePath(); };
-      g.save(); g.shadowColor = 'rgba(40,28,10,.22)'; g.shadowOffsetX = 8 * u; g.shadowOffsetY = 16 * u; g.shadowBlur = 16 * u; g.fillStyle = o.fill || C.card; path(); g.fill(); g.restore();
+      g.save(); g.shadowColor = 'rgba(40,28,10,.34)'; g.shadowOffsetX = 10 * u; g.shadowOffsetY = 20 * u; g.shadowBlur = 26 * u; g.fillStyle = o.fill || C.card; path(); g.fill(); g.restore();
       g.save(); path(); g.clip();
       const pat = paperPattern(g, 0.8); if (pat) { g.globalAlpha = 0.5; g.globalCompositeOperation = 'multiply'; g.fillStyle = pat; g.fillRect(0, 0, cv.width, cv.height); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
       if (o.grid) { g.strokeStyle = 'rgba(135,126,100,.28)'; g.lineWidth = 2 * u; const gs = 64 * u; g.beginPath(); for (let x = pad + gs; x < pad + wPx; x += gs) { g.moveTo(x, pad); g.lineTo(x, pad + hPx); } for (let y = pad + gs; y < pad + hPx; y += gs) { g.moveTo(pad, y); g.lineTo(pad + wPx, y); } g.stroke(); }
@@ -111,8 +121,8 @@
     function tape(ctx, b, rot, a = 1, dy = 0) {
       const [x, y, w, h] = box(b); ctx.save(); ctx.globalAlpha *= a * 0.92; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate((rot * Math.PI) / 180);
       ctx.shadowColor = 'rgba(40,28,10,.22)'; ctx.shadowBlur = 8 * u; ctx.shadowOffsetY = 4 * u;
-      ctx.fillStyle = 'rgba(216,166,75,.62)'; ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); for (let k = 0; k <= 8; k++) ctx.lineTo(-w / 2 + (k % 2 ? 5 : 0) * u, -h / 2 + (h * k) / 8); ctx.lineTo(w / 2, h / 2); for (let k = 8; k >= 0; k--) ctx.lineTo(w / 2 - (k % 2 ? 5 : 0) * u, -h / 2 + (h * k) / 8); ctx.closePath(); ctx.fill();
-      ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(255,244,217,.38)'; ctx.lineWidth = 2 * u; ctx.beginPath(); for (let xx = -w / 2 + 16 * u; xx < w / 2; xx += 16 * u) { ctx.moveTo(xx, -h / 2); ctx.lineTo(xx, h / 2); } ctx.stroke();
+      ctx.fillStyle = 'rgba(214,106,52,.82)'; ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); for (let k = 0; k <= 8; k++) ctx.lineTo(-w / 2 + (k % 2 ? 5 : 0) * u, -h / 2 + (h * k) / 8); ctx.lineTo(w / 2, h / 2); for (let k = 8; k >= 0; k--) ctx.lineTo(w / 2 - (k % 2 ? 5 : 0) * u, -h / 2 + (h * k) / 8); ctx.closePath(); ctx.fill();
+      ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(255,236,214,.30)'; ctx.lineWidth = 2 * u; ctx.beginPath(); for (let xx = -w / 2 + 16 * u; xx < w / 2; xx += 16 * u) { ctx.moveTo(xx, -h / 2); ctx.lineTo(xx, h / 2); } ctx.stroke();
       ctx.restore();
     }
     function fitImg(ctx, im, b, a = 1, rot = 0, dy = 0, shadow = true, flip = false) {
@@ -126,6 +136,17 @@
     const pk = (cat, id) => art(`pack/${cat}/${id}.webp`);
     const wxId = (w) => E.wxPackId(w);   // код погоды WMO → картинка; общая функция в episode.js
     const stickerImg = (key) => (info && info.files[key] ? art(info.files[key]) : null);
+    // окна рамок в долях картинки [x, y, w, h] — прозрачная область, найдена по альфа-каналу
+    const FRAMES = { 'compass-map': [0.241, 0.137, 0.508, 0.643], polaroid: [0.27, 0.142, 0.489, 0.598], 'photo-frame': [0.2, 0.093, 0.583, 0.641], 'begins-here': [0.23, 0.138, 0.558, 0.604] };
+    // рамка-коллаж с содержимым: inner(ctx, x, y, w, h) рисует в окне, рамка ложится сверху; cx, cy — центр, fw — ширина рамки (px)
+    function framed(ctx, id, cx, cy, fw, rot, a, inner) {
+      const im = pk('frame', id), n = FRAMES[id]; if (!im || !n) return null;
+      const fh = (fw * im.height) / im.width, e = 0.008, wx = (n[0] - e) * fw, wy = (n[1] - e) * fh, ww = (n[2] + 2 * e) * fw, wh = (n[3] + 2 * e) * fh;
+      ctx.save(); ctx.globalAlpha *= a; ctx.translate(cx, cy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-fw / 2, -fh / 2);
+      ctx.save(); ctx.beginPath(); ctx.rect(wx, wy, ww, wh); ctx.clip(); ctx.fillStyle = C.card; ctx.fillRect(wx, wy, ww, wh); inner(ctx, wx, wy, ww, wh); ctx.restore();
+      ctx.shadowColor = 'rgba(30,20,8,.38)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetX = 6 * u; ctx.shadowOffsetY = 16 * u; ctx.drawImage(im, 0, 0, fw, fh);
+      ctx.restore(); return { fh, top: cy - fh / 2, bottom: cy + fh / 2 };
+    }
 
     /* ---------- текст ---------- */
     function fitFont(ctx, str, weight, size, fam, maxW) { ctx.font = `${weight} ${size}px ${fam}`; const w = ctx.measureText(str).width; if (w > maxW && maxW > 0) { size *= maxW / w; ctx.font = `${weight} ${size}px ${fam}`; } return size; }
@@ -216,6 +237,21 @@
       for (const [iso, names] of Object.entries(info.countryAliases)) if (names.some((x) => x.toLowerCase() === n)) return iso;
       return null;
     }
+    const flagOf = (iso, kind) => { const f = iso && flags[iso] && flags[iso][kind]; return f ? art(f.file) : null; };
+    // флаг: бумажный, с белой каймой и скотчем — приклеен к углу карточки; x, y — центр, wU — ширина в u
+    function pinFlag(ctx, iso, x, y, wU, rot, a) {
+      const im = flagOf(iso, 'flag'); if (!im) return; const w = px(wU), h = (w * im.height) / im.width, b = px(10);
+      ctx.save(); ctx.globalAlpha *= a; ctx.translate(x, y); ctx.rotate((rot * Math.PI) / 180);
+      ctx.shadowColor = 'rgba(30,20,8,.35)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 8 * u; ctx.fillStyle = '#fbf7ee'; ctx.fillRect(-w / 2 - b, -h / 2 - b, w + 2 * b, h + 2 * b);
+      ctx.shadowColor = 'transparent'; ctx.drawImage(im, -w / 2, -h / 2, w, h);
+      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(-w / 2, -h / 2, w, h * 0.5);   // лёгкий блик бумаги
+      ctx.restore(); tape(ctx, [(x - px(wU * 0.3)) / u, (y - h / 2 - px(28)) / u, wU * 0.6, 56], rot - 4, a);
+    }
+    // герб: печать-наклейка с тенью (только у стран, где он есть; у Турции официального герба нет)
+    function stampEmblem(ctx, iso, x, y, sU, a) {
+      const im = flagOf(iso, 'emblem'); if (!im) return; const sc = px(sU) / Math.max(im.width, im.height), w = im.width * sc, h = im.height * sc;
+      ctx.save(); ctx.globalAlpha *= a * 0.95; ctx.shadowColor = 'rgba(30,20,8,.35)'; ctx.shadowBlur = 16 * u; ctx.shadowOffsetY = 8 * u; ctx.drawImage(im, x - w / 2, y - h / 2, w, h); ctx.restore();
+    }
     function placeSticker(label, country) {
       if (/шылпык|chilpyk/i.test(label || '')) return 'uz-chilpyk';   // подтверждённое событие героя (пост 407)
       const iso = countryIso(country); return iso ? info.cultureByCountry[iso] : 'stamp-compass';
@@ -238,7 +274,10 @@
     function cover(ctx, s, p, a, dy, lt) {
       const c = L.cover, [hx, hy, hw, hh] = box(c.head), [dx, dyy, dw, dh] = box(c.dest);
       const ct = E.coverTexts(s, p), from = ct.from, to = ct.to, hook = ct.small;
-      const wash = art('wash.webp'); if (wash) fitImg(ctx, wash, c.wash, a * 0.58, 0, dy * 0.4, false, portrait);
+      const fcx = portrait ? W / 2 : px(1480), fcy = portrait ? px(1150) : px(560), fw = portrait ? W * 1.08 : px(900);   // в 16:9 — справа; под карточку уходит только край коллажа, не окно
+      const sets = s.recipe === 'season-card' ? E.allSets() : [E.todaySet()];
+      const fr = sets.length && sets[0].pts && sets[0].pts.length > 1 ? framed(ctx, 'begins-here', fcx, fcy + dy * 0.5, fw, portrait ? -1.5 : 2, a, (g, x, y, w, h) => sketch(g, [(x + w * 0.1) / u, (y + h * 0.12) / u, (w * 0.8) / u, (h * 0.76) / u], sets, 1, lt, 1)) : null;
+      const wash = art('wash.webp'); if (wash && !fr) fitImg(ctx, wash, c.wash, a * 0.58, 0, dy * 0.4, false, portrait);
       // назначение: крупно в одну строку; длинное — меньше и в две строки (читаемо, не мельчит)
       let size = hook ? 100 : 180, lines = null;
       for (const sz of hook ? [100] : [180, 136, 100]) { size = sz; lines = wrapLines(ctx, to, S.headW, px(sz), HEAD, px(c.dest[2]), sz >= 136 ? 1 : 2); if (lines) break; }
@@ -249,8 +288,12 @@
       text(ctx, from, hx, hy + hh * 0.72, { size: 100, fam: HEAD, weight: S.headW, color: C.ink, max: c.head[2], ls: -0.02, a });
       lines.forEach((ln, i) => text(ctx, ln, dx, first + i * lh, { size, fam: HEAD, weight: S.headW, color: C.green, max: c.dest[2], ls: -0.02, a }));
       if (E.NAME) text(ctx, E.NAME, dx, last + px(size) * 0.3 + px(44), { size: 56, fam: HAND, weight: 400, color: C.accent, max: c.dest[2], a: a * 0.95 });
-      tape(ctx, [bx / u + bw / u * 0.58, by / u - 36, 288, 80], -4, a, dy);
-      ctx0 = ctx; heroBox(c.hero, a, dy + (1 - easeOut(lt / 0.8)) * px(30), 0);
+      const ciso = countryIso(E.countryOf(s, p));
+      if (ciso && flagOf(ciso, 'flag')) pinFlag(ctx, ciso, bx + bw - px(70), by + px(10) + dy, 170, 6, a);
+      else tape(ctx, [bx / u + bw / u * 0.58, by / u - 36, 288, 80], -4, a, dy);
+      ctx0 = ctx;
+      if (!fr) heroBox(c.hero, a, dy + (1 - easeOut(lt / 0.8)) * px(30), 0);
+      else if (E.MARK && E.MARK !== 'dot') heroBox(portrait ? [720, (fr.bottom / u) - 300, 280, 380] : [(fcx + fw * 0.3) / u, (fr.bottom / u) - 300, 240, 320], a, dy + (1 - easeOut(lt / 0.8)) * px(30), 4);   // знак героя — наклейкой на углу коллажа
     }
 
     /* ---------- рельеф: настоящие высоты, 3D-вид с маршрутом поверх (Terrain), запасной вариант — эскиз ---------- */
@@ -323,22 +366,46 @@
       const c = L.arrival, [tx, ty, tw, th] = box(c.title), pad = px(32);
       const label = E.arrivalLabel(s, p), country = E.countryOf(s, p), sk = placeSticker(label, country);
       const [sx, sy, sw, sh] = box(c.sticker); const pb = [sx - px(24), sy - px(24), sw + px(48), sh + px(48)];
-      drawCard(ctx, card(pb[2], pb[3], { seed: 8, fill: '#f6e3b4', edge: 5 }), pb[0], pb[1], pb[2], pb[3], a, 1.5, dy);
-      const wash = art('wash.webp'); if (wash) fitImg(ctx, wash, [c.sticker[0] - 40, c.sticker[1] + 80, c.sticker[2] + 80, c.sticker[3] - 160], a * 0.4, 0, dy, false);
       const SIGNS = ['09', '10', '11', '12'], sg = sk === 'stamp-compass' ? pk('sign', SIGNS[[...String(label)].reduce((h, ch) => h + ch.charCodeAt(0), 0) % SIGNS.length]) : null;   // нет символа страны — указатель вместо пустого компаса (декор, ничего не утверждает)
-      fitImg(ctx, sg || stickerImg(sk), c.sticker, a * easeOut(lt / 0.7), sg ? 0 : -2, dy + (1 - easeOut(lt / 0.8)) * px(30));
+      const pic = sg || stickerImg(sk), pop = (1 - easeOut(lt / 0.8)) * px(30);
+      const fr = framed(ctx, 'compass-map', portrait ? W / 2 : px(1480), portrait ? sy + sh / 2 + dy : px(560) + dy, portrait ? W * 1.1 : px(900), portrait ? 1.2 : -1.5, a, (g, x, y, w, h) => {
+        const wash = art('wash.webp'); if (wash) { g.save(); g.globalAlpha *= 0.45; g.drawImage(wash, x - w * 0.1, y + h * 0.2, w * 1.2, h * 0.6); g.restore(); }
+        if (pic) { const sc = Math.min((w * 0.78) / pic.width, (h * 0.8) / pic.height), dw = pic.width * sc, dh = pic.height * sc; g.save(); g.globalAlpha *= easeOut(lt / 0.7); g.shadowColor = 'rgba(30,20,8,.3)'; g.shadowBlur = 18 * u; g.shadowOffsetY = 10 * u; g.drawImage(pic, x + (w - dw) / 2, y + (h - dh) / 2 + pop, dw, dh); g.restore(); }
+      });
+      if (!fr) {
+        drawCard(ctx, card(pb[2], pb[3], { seed: 8, fill: '#f6e3b4', edge: 5 }), pb[0], pb[1], pb[2], pb[3], a, 1.5, dy);
+        fitImg(ctx, pic, c.sticker, a * easeOut(lt / 0.7), sg ? 0 : -2, dy + pop);
+      }
       const cw = tw + 2 * pad, ch = th + 2 * pad; drawCard(ctx, card(cw, ch, { seed: 4 }), tx - pad, ty - pad, cw, ch, a, 0, dy);
       text(ctx, label, tx, ty + th * 0.72, { size: 136, fam: HEAD, weight: S.headW, color: C.green, max: c.title[2], ls: -0.02, a });
-      tape(ctx, c.tape, -4, a, dy);
+      const iso = countryIso(country);
+      if (iso) {
+        const fa = a * easeOut((lt - 0.3) / 0.6);
+        pinFlag(ctx, iso, tx + tw + pad - px(portrait ? 40 : 30), ty - pad + px(portrait ? 30 : 20) + dy, portrait ? 210 : 180, 7, fa);
+        if (fr) stampEmblem(ctx, iso, portrait ? W - px(210) : px(1480) + px(330), fr.bottom - px(portrait ? 170 : 130) + dy, portrait ? 230 : 190, fa);
+      } else tape(ctx, c.tape, -4, a, dy);
       const date = [country && sk !== 'stamp-compass' ? country : '', E.dateLine(s, p)].filter(Boolean).join(' · ');
-      const dcard = card(box(c.date)[2] + pad, px(56) + pad, { seed: 6 }); drawCard(ctx, dcard, box(c.date)[0] - pad / 2, box(c.date)[1] - pad / 2, box(c.date)[2] + pad, px(56) + pad, a, 0, dy);
-      text(ctx, E.kindWord(s, p) + (date ? ' · ' + date : ''), box(c.date)[0], box(c.date)[1] + px(40), { size: 44, weight: 400, color: C.secondary, max: c.date[2], a });
+      const dY = portrait && fr ? Math.max(box(c.date)[1], fr.bottom + px(24)) : box(c.date)[1];
+      const dcard = card(box(c.date)[2] + pad, px(56) + pad, { seed: 6 }); drawCard(ctx, dcard, box(c.date)[0] - pad / 2, dY - pad / 2, box(c.date)[2] + pad, px(56) + pad, a, 0, dy);
+      text(ctx, E.kindWord(s, p) + (date ? ' · ' + date : ''), box(c.date)[0], dY + px(40), { size: 44, weight: 400, color: C.secondary, max: c.date[2], a });
     }
     function photoScene(ctx, s, p, t, lt, dur) {
       const c = L.photo, ids = (p.mediaIds || []).filter((id) => E.mediaById[id]), n = ids.length; if (!n) return;
       const slot = dur / n; const k = Math.min(n - 1, Math.floor(lt / slot)), l2 = lt - k * slot, m = E.mediaById[ids[k]];
       const aIn = easeOut(l2 / 0.6), aOut = 1 - smooth((l2 - (slot - 0.5)) / 0.5), a = aIn * aOut;   // каждое фото плавно уходит, смена без резкого скачка
       const dy = (1 - easeOut(l2 / 0.7)) * px(48), rot = (k % 2 ? 1 : -1) * 2;
+      const fid = k % 2 ? 'photo-frame' : 'polaroid', fimg = pk('frame', fid);
+      if (fimg) {
+        const fw = portrait ? W * 1.12 : px(1240), fcy = portrait ? H * 0.42 : H * 0.44, e = E.img(m.url), zoom = 1.02 + 0.05 * clamp(l2 / slot, 0, 1);
+        const fr = framed(ctx, fid, W / 2 + (portrait ? 0 : -px(40)), fcy + dy, fw, rot * 0.6, a, (g, x, y, w, h) => {
+          if (e.ok) { const im = e.img, sc = Math.max(w / im.width, h / im.height) * zoom; g.drawImage(im, x + (w - im.width * sc) / 2, y + (h - im.height * sc) / 2, im.width * sc, im.height * sc); }
+          if (m.credit) { g.save(); g.font = `500 ${px(22)}px ${BODY}`; g.fillStyle = 'rgba(255,255,255,.92)'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 6 * u; g.fillText(m.credit, x + px(14), y + h - px(14), w - px(28)); g.restore(); }
+        });
+        const capY = fr.bottom + px(portrait ? 90 : 40);
+        text(ctx, m.caption || E.toLabel || '', W / 2, capY + dy, { size: portrait ? 84 : 64, fam: HAND, weight: 400, color: C.ink, max: portrait ? 900 : 1200, align: 'center', a });
+        text(ctx, E.photoDate(m, s), W / 2, capY + px(portrait ? 70 : 54) + dy, { size: portrait ? 42 : 34, weight: 500, color: C.secondary, max: 900, align: 'center', a });
+        return;
+      }
       const [cx, cy, cw, chh] = box(c.card); drawCard(ctx, card(cw, chh, { seed: 20 + k, fill: '#fffaf0', edge: 1.5 }), cx, cy, cw, chh, a, rot, dy);
       ctx.save(); ctx.translate(cx + cw / 2, cy + chh / 2 + dy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-cw / 2, -chh / 2);
       const wx = box(c.win)[0] - cx, wy = box(c.win)[1] - cy, ww = box(c.win)[2], wh = box(c.win)[3];
@@ -427,7 +494,7 @@
         default: roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt });
       }
     }
-    const packNeeded = () => ['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12'].concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
+    const packNeeded = () => ['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here'].concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
     return { draw, ready: Promise.all([READY(packNeeded()), ...relLoads]), isDark: (s) => FAM[s.recipe] === 'fin' };
   }
 

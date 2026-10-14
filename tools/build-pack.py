@@ -15,7 +15,7 @@ for d, c in cat.items():
         name = wx.get(base) if d == 'Погода' else fr.get(base) if d == 'Рамки' else (n.group(1) if n else '01')
         if d == 'Баннеры' and not n: name = 'x' + str(len(idx.get(c, [])) + 1).zfill(2)
         name = name or base
-        mx = 640 if d in ('Рамки', 'Пейзажи', 'Туман', 'Карта', 'HUD') else 420
+        mx = 1400 if d == 'Рамки' else 640 if d in ('Пейзажи', 'Туман', 'Карта', 'HUD') else 420   # рамки — во весь кадр, нужны крупными
         im = Image.open(f'{V}/{d}/{f}').convert('RGBA'); im.thumbnail((mx * 2 if d in ('Пейзажи', 'Туман') else mx, mx), Image.LANCZOS)
         im.save(f'{O}/{c}/{name}.webp', 'WEBP', quality=82, method=6)
         idx.setdefault(c, []).append({'id': name, 'w': im.width, 'h': im.height})

@@ -18,7 +18,7 @@ ok(['wind', 'rain'].every((k) => info.files[info.events[k]]), 'стикеры с
 ok(!!info.files['uz-chilpyk'] && !!info.files['stamp-compass'], 'Шылпык (подтверждённое событие) и компас на месте');
 const aliasDup = Object.values(info.countryAliases).flat().map((x) => x.toLowerCase()); ok(new Set(aliasDup).size === aliasDup.length, 'названия стран не повторяются между странами');
 // вес: всё, кроме source/ и pack/ (набор «приключение», подгружается по надобности), ≤ 600 КБ
-const walk = (d) => readdirSync(new URL(d, A), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'source' || e.name === 'pack' ? [] : walk(d + e.name + '/')) : [d + e.name]));
+const walk = (d) => readdirSync(new URL(d, A), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'source' || e.name === 'pack' || e.name === 'flags' ? [] : walk(d + e.name + '/')) : [d + e.name]));
 const total = walk('').reduce((s, f) => s + size(f), 0);
 ok(total <= 600 * 1024, `вес art/ без source: ${(total / 1024).toFixed(0)} КБ (бюджет 600)`);
 ok(size('barbos.webp') <= 150 * 1024 && size('paper.jpg') <= 400 * 1024 && size('wash.webp') <= 150 * 1024, 'каждый файл в своём бюджете');
@@ -26,11 +26,19 @@ ok(size('barbos.webp') <= 150 * 1024 && size('paper.jpg') <= 400 * 1024 && size(
 // набор art/pack: всё, что использует код, на месте; каждый файл ≤ 200 КБ, весь набор ≤ 6 МБ
 {
   const idx = JSON.parse(readFileSync(new URL('pack/pack.json', A), 'utf8')); let tot = 0, big = 0, miss = 0;
-  for (const [c, items] of Object.entries(idx)) for (const it of items) { const f = `pack/${c}/${it.id}.webp`; try { const z = size(f); tot += z; if (z > 200 * 1024) big++; } catch (e) { miss++; } }
+  for (const [c, items] of Object.entries(idx)) for (const it of items) { const f = `pack/${c}/${it.id}.webp`; try { const z = size(f); tot += z; if (z > (c === 'frame' ? 450 : 200) * 1024) big++; } catch (e) { miss++; } }
   ok(miss === 0, 'все файлы из pack.json лежат в art/pack');
-  ok(big === 0, 'каждый файл набора ≤ 200 КБ'); ok(tot <= 6 * 1048576, `набор art/pack: ${(tot / 1048576).toFixed(1)} МБ (бюджет 6)`);
+  ok(big === 0, 'каждый файл набора ≤ 200 КБ (рамки ≤ 450 КБ)'); ok(tot <= 6 * 1048576, `набор art/pack: ${(tot / 1048576).toFixed(1)} МБ (бюджет 6)`);
   const used = ['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'wx/storm', 'wx/snow', 'wx/rain', 'wx/forest-fog', 'wx/wind-leaves', 'wx/sun', 'wx/sun-rays', 'wx/clouds'];
   ok(used.every((u) => { try { size(`pack/${u}.webp`); return true; } catch (e) { return false; } }), 'графика, которую использует «Дневник», на месте');
 }
 
+// флаги и гербы: у каждой страны из реестра есть флаг, файлы на месте, всё ≤ 1 МБ, лицензия указана
+{
+  const fl = JSON.parse(readFileSync(new URL('flags/flags.json', A), 'utf8')); let tot = 0, miss = 0, nolic = 0;
+  for (const [iso, kinds] of Object.entries(fl)) for (const x of Object.values(kinds)) { try { tot += size(x.file); } catch (e) { miss++; } if (!x.license) nolic++; }
+  ok(Object.values(fl).every((k) => k.flag), `у всех ${Object.keys(fl).length} стран есть флаг`);
+  ok(miss === 0 && nolic === 0, 'файлы флагов и гербов на месте, у каждого указана лицензия');
+  ok(tot <= 1048576, `флаги и гербы: ${(tot / 1024).toFixed(0)} КБ (бюджет 1024)`);
+}
 console.log(bad ? `\nПАДЕНИЙ: ${bad}` : '\nВСЕ ПРОВЕРКИ ПРОШЛИ'); process.exit(bad ? 1 : 0);

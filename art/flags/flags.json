@@ -1,0 +1,173 @@
+{
+ "kz": {
+  "flag": {
+   "file": "flags/kz-flag.webp",
+   "w": 480,
+   "h": 240,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Kazakhstan.svg",
+   "author": "Shaken Niyazbekop",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/kz-emblem.webp",
+   "w": 480,
+   "h": 480,
+   "source": "https://commons.wikimedia.org/wiki/File:Emblem_of_Kazakhstan_latin.svg",
+   "author": "Government of Kazakhstan - SVG for the cyrillic version by User:Bingread, based on \"Векторизация эталонного герба РК (СТ РК 989 – 2008) --- С 1 апреля 2008 года утвержден и введен в действие СТ РК 989-2008 «Государственный Герб Республики Казахстан. Форма. Размеры. Технические требования» и утвержден новый образец эталона Государственного Герба Республики Казахстан.\"\n\nModified to incorporate the mondifications made under \"Приказ Председателя Комитета технического регулирования и метрологии Министерства по инвестициям и развитию Республики Казахстан от 20 сентября 2018 года № 272-од (О некоторых вопросах стандартизации)\" by User:Glide08",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "tr": {
+  "flag": {
+   "file": "flags/tr-flag.webp",
+   "w": 480,
+   "h": 320,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Turkey.svg",
+   "author": "David Benbennick (original author)",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "ge": {
+  "flag": {
+   "file": "flags/ge-flag.webp",
+   "w": 480,
+   "h": 320,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Georgia.svg",
+   "author": "Last update by MapGrid\n\nSKopp",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/ge-emblem.webp",
+   "w": 480,
+   "h": 419,
+   "source": "https://commons.wikimedia.org/wiki/File:Greater_coat_of_arms_of_Georgia.svg",
+   "author": "Mamuka Gongadze; SVG creator Vakhtang Jokhadze from F l a n k e r's Image:Coat of arms of Georgia.svg",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "am": {
+  "flag": {
+   "file": "flags/am-flag.webp",
+   "w": 480,
+   "h": 240,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Armenia.svg",
+   "author": "Original: Stepan Malkhasyants Vector:  SKopp",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/am-emblem.webp",
+   "w": 480,
+   "h": 461,
+   "source": "https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Armenia.svg",
+   "author": "",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "ir": {
+  "flag": {
+   "file": "flags/ir-flag.webp",
+   "w": 480,
+   "h": 274,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Iran.svg",
+   "author": "SVG file: SiBr4Designer: Hamid NadimiConstruction: ISIRI",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/ir-emblem.webp",
+   "w": 480,
+   "h": 473,
+   "source": "https://commons.wikimedia.org/wiki/File:Emblem_of_Iran.svg",
+   "author": "Madden",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "uz": {
+  "flag": {
+   "file": "flags/uz-flag.webp",
+   "w": 480,
+   "h": 240,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Uzbekistan.svg",
+   "author": "Farhod Yoʻldoshev",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/uz-emblem.webp",
+   "w": 456,
+   "h": 480,
+   "source": "https://commons.wikimedia.org/wiki/File:Emblem_of_Uzbekistan.svg",
+   "author": "",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "kg": {
+  "flag": {
+   "file": "flags/kg-flag.webp",
+   "w": 480,
+   "h": 288,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Kyrgyzstan.svg",
+   "author": "Shakiev N.T., Primov U.B.",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/kg-emblem.webp",
+   "w": 480,
+   "h": 480,
+   "source": "https://commons.wikimedia.org/wiki/File:Emblem_of_Kyrgyzstan.svg",
+   "author": "А. Абдраев (A. Abdraev), С. Дубанаев (S. Dubanaev) 1994. Standardized version:Nurbek Nasyranbekov Nargiza Kulataeva, Kanat Karapashov, Marcel Sheishenov(2016).",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "cn": {
+  "flag": {
+   "file": "flags/cn-flag.webp",
+   "w": 480,
+   "h": 320,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_the_People%27s_Republic_of_China.svg",
+   "author": "Zeng Liansong",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/cn-emblem.webp",
+   "w": 442,
+   "h": 480,
+   "source": "https://commons.wikimedia.org/wiki/File:National_Emblem_of_the_People%27s_Republic_of_China.svg",
+   "author": "澳门特别行政区立法会 / Assembleia Legislativa da Região Administrativa Especial de Macau / Legislative Assembly of the Macau Special Administrative Region",
+   "license": "Public domain",
+   "note": ""
+  }
+ },
+ "tj": {
+  "flag": {
+   "file": "flags/tj-flag.webp",
+   "w": 480,
+   "h": 240,
+   "source": "https://commons.wikimedia.org/wiki/File:Flag_of_Tajikistan.svg",
+   "author": "Unknown authorUnknown author",
+   "license": "Public domain",
+   "note": ""
+  },
+  "emblem": {
+   "file": "flags/tj-emblem.webp",
+   "w": 480,
+   "h": 475,
+   "source": "https://commons.wikimedia.org/wiki/File:Emblem_of_Tajikistan.svg",
+   "author": "",
+   "license": "Public domain",
+   "note": ""
+  }
+ }
+}
