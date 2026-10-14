@@ -39,9 +39,9 @@
     'day-card': 'cover', 'trip-title': 'cover', 'season-card': 'cover',
     'route-reveal': 'road', 'camera-follow': 'road', 'weather-card': 'road', 'time-on-road': 'road', 'high-point': 'road', 'distance-counter': 'road', 'overview-to-detail': 'road',
     'progress-overview': 'jroad', 'journey-recap': 'jroad', 'day-barcode': 'barcode',
-    'checkpoint-arrival': 'arrival', 'location-card': 'arrival',
+    'checkpoint-arrival': 'photo', 'location-card': 'photo',
     'photo-reveal': 'photo', 'highlights-reel': 'photo',
-    'elevation-profile': 'elev', 'note-card': 'note',
+    'elevation-profile': 'road', 'note-card': 'note',
     'day-summary': 'fin', 'pullback': 'fin', 'progress-poster': 'fin',
   };
 
@@ -380,10 +380,22 @@
       }
       text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(c.names[1]) + px(54), { size: 56, weight: 500, color: C.ink, max: c.names[2], a, fam: BODY });
       tape(ctx, c.tape, 3, a, dy);
-      const spec = E.metric(s, p, t, lt, dur); const ma = E.vis(lt, dur); const sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
-      const mh2 = metricCard(ctx, c.metric, spec, ma * env, (1 - easeOut(lt / 0.6)) * px(24), -1, 11);
-      const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], ma * env, 6, 0);
-      else if (E.MARK === 'unicycle' && E.uni() && mh2) fitImg(ctx, E.uni(), [c.metric[0] + c.metric[2] - 250, c.metric[1] + mh2 / u + 14, 240, 300], ma * env, 5, (1 - easeOut(lt / 0.8)) * px(30));   // уницикл под карточкой километров, справа — не на тексте
+      // Карта не меняется вместе с показателями: на той же странице плавно сменяется только карточка.
+      const prev = s.t0 > E.run(s).t0 ? E.at(s.t0 - 0.0001) : null, ma = prev ? smooth(lt / 0.6) : 1;
+      if (prev && ma < 1) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * (1 - ma));
+      roadFact(ctx, s, p, t, lt, dur, ma * env);
+    }
+    function roadFact(ctx, s, p, t, lt, dur, a) {
+      const c = L.road;
+      if (s.recipe === 'elevation-profile') {
+        const [x, y, w] = c.metric;
+        elevation(ctx, s, p, t, lt, dur, a, 0, { small: true, metric: c.metric, prof: [x, y + 230, w, 220], core: [x + 40, y + 254, w - 80, 164], cap: [x + 32, y + 458, w - 64, 48], tape: [x + w - 240, y + 210, 180, 50] });
+        return;
+      }
+      const spec = E.metric(s, p, t, lt, dur), sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
+      const mh2 = metricCard(ctx, c.metric, spec, a, 0, -1, 11);
+      const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], a, 6, 0);
+      else if (E.MARK === 'unicycle' && E.uni() && mh2) fitImg(ctx, E.uni(), [c.metric[0] + c.metric[2] - 250, c.metric[1] + mh2 / u + 14, 240, 300], a, 5, 0);   // уницикл под карточкой километров, справа — не на тексте
     }
     function arrival(ctx, s, p, a, dy, lt) {
       const c = L.arrival, [tx, ty, tw, th] = box(c.title), pad = px(32);
@@ -412,15 +424,18 @@
       const dcard = card(box(c.date)[2] + pad, px(56) + pad, { seed: 6 }); drawCard(ctx, dcard, box(c.date)[0] - pad / 2, dY - pad / 2, box(c.date)[2] + pad, px(56) + pad, a, 0, dy);
       text(ctx, E.kindWord(s, p) + (date ? ' · ' + date : ''), box(c.date)[0], dY + px(40), { size: 44, weight: 400, color: C.secondary, max: c.date[2], a });
     }
-    function photoScene(ctx, s, p, t, lt, dur) {
+    function photoScene(ctx, s, p, t, lt, dur, withPlace = false) {
       const c = L.photo, ids = (p.mediaIds || []).filter((id) => E.mediaById[id]), n = ids.length; if (!n) return;
-      const slot = dur / n; const k = Math.min(n - 1, Math.floor(lt / slot)), l2 = lt - k * slot, m = E.mediaById[ids[k]];
-      const a = 1;   // фото остаётся на странице до перелистывания
-      const dy = (1 - easeOut(l2 / 0.7)) * px(48), rot = (k % 2 ? 1 : -1) * 2;
-      const fid = k % 2 ? 'photo-frame' : 'polaroid', fimg = pk('frame', fid);
+      const slot = dur / n, k = Math.min(n - 1, Math.floor(lt / slot)), l2 = lt - k * slot, a = k > 0 ? smooth(l2 / Math.min(0.6, slot * 0.4)) : 1;
+      if (k > 0 && a < 1) photoCard(ctx, s, E.mediaById[ids[k - 1]], slot, slot, 1 - a, withPlace);
+      photoCard(ctx, s, E.mediaById[ids[k]], l2, slot, a, withPlace);
+    }
+    function photoCard(ctx, s, m, l2, slot, a, withPlace) {
+      const c = L.photo, k = 0, dy = 0, rot = -2;   // рамка лежит на месте, меняются фотография и подпись
+      const fid = 'polaroid', fimg = pk('frame', fid);
       if (fimg) {
-        const fw = portrait ? W * 1.12 : px(1240), fcy = portrait ? H * 0.47 : H * 0.46, e = E.img(m.url), zoom = 1.02 + 0.05 * clamp(l2 / slot, 0, 1);
-        const fr = framed(ctx, fid, W / 2 + (portrait ? 0 : -px(40)), fcy + dy, fw, rot * 0.6, a, (g, x, y, w, h) => {
+        const side = withPlace && !portrait, fw = portrait ? W * 1.12 : px(side ? 1000 : 1240), fcy = portrait ? H * 0.47 : side ? px(520) : H * 0.46, fcx = side ? px(1340) : W / 2 + (portrait ? 0 : -px(40)), e = E.img(m.url), zoom = 1.02 + 0.05 * clamp(l2 / slot, 0, 1);
+        const fr = framed(ctx, fid, fcx, fcy + dy, fw, rot * 0.6, a, (g, x, y, w, h) => {
           if (e.ok) { const im = e.img, sc = Math.max(w / im.width, h / im.height) * zoom; g.drawImage(im, x + (w - im.width * sc) / 2, y + (h - im.height * sc) / 2, im.width * sc, im.height * sc); }
           if (m.credit) { g.save(); g.font = `500 ${px(22)}px ${BODY}`; g.fillStyle = 'rgba(255,255,255,.92)'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 6 * u; g.fillText(m.credit, x + px(14), y + h - px(14), w - px(28)); g.restore(); }
         }, (g, w, h) => {
@@ -431,7 +446,7 @@
           (lines || [cap]).forEach((ln, i, arr) => text(g, ln, 0, (i - (arr.length - 1) / 2) * size * 1.05, { size: size / u, fam: HAND, color: C.ink, max: max / u, align: 'center' }));
           g.restore();
         });
-        text(ctx, E.photoDate(m, s), W / 2, fr.bottom + px(portrait ? 62 : 38), { size: portrait ? 42 : 34, weight: 500, color: C.secondary, max: 900, align: 'center', a });
+        text(ctx, E.photoDate(m, s), fcx, fr.bottom + px(portrait ? 62 : 38), { size: portrait ? 42 : 34, weight: 500, color: C.secondary, max: 900, align: 'center', a });
         return;
       }
       const [cx, cy, cw, chh] = box(c.card); drawCard(ctx, card(cw, chh, { seed: 20 + k, fill: '#fffaf0', edge: 1.5 }), cx, cy, cw, chh, a, rot, dy);
@@ -448,8 +463,8 @@
       ctx.restore();
       tape(ctx, c.tape, -3, a, dy);
     }
-    function elevation(ctx, s, p, t, lt, dur, a, dy) {
-      const c = L.elev, pr = p.profile; const [px0, py0, pw, ph] = box(c.prof);
+    function elevation(ctx, s, p, t, lt, dur, a, dy, layout = L.elev) {
+      const c = layout, pr = p.profile; const [px0, py0, pw, ph] = box(c.prof);
       if (pr && pr.length >= 8) {
         drawCard(ctx, card(pw, ph, { seed: 12, grid: true }), px0, py0, pw, ph, a, 0, dy);
         const [cx, cy, cw, chh] = box(c.core), lo = Math.min(...pr), hi = Math.max(...pr), sp = Math.max(1, hi - lo);
@@ -459,14 +474,14 @@
         ctx.save(); ctx.globalAlpha *= a; ctx.translate(0, dy);
         ctx.beginPath(); ctx.moveTo(cx, cy + chh); ctx.lineTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineTo(ex, cy + chh); ctx.closePath();
         ctx.fillStyle = 'rgba(82,126,133,.30)'; ctx.fill();
-        ctx.beginPath(); ctx.moveTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 12 * u; ctx.strokeStyle = C.accent; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = (c.small ? 6 : 12) * u; ctx.strokeStyle = C.accent; ctx.stroke();
         const mi = pr.indexOf(hi);
         if (p.maxEle != null && g >= mi) { const ma = smooth((g - mi) / 3); ctx.globalAlpha *= ma; ctx.beginPath(); ctx.arc(X(mi), Y(hi), 14 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
         ctx.restore();
         tape(ctx, c.tape, -4, a, dy);
-        text(ctx, `${E.fmtN(Math.round(lo))} → ${E.fmtN(Math.round(hi))} м над уровнем моря`, box(c.cap)[0], box(c.cap)[1] + px(48), { size: 44, weight: 500, color: C.secondary, max: c.cap[2], a });
+        text(ctx, `${E.fmtN(Math.round(lo))} → ${E.fmtN(Math.round(hi))} м над уровнем моря`, box(c.cap)[0], box(c.cap)[1] + px(c.small ? 32 : 48), { size: c.small ? 32 : 44, weight: 500, color: C.secondary, max: c.cap[2], a });
       }
-      metricCard(ctx, c.metric, { kicker: 'набор высоты', big: '+' + E.fmtN(p.gain) + ' м', sub: pr ? 'рельеф дня' : 'за день ' + E.today.day }, a, (1 - easeOut(lt / 0.6)) * px(24), -1, 13);
+      metricCard(ctx, c.metric, { kicker: 'набор высоты', big: '+' + E.fmtN(p.gain) + ' м', sub: pr ? c.small ? '' : 'рельеф дня' : 'за день ' + E.today.day, size: c.small ? 110 : L.counter }, a, c.small ? 0 : (1 - easeOut(lt / 0.6)) * px(24), -1, 13);
     }
     function barcode(ctx, s, p, t, lt, dur, a, dy) {
       const c = L.road, [mx, my, mw, mh] = box(c.map); drawCard(ctx, card(mw, mh, { seed: 15, grid: true }), mx, my, mw, mh, a, 0, dy);
@@ -511,6 +526,20 @@
       ctx.save(); ctx.globalAlpha = a * 0.5; ctx.strokeStyle = dark ? 'rgba(241,230,207,.5)' : 'rgba(31,78,90,.35)'; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(x0, y + px(22)); ctx.lineTo(x1, y + px(22)); ctx.stroke(); ctx.restore();
     }
     /* ---------- кадр ---------- */
+    function memories(ctx, s, p, t, lt, dur, a, dy, run) {
+      const ph = run.shots.find((q) => q.recipe === 'photo-reveal' || q.recipe === 'highlights-reel');
+      if (!ph || !(ph.params.mediaIds || []).some((id) => E.mediaById[id])) { if (s.recipe === 'checkpoint-arrival' || s.recipe === 'location-card') arrival(ctx, s, p, a, dy, t - run.t0); return; }
+      // Прибытие и фото — один разворот: место остаётся над фотографиями до самого итога.
+      const ar = run.shots.find((q) => q.recipe === 'checkpoint-arrival' || q.recipe === 'location-card');
+      photoScene(ctx, ph, ph.params, t, t - run.t0, run.t1 - run.t0, !!ar);
+      if (!ar) return;
+      const label = E.arrivalLabel(ar, ar.params), country = E.countryOf(ar, ar.params), iso = countryIso(country);
+      const x = px(164), y = portrait ? px(244) : px(390), w = portrait ? px(752) : px(560), h = px(portrait ? 140 : 150);
+      drawCard(ctx, card(w, h, { seed: 4 }), x, y, w, h, a, 0, dy);
+      text(ctx, label, x + px(32), y + h * 0.72 + dy, { size: portrait ? 100 : 76, fam: HEAD, weight: S.headW, color: C.green, max: (w - px(iso && E.showFlags ? 140 : 64)) / u, a });
+      if (iso) pinFlag(ctx, iso, x + w - px(10), y + px(10) + dy, portrait ? 150 : 120, 7, a);
+      if (E.stk(1)) fitImg(ctx, E.stk(1), portrait ? [730, 1180, 180, 180] : [1380, 700, 180, 180], a, 5);
+    }
     function drawPage(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, fam = FAM[s.recipe] || 'road', p = s.params || {};
       const dark = fam === 'fin';
@@ -525,7 +554,7 @@
         case 'road': roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt }); break;
         case 'jroad': roadScene(ctx, s, p, t, lt, dur, true, { env, lt: rlt }); break;
         case 'arrival': arrival(ctx, s, p, a, dy, rlt); break;
-        case 'photo': photoScene(ctx, s, p, t, lt, dur); break;
+        case 'photo': memories(ctx, s, p, t, lt, dur, a, dy, run); break;
         case 'elev': elevation(ctx, s, p, t, rlt, rdur, a, dy); break;
         case 'barcode': barcode(ctx, s, p, t, rlt, rdur, a, dy); break;
         case 'note': noteScene(ctx, s, p, a, dy, rlt); break;
@@ -537,10 +566,6 @@
     function draw(ctx, t, s, su, lt, TR) {
       drawPage(ctx, t, s, su, lt, TR);
       const run = E.run(s); let at = run.t0;
-      if (FAM[s.recipe] === 'photo') {
-        const ids = ((s.params || {}).mediaIds || []).filter((id) => E.mediaById[id]), slot = s.durationSec / ids.length;
-        const k = Math.min(ids.length - 1, Math.floor(lt / slot)); if (k > 0) at = s.t0 + k * slot;
-      }
       const dt = t - at; if (at <= 0 || dt < 0 || dt >= TURN) return;
       // Предыдущая страница заморожена у границы: результат одинаков при проигрывании и перемотке.
       if (!turnCanvas) { turnCanvas = document.createElement('canvas'); turnCanvas.width = W; turnCanvas.height = H; }
