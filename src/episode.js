@@ -741,6 +741,7 @@
         dateLine: (s, p) => (journey.schematic ? (journey.dayLabels && journey.dayLabels[p && p.day != null ? p.day : today.day]) || '' : dateRu(today.date)),
         kindWord: (s, p) => (s.recipe === 'location-card' ? 'здесь' : p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие'),
         arrivalLabel: (s, p) => (s.recipe === 'location-card' ? p.label || 'здесь' : p.label),
+        countriesInPlan: () => [...new Set(shots.map((sh) => ((journey.dayNotes && journey.dayNotes[sh.params && sh.params.day != null ? sh.params.day : today.day]) || today.country || null)).filter(Boolean))],
         countryOf: (s, p) => (journey.dayNotes && journey.dayNotes[p && p.day != null ? p.day : today.day]) || today.country || null,
         coverTexts: (s, p) => {
           const route2 = route2T();

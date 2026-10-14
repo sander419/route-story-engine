@@ -37,8 +37,9 @@ ok(size('barbos.webp') <= 150 * 1024 && size('paper.jpg') <= 400 * 1024 && size(
 {
   const fl = JSON.parse(readFileSync(new URL('flags/flags.json', A), 'utf8')); let tot = 0, miss = 0, nolic = 0;
   for (const [iso, kinds] of Object.entries(fl)) for (const x of Object.values(kinds)) { try { tot += size(x.file); } catch (e) { miss++; } if (!x.license) nolic++; }
-  ok(Object.values(fl).every((k) => k.flag), `у всех ${Object.keys(fl).length} стран есть флаг`);
+  ok(Object.keys(fl).length >= 200 && ['ru', 'pt', 'jp', 'us', 'fr', 'kz'].every((c) => fl[c] && fl[c].flag), 'флаги есть у ≥200 стран, включая Россию');
+  ok(Object.values(fl).every((k) => k.flag), `у всех ${Object.keys(fl).length} стран есть флаг (>= 200 стран)`);
   ok(miss === 0 && nolic === 0, 'файлы флагов и гербов на месте, у каждого указана лицензия');
-  ok(tot <= 1048576, `флаги и гербы: ${(tot / 1024).toFixed(0)} КБ (бюджет 1024)`);
+  ok(tot <= 3 * 1048576, `флаги и гербы: ${(tot / 1024).toFixed(0)} КБ (бюджет 3072; грузятся только для стран маршрута)`);
 }
 console.log(bad ? `\nПАДЕНИЙ: ${bad}` : '\nВСЕ ПРОВЕРКИ ПРОШЛИ'); process.exit(bad ? 1 : 0);

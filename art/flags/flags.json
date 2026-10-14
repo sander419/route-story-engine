@@ -169,5 +169,2645 @@
    "license": "Public domain",
    "note": ""
   }
+ },
+ "ad": {
+  "flag": {
+   "file": "flags/ad-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Andorra"
+  }
+ },
+ "ae": {
+  "flag": {
+   "file": "flags/ae-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "United Arab Emirates"
+  }
+ },
+ "af": {
+  "flag": {
+   "file": "flags/af-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Afghanistan"
+  }
+ },
+ "ag": {
+  "flag": {
+   "file": "flags/ag-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Antigua and Barbuda"
+  }
+ },
+ "ai": {
+  "flag": {
+   "file": "flags/ai-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Anguilla"
+  }
+ },
+ "al": {
+  "flag": {
+   "file": "flags/al-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Albania"
+  }
+ },
+ "ao": {
+  "flag": {
+   "file": "flags/ao-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Angola"
+  }
+ },
+ "aq": {
+  "flag": {
+   "file": "flags/aq-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Antarctica"
+  }
+ },
+ "ar": {
+  "flag": {
+   "file": "flags/ar-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Argentina"
+  }
+ },
+ "as": {
+  "flag": {
+   "file": "flags/as-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "American Samoa"
+  }
+ },
+ "at": {
+  "flag": {
+   "file": "flags/at-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Austria"
+  }
+ },
+ "au": {
+  "flag": {
+   "file": "flags/au-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Australia"
+  }
+ },
+ "aw": {
+  "flag": {
+   "file": "flags/aw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Aruba"
+  }
+ },
+ "ax": {
+  "flag": {
+   "file": "flags/ax-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Aland Islands"
+  }
+ },
+ "az": {
+  "flag": {
+   "file": "flags/az-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Azerbaijan"
+  }
+ },
+ "ba": {
+  "flag": {
+   "file": "flags/ba-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bosnia and Herzegovina"
+  }
+ },
+ "bb": {
+  "flag": {
+   "file": "flags/bb-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Barbados"
+  }
+ },
+ "bd": {
+  "flag": {
+   "file": "flags/bd-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bangladesh"
+  }
+ },
+ "be": {
+  "flag": {
+   "file": "flags/be-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Belgium"
+  }
+ },
+ "bf": {
+  "flag": {
+   "file": "flags/bf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Burkina Faso"
+  }
+ },
+ "bg": {
+  "flag": {
+   "file": "flags/bg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bulgaria"
+  }
+ },
+ "bh": {
+  "flag": {
+   "file": "flags/bh-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bahrain"
+  }
+ },
+ "bi": {
+  "flag": {
+   "file": "flags/bi-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Burundi"
+  }
+ },
+ "bj": {
+  "flag": {
+   "file": "flags/bj-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Benin"
+  }
+ },
+ "bl": {
+  "flag": {
+   "file": "flags/bl-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saint Barthélemy"
+  }
+ },
+ "bm": {
+  "flag": {
+   "file": "flags/bm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bermuda"
+  }
+ },
+ "bn": {
+  "flag": {
+   "file": "flags/bn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Brunei Darussalam"
+  }
+ },
+ "bo": {
+  "flag": {
+   "file": "flags/bo-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bolivia"
+  }
+ },
+ "bq": {
+  "flag": {
+   "file": "flags/bq-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bonaire, Sint Eustatius and Saba"
+  }
+ },
+ "br": {
+  "flag": {
+   "file": "flags/br-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Brazil"
+  }
+ },
+ "bs": {
+  "flag": {
+   "file": "flags/bs-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bahamas"
+  }
+ },
+ "bt": {
+  "flag": {
+   "file": "flags/bt-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bhutan"
+  }
+ },
+ "bv": {
+  "flag": {
+   "file": "flags/bv-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Bouvet Island"
+  }
+ },
+ "bw": {
+  "flag": {
+   "file": "flags/bw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Botswana"
+  }
+ },
+ "by": {
+  "flag": {
+   "file": "flags/by-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Belarus"
+  }
+ },
+ "bz": {
+  "flag": {
+   "file": "flags/bz-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Belize"
+  }
+ },
+ "ca": {
+  "flag": {
+   "file": "flags/ca-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Canada"
+  }
+ },
+ "cc": {
+  "flag": {
+   "file": "flags/cc-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cocos (Keeling) Islands"
+  }
+ },
+ "cd": {
+  "flag": {
+   "file": "flags/cd-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Democratic Republic of the Congo"
+  }
+ },
+ "cf": {
+  "flag": {
+   "file": "flags/cf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Central African Republic"
+  }
+ },
+ "cg": {
+  "flag": {
+   "file": "flags/cg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Republic of the Congo"
+  }
+ },
+ "ch": {
+  "flag": {
+   "file": "flags/ch-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Switzerland"
+  }
+ },
+ "ci": {
+  "flag": {
+   "file": "flags/ci-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Côte d'Ivoire"
+  }
+ },
+ "ck": {
+  "flag": {
+   "file": "flags/ck-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cook Islands"
+  }
+ },
+ "cl": {
+  "flag": {
+   "file": "flags/cl-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Chile"
+  }
+ },
+ "cm": {
+  "flag": {
+   "file": "flags/cm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cameroon"
+  }
+ },
+ "co": {
+  "flag": {
+   "file": "flags/co-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Colombia"
+  }
+ },
+ "cr": {
+  "flag": {
+   "file": "flags/cr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Costa Rica"
+  }
+ },
+ "cu": {
+  "flag": {
+   "file": "flags/cu-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cuba"
+  }
+ },
+ "cv": {
+  "flag": {
+   "file": "flags/cv-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cabo Verde"
+  }
+ },
+ "cw": {
+  "flag": {
+   "file": "flags/cw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Curaçao"
+  }
+ },
+ "cx": {
+  "flag": {
+   "file": "flags/cx-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Christmas Island"
+  }
+ },
+ "cy": {
+  "flag": {
+   "file": "flags/cy-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cyprus"
+  }
+ },
+ "cz": {
+  "flag": {
+   "file": "flags/cz-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Czech Republic"
+  }
+ },
+ "de": {
+  "flag": {
+   "file": "flags/de-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Germany"
+  }
+ },
+ "dj": {
+  "flag": {
+   "file": "flags/dj-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Djibouti"
+  }
+ },
+ "dk": {
+  "flag": {
+   "file": "flags/dk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Denmark"
+  }
+ },
+ "dm": {
+  "flag": {
+   "file": "flags/dm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Dominica"
+  }
+ },
+ "do": {
+  "flag": {
+   "file": "flags/do-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Dominican Republic"
+  }
+ },
+ "dz": {
+  "flag": {
+   "file": "flags/dz-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Algeria"
+  }
+ },
+ "ec": {
+  "flag": {
+   "file": "flags/ec-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Ecuador"
+  }
+ },
+ "ee": {
+  "flag": {
+   "file": "flags/ee-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Estonia"
+  }
+ },
+ "eg": {
+  "flag": {
+   "file": "flags/eg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Egypt"
+  }
+ },
+ "eh": {
+  "flag": {
+   "file": "flags/eh-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Western Sahara"
+  }
+ },
+ "er": {
+  "flag": {
+   "file": "flags/er-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Eritrea"
+  }
+ },
+ "es": {
+  "flag": {
+   "file": "flags/es-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Spain"
+  }
+ },
+ "et": {
+  "flag": {
+   "file": "flags/et-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Ethiopia"
+  }
+ },
+ "fi": {
+  "flag": {
+   "file": "flags/fi-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Finland"
+  }
+ },
+ "fj": {
+  "flag": {
+   "file": "flags/fj-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Fiji"
+  }
+ },
+ "fk": {
+  "flag": {
+   "file": "flags/fk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Falkland Islands"
+  }
+ },
+ "fm": {
+  "flag": {
+   "file": "flags/fm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Federated States of Micronesia"
+  }
+ },
+ "fo": {
+  "flag": {
+   "file": "flags/fo-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Faroe Islands"
+  }
+ },
+ "fr": {
+  "flag": {
+   "file": "flags/fr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "France"
+  }
+ },
+ "ga": {
+  "flag": {
+   "file": "flags/ga-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Gabon"
+  }
+ },
+ "gb": {
+  "flag": {
+   "file": "flags/gb-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "United Kingdom"
+  }
+ },
+ "gd": {
+  "flag": {
+   "file": "flags/gd-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Grenada"
+  }
+ },
+ "gf": {
+  "flag": {
+   "file": "flags/gf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "French Guiana"
+  }
+ },
+ "gg": {
+  "flag": {
+   "file": "flags/gg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Guernsey"
+  }
+ },
+ "gh": {
+  "flag": {
+   "file": "flags/gh-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Ghana"
+  }
+ },
+ "gi": {
+  "flag": {
+   "file": "flags/gi-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Gibraltar"
+  }
+ },
+ "gl": {
+  "flag": {
+   "file": "flags/gl-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Greenland"
+  }
+ },
+ "gm": {
+  "flag": {
+   "file": "flags/gm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Gambia"
+  }
+ },
+ "gn": {
+  "flag": {
+   "file": "flags/gn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Guinea"
+  }
+ },
+ "gp": {
+  "flag": {
+   "file": "flags/gp-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Guadeloupe"
+  }
+ },
+ "gq": {
+  "flag": {
+   "file": "flags/gq-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Equatorial Guinea"
+  }
+ },
+ "gr": {
+  "flag": {
+   "file": "flags/gr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Greece"
+  }
+ },
+ "gs": {
+  "flag": {
+   "file": "flags/gs-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "South Georgia and the South Sandwich Islands"
+  }
+ },
+ "gt": {
+  "flag": {
+   "file": "flags/gt-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Guatemala"
+  }
+ },
+ "gu": {
+  "flag": {
+   "file": "flags/gu-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Guam"
+  }
+ },
+ "gw": {
+  "flag": {
+   "file": "flags/gw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Guinea-Bissau"
+  }
+ },
+ "gy": {
+  "flag": {
+   "file": "flags/gy-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Guyana"
+  }
+ },
+ "hk": {
+  "flag": {
+   "file": "flags/hk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Hong Kong"
+  }
+ },
+ "hm": {
+  "flag": {
+   "file": "flags/hm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Heard Island and McDonald Islands"
+  }
+ },
+ "hn": {
+  "flag": {
+   "file": "flags/hn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Honduras"
+  }
+ },
+ "hr": {
+  "flag": {
+   "file": "flags/hr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Croatia"
+  }
+ },
+ "ht": {
+  "flag": {
+   "file": "flags/ht-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Haiti"
+  }
+ },
+ "hu": {
+  "flag": {
+   "file": "flags/hu-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Hungary"
+  }
+ },
+ "id": {
+  "flag": {
+   "file": "flags/id-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Indonesia"
+  }
+ },
+ "ie": {
+  "flag": {
+   "file": "flags/ie-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Ireland"
+  }
+ },
+ "il": {
+  "flag": {
+   "file": "flags/il-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Israel"
+  }
+ },
+ "im": {
+  "flag": {
+   "file": "flags/im-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Isle of Man"
+  }
+ },
+ "in": {
+  "flag": {
+   "file": "flags/in-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "India"
+  }
+ },
+ "io": {
+  "flag": {
+   "file": "flags/io-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "British Indian Ocean Territory"
+  }
+ },
+ "iq": {
+  "flag": {
+   "file": "flags/iq-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Iraq"
+  }
+ },
+ "is": {
+  "flag": {
+   "file": "flags/is-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Iceland"
+  }
+ },
+ "it": {
+  "flag": {
+   "file": "flags/it-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Italy"
+  }
+ },
+ "je": {
+  "flag": {
+   "file": "flags/je-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Jersey"
+  }
+ },
+ "jm": {
+  "flag": {
+   "file": "flags/jm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Jamaica"
+  }
+ },
+ "jo": {
+  "flag": {
+   "file": "flags/jo-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Jordan"
+  }
+ },
+ "jp": {
+  "flag": {
+   "file": "flags/jp-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Japan"
+  }
+ },
+ "ke": {
+  "flag": {
+   "file": "flags/ke-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Kenya"
+  }
+ },
+ "kh": {
+  "flag": {
+   "file": "flags/kh-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cambodia"
+  }
+ },
+ "ki": {
+  "flag": {
+   "file": "flags/ki-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Kiribati"
+  }
+ },
+ "km": {
+  "flag": {
+   "file": "flags/km-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Comoros"
+  }
+ },
+ "kn": {
+  "flag": {
+   "file": "flags/kn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saint Kitts and Nevis"
+  }
+ },
+ "kp": {
+  "flag": {
+   "file": "flags/kp-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "North Korea"
+  }
+ },
+ "kr": {
+  "flag": {
+   "file": "flags/kr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "South Korea"
+  }
+ },
+ "kw": {
+  "flag": {
+   "file": "flags/kw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Kuwait"
+  }
+ },
+ "ky": {
+  "flag": {
+   "file": "flags/ky-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Cayman Islands"
+  }
+ },
+ "la": {
+  "flag": {
+   "file": "flags/la-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Laos"
+  }
+ },
+ "lb": {
+  "flag": {
+   "file": "flags/lb-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Lebanon"
+  }
+ },
+ "lc": {
+  "flag": {
+   "file": "flags/lc-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saint Lucia"
+  }
+ },
+ "li": {
+  "flag": {
+   "file": "flags/li-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Liechtenstein"
+  }
+ },
+ "lk": {
+  "flag": {
+   "file": "flags/lk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Sri Lanka"
+  }
+ },
+ "lr": {
+  "flag": {
+   "file": "flags/lr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Liberia"
+  }
+ },
+ "ls": {
+  "flag": {
+   "file": "flags/ls-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Lesotho"
+  }
+ },
+ "lt": {
+  "flag": {
+   "file": "flags/lt-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Lithuania"
+  }
+ },
+ "lu": {
+  "flag": {
+   "file": "flags/lu-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Luxembourg"
+  }
+ },
+ "lv": {
+  "flag": {
+   "file": "flags/lv-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Latvia"
+  }
+ },
+ "ly": {
+  "flag": {
+   "file": "flags/ly-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Libya"
+  }
+ },
+ "ma": {
+  "flag": {
+   "file": "flags/ma-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Morocco"
+  }
+ },
+ "mc": {
+  "flag": {
+   "file": "flags/mc-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Monaco"
+  }
+ },
+ "md": {
+  "flag": {
+   "file": "flags/md-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Moldova"
+  }
+ },
+ "me": {
+  "flag": {
+   "file": "flags/me-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Montenegro"
+  }
+ },
+ "mf": {
+  "flag": {
+   "file": "flags/mf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saint Martin"
+  }
+ },
+ "mg": {
+  "flag": {
+   "file": "flags/mg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Madagascar"
+  }
+ },
+ "mh": {
+  "flag": {
+   "file": "flags/mh-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Marshall Islands"
+  }
+ },
+ "mk": {
+  "flag": {
+   "file": "flags/mk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "North Macedonia"
+  }
+ },
+ "ml": {
+  "flag": {
+   "file": "flags/ml-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Mali"
+  }
+ },
+ "mm": {
+  "flag": {
+   "file": "flags/mm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Myanmar"
+  }
+ },
+ "mn": {
+  "flag": {
+   "file": "flags/mn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Mongolia"
+  }
+ },
+ "mo": {
+  "flag": {
+   "file": "flags/mo-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Macau"
+  }
+ },
+ "mp": {
+  "flag": {
+   "file": "flags/mp-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Northern Mariana Islands"
+  }
+ },
+ "mq": {
+  "flag": {
+   "file": "flags/mq-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Martinique"
+  }
+ },
+ "mr": {
+  "flag": {
+   "file": "flags/mr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Mauritania"
+  }
+ },
+ "ms": {
+  "flag": {
+   "file": "flags/ms-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Montserrat"
+  }
+ },
+ "mt": {
+  "flag": {
+   "file": "flags/mt-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Malta"
+  }
+ },
+ "mu": {
+  "flag": {
+   "file": "flags/mu-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Mauritius"
+  }
+ },
+ "mv": {
+  "flag": {
+   "file": "flags/mv-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Maldives"
+  }
+ },
+ "mw": {
+  "flag": {
+   "file": "flags/mw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Malawi"
+  }
+ },
+ "mx": {
+  "flag": {
+   "file": "flags/mx-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Mexico"
+  }
+ },
+ "my": {
+  "flag": {
+   "file": "flags/my-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Malaysia"
+  }
+ },
+ "mz": {
+  "flag": {
+   "file": "flags/mz-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Mozambique"
+  }
+ },
+ "na": {
+  "flag": {
+   "file": "flags/na-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Namibia"
+  }
+ },
+ "nc": {
+  "flag": {
+   "file": "flags/nc-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "New Caledonia"
+  }
+ },
+ "ne": {
+  "flag": {
+   "file": "flags/ne-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Niger"
+  }
+ },
+ "nf": {
+  "flag": {
+   "file": "flags/nf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Norfolk Island"
+  }
+ },
+ "ng": {
+  "flag": {
+   "file": "flags/ng-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Nigeria"
+  }
+ },
+ "ni": {
+  "flag": {
+   "file": "flags/ni-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Nicaragua"
+  }
+ },
+ "nl": {
+  "flag": {
+   "file": "flags/nl-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Netherlands"
+  }
+ },
+ "no": {
+  "flag": {
+   "file": "flags/no-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Norway"
+  }
+ },
+ "np": {
+  "flag": {
+   "file": "flags/np-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Nepal"
+  }
+ },
+ "nr": {
+  "flag": {
+   "file": "flags/nr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Nauru"
+  }
+ },
+ "nu": {
+  "flag": {
+   "file": "flags/nu-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Niue"
+  }
+ },
+ "nz": {
+  "flag": {
+   "file": "flags/nz-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "New Zealand"
+  }
+ },
+ "om": {
+  "flag": {
+   "file": "flags/om-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Oman"
+  }
+ },
+ "pa": {
+  "flag": {
+   "file": "flags/pa-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Panama"
+  }
+ },
+ "pe": {
+  "flag": {
+   "file": "flags/pe-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Peru"
+  }
+ },
+ "pf": {
+  "flag": {
+   "file": "flags/pf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "French Polynesia"
+  }
+ },
+ "pg": {
+  "flag": {
+   "file": "flags/pg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Papua New Guinea"
+  }
+ },
+ "ph": {
+  "flag": {
+   "file": "flags/ph-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Philippines"
+  }
+ },
+ "pk": {
+  "flag": {
+   "file": "flags/pk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Pakistan"
+  }
+ },
+ "pl": {
+  "flag": {
+   "file": "flags/pl-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Poland"
+  }
+ },
+ "pm": {
+  "flag": {
+   "file": "flags/pm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saint Pierre and Miquelon"
+  }
+ },
+ "pn": {
+  "flag": {
+   "file": "flags/pn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Pitcairn"
+  }
+ },
+ "pr": {
+  "flag": {
+   "file": "flags/pr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Puerto Rico"
+  }
+ },
+ "ps": {
+  "flag": {
+   "file": "flags/ps-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "State of Palestine"
+  }
+ },
+ "pt": {
+  "flag": {
+   "file": "flags/pt-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Portugal"
+  }
+ },
+ "pw": {
+  "flag": {
+   "file": "flags/pw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Palau"
+  }
+ },
+ "py": {
+  "flag": {
+   "file": "flags/py-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Paraguay"
+  }
+ },
+ "qa": {
+  "flag": {
+   "file": "flags/qa-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Qatar"
+  }
+ },
+ "re": {
+  "flag": {
+   "file": "flags/re-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Réunion"
+  }
+ },
+ "ro": {
+  "flag": {
+   "file": "flags/ro-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Romania"
+  }
+ },
+ "rs": {
+  "flag": {
+   "file": "flags/rs-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Serbia"
+  }
+ },
+ "ru": {
+  "flag": {
+   "file": "flags/ru-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Russia"
+  }
+ },
+ "rw": {
+  "flag": {
+   "file": "flags/rw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Rwanda"
+  }
+ },
+ "sa": {
+  "flag": {
+   "file": "flags/sa-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saudi Arabia"
+  }
+ },
+ "sb": {
+  "flag": {
+   "file": "flags/sb-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Solomon Islands"
+  }
+ },
+ "sc": {
+  "flag": {
+   "file": "flags/sc-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Seychelles"
+  }
+ },
+ "sd": {
+  "flag": {
+   "file": "flags/sd-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Sudan"
+  }
+ },
+ "se": {
+  "flag": {
+   "file": "flags/se-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Sweden"
+  }
+ },
+ "sg": {
+  "flag": {
+   "file": "flags/sg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Singapore"
+  }
+ },
+ "sh": {
+  "flag": {
+   "file": "flags/sh-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saint Helena, Ascension and Tristan da Cunha"
+  }
+ },
+ "si": {
+  "flag": {
+   "file": "flags/si-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Slovenia"
+  }
+ },
+ "sj": {
+  "flag": {
+   "file": "flags/sj-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Svalbard and Jan Mayen"
+  }
+ },
+ "sk": {
+  "flag": {
+   "file": "flags/sk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Slovakia"
+  }
+ },
+ "sl": {
+  "flag": {
+   "file": "flags/sl-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Sierra Leone"
+  }
+ },
+ "sm": {
+  "flag": {
+   "file": "flags/sm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "San Marino"
+  }
+ },
+ "sn": {
+  "flag": {
+   "file": "flags/sn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Senegal"
+  }
+ },
+ "so": {
+  "flag": {
+   "file": "flags/so-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Somalia"
+  }
+ },
+ "sr": {
+  "flag": {
+   "file": "flags/sr-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Suriname"
+  }
+ },
+ "ss": {
+  "flag": {
+   "file": "flags/ss-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "South Sudan"
+  }
+ },
+ "st": {
+  "flag": {
+   "file": "flags/st-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Sao Tome and Principe"
+  }
+ },
+ "sv": {
+  "flag": {
+   "file": "flags/sv-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "El Salvador"
+  }
+ },
+ "sx": {
+  "flag": {
+   "file": "flags/sx-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Sint Maarten"
+  }
+ },
+ "sy": {
+  "flag": {
+   "file": "flags/sy-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Syria"
+  }
+ },
+ "sz": {
+  "flag": {
+   "file": "flags/sz-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Eswatini"
+  }
+ },
+ "tc": {
+  "flag": {
+   "file": "flags/tc-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Turks and Caicos Islands"
+  }
+ },
+ "td": {
+  "flag": {
+   "file": "flags/td-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Chad"
+  }
+ },
+ "tf": {
+  "flag": {
+   "file": "flags/tf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "French Southern Territories"
+  }
+ },
+ "tg": {
+  "flag": {
+   "file": "flags/tg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Togo"
+  }
+ },
+ "th": {
+  "flag": {
+   "file": "flags/th-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Thailand"
+  }
+ },
+ "tk": {
+  "flag": {
+   "file": "flags/tk-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Tokelau"
+  }
+ },
+ "tl": {
+  "flag": {
+   "file": "flags/tl-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Timor-Leste"
+  }
+ },
+ "tm": {
+  "flag": {
+   "file": "flags/tm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Turkmenistan"
+  }
+ },
+ "tn": {
+  "flag": {
+   "file": "flags/tn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Tunisia"
+  }
+ },
+ "to": {
+  "flag": {
+   "file": "flags/to-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Tonga"
+  }
+ },
+ "tt": {
+  "flag": {
+   "file": "flags/tt-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Trinidad and Tobago"
+  }
+ },
+ "tv": {
+  "flag": {
+   "file": "flags/tv-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Tuvalu"
+  }
+ },
+ "tw": {
+  "flag": {
+   "file": "flags/tw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Taiwan"
+  }
+ },
+ "tz": {
+  "flag": {
+   "file": "flags/tz-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Tanzania"
+  }
+ },
+ "ua": {
+  "flag": {
+   "file": "flags/ua-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Ukraine"
+  }
+ },
+ "ug": {
+  "flag": {
+   "file": "flags/ug-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Uganda"
+  }
+ },
+ "um": {
+  "flag": {
+   "file": "flags/um-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "United States Minor Outlying Islands"
+  }
+ },
+ "us": {
+  "flag": {
+   "file": "flags/us-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "United States of America"
+  }
+ },
+ "uy": {
+  "flag": {
+   "file": "flags/uy-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Uruguay"
+  }
+ },
+ "va": {
+  "flag": {
+   "file": "flags/va-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Holy See"
+  }
+ },
+ "vc": {
+  "flag": {
+   "file": "flags/vc-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Saint Vincent and the Grenadines"
+  }
+ },
+ "ve": {
+  "flag": {
+   "file": "flags/ve-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Venezuela"
+  }
+ },
+ "vg": {
+  "flag": {
+   "file": "flags/vg-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Virgin Islands (British)"
+  }
+ },
+ "vi": {
+  "flag": {
+   "file": "flags/vi-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Virgin Islands (U.S.)"
+  }
+ },
+ "vn": {
+  "flag": {
+   "file": "flags/vn-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Vietnam"
+  }
+ },
+ "vu": {
+  "flag": {
+   "file": "flags/vu-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Vanuatu"
+  }
+ },
+ "wf": {
+  "flag": {
+   "file": "flags/wf-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Wallis and Futuna"
+  }
+ },
+ "ws": {
+  "flag": {
+   "file": "flags/ws-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Samoa"
+  }
+ },
+ "ye": {
+  "flag": {
+   "file": "flags/ye-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Yemen"
+  }
+ },
+ "yt": {
+  "flag": {
+   "file": "flags/yt-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Mayotte"
+  }
+ },
+ "za": {
+  "flag": {
+   "file": "flags/za-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "South Africa"
+  }
+ },
+ "zm": {
+  "flag": {
+   "file": "flags/zm-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Zambia"
+  }
+ },
+ "zw": {
+  "flag": {
+   "file": "flags/zw-flag.webp",
+   "w": 320,
+   "h": 240,
+   "source": "https://github.com/lipis/flag-icons",
+   "author": "Panayiotis Lipiridis и участники (flag-icons)",
+   "license": "MIT",
+   "note": "Zimbabwe"
+  }
  }
 }
