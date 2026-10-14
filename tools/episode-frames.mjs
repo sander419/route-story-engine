@@ -2,13 +2,14 @@ import { createRequire } from 'node:module';
 import { writeFileSync } from 'node:fs';
 const require = createRequire('C:/Users/glina/route-story-spike/package.json');
 const { chromium } = require('playwright');
+const WXJ = process.env.WX_JSON || '';
 const [,, type = 'returning-viewer', style = 'night', fmt = 'v'] = process.argv;
 const b = await chromium.launch({ channel: 'msedge', headless: true });
 const p = await b.newPage({ viewport: { width: 1400, height: 900 } });
 p.on('pageerror', (e) => console.log('pageerror:', e.message));
 await p.goto('http://localhost:4180/');
 await p.waitForFunction(() => window.Director && window.Episode);
-const info = await p.evaluate(async ([type, style, fmt]) => {
+const info = await p.evaluate(async ([type, style, fmt, WXJ]) => {
   await document.fonts.load('700 40px Caveat', 'Аа'); await document.fonts.load('700 40px Oswald', 'Аа');
   const base = await (await fetch('data/demo-journey.json')).json();
   const gpx = await (await fetch('samples/day47.gpx')).text();
@@ -16,6 +17,7 @@ const info = await p.evaluate(async ([type, style, fmt]) => {
   const step = Math.max(1, Math.floor(r.n / 150)), line = [];
   for (let i = 0; i < r.n; i += step) line.push([r.lon[i], r.lat[i]]); line.push([r.lon[r.n - 1], r.lat[r.n - 1]]);
   const seg = { km: Math.round(r.total / 100) / 10, line, date: '2026-08-16', to: 'Байкал', gain: Math.round(r.stats.gain) };
+  if (WXJ) seg.weather = JSON.parse(WXJ);   // WX_JSON='{...}' — подставить погоду дня для проверки карточки
   const media = [{ kind: 'photo', url: 'media/demo/baikal-1.jpg', caption: 'Первый вид на Байкал', credit: 'Фото: Thomas D. Fischer · CC BY-SA 4.0' }, { kind: 'photo', url: 'media/demo/baikal-2.jpg', caption: 'Берег у Листвянки', credit: 'Фото: Thomas D. Fischer · CC BY-SA 4.0' }];
   const { journey, change } = window.Director.addDay(base, seg, media, [{ text: 'Изнурительно, но весело' }]);
   const res = window.Director.direct(journey, type, { aspect: fmt === 'v' ? '9:16' : '16:9' });
@@ -24,7 +26,7 @@ const info = await p.evaluate(async ([type, style, fmt]) => {
   await sc.assetsReady;
   window.__ep = sc;
   return { change, plan: res.plan.beats.map((x) => `${x.startSec}s ${x.recipe} (${x.durationSec})`), dur: res.plan.durationSec, valid: window.Director.validate(res.plan, journey) };
-}, [type, style, fmt]);
+}, [type, style, fmt, WXJ]);
 console.log(JSON.stringify(info.change), '\nplan', info.dur, 's\n ' + info.plan.join('\n '), '\nvalid', JSON.stringify(info.valid));
 const times = await p.evaluate(() => window.__ep.plan.beats.map((x) => x.startSec + x.durationSec * 0.6));
 const shots = [];

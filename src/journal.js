@@ -53,7 +53,7 @@
   }
   let info = null;
   const infoP = fetch(ART + 'stickers.json').then((r) => r.json()).then((j) => { info = j; }).catch(() => {});
-  const READY = () => Promise.all([infoP, load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p]).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
+  const READY = (extra = []) => Promise.all([infoP, load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p, ...extra.map((f) => load(ART + 'pack/' + f + '.webp').p)]).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
 
   const rngOf = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
@@ -122,6 +122,13 @@
       ctx.drawImage(im, -dw / 2, -dh / 2, dw, dh); ctx.restore();
     }
     const art = (f) => { const e = load(ART + f); return e.ok ? e.img : null; };
+    /* набор графики «приключение» (art/pack, 103 PNG из Obsidian → webp): подбирается по данным, не по вкусу */
+    const pk = (cat, id) => art(`pack/${cat}/${id}.webp`);
+    const wxId = (w) => {   // код погоды WMO (худший за день) → картинка; нет кода — картинки нет
+      if (!w || w.code == null) return null; const c = w.code;
+      if (c >= 95) return 'storm'; if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow'; if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || w.precip >= 2) return 'rain';
+      if (c === 45 || c === 48) return 'forest-fog'; if (w.wind >= 5) return 'wind-leaves'; if (c === 0) return 'sun'; if (c === 1 || c === 2) return 'sun-rays'; return 'clouds';
+    };
     const stickerImg = (key) => (info && info.files[key] ? art(info.files[key]) : null);
 
     /* ---------- текст ---------- */
@@ -217,7 +224,7 @@
       if (/шылпык|chilpyk/i.test(label || '')) return 'uz-chilpyk';   // подтверждённое событие героя (пост 407)
       const iso = countryIso(country); return iso ? info.cultureByCountry[iso] : 'stamp-compass';
     }
-    const weatherSticker = () => { const W0 = E.WX; if (!W0) return null; if (W0.precip >= 2) return info && info.events.rain; if (W0.wind >= 3) return info && info.events.wind; return null; };
+    const weatherSticker = () => { const W0 = E.WX; if (!W0) return null; const id = wxId(W0); if (id && pk('wx', id)) return { pack: pk('wx', id) }; if (W0.precip >= 2) return info && info.events.rain; if (W0.wind >= 3) return info && info.events.wind; return null; };
 
     function wrapLines(ctx, str, weight, size, fam, maxW, maxLines) {
       ctx.save(); ctx.font = `${weight} ${size}px ${fam}`; const words = String(str).split(/\s+/), lines = []; let cur = '';
@@ -314,7 +321,7 @@
       tape(ctx, c.tape, 3, a, dy);
       const spec = E.metric(s, p, t, lt, dur); const ma = E.vis(lt, dur); const sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
       const mh2 = metricCard(ctx, c.metric, spec, ma * env, (1 - easeOut(lt / 0.6)) * px(24), -1, 11);
-      if (sticker && stickerImg(sticker)) fitImg(ctx, stickerImg(sticker), [c.metric[0] + c.metric[2] - 190, c.metric[1] - 150, 200, 200], ma * env, 6, 0);   // на уголке карточки, поверх текста не лежит
+      const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], ma * env, 6, 0);   // на уголке карточки, поверх текста не лежит
     }
     function arrival(ctx, s, p, a, dy, lt) {
       const c = L.arrival, [tx, ty, tw, th] = box(c.title), pad = px(32);
@@ -322,7 +329,8 @@
       const [sx, sy, sw, sh] = box(c.sticker); const pb = [sx - px(24), sy - px(24), sw + px(48), sh + px(48)];
       drawCard(ctx, card(pb[2], pb[3], { seed: 8, fill: '#f6e3b4', edge: 5 }), pb[0], pb[1], pb[2], pb[3], a, 1.5, dy);
       const wash = art('wash.webp'); if (wash) fitImg(ctx, wash, [c.sticker[0] - 40, c.sticker[1] + 80, c.sticker[2] + 80, c.sticker[3] - 160], a * 0.4, 0, dy, false);
-      fitImg(ctx, stickerImg(sk), c.sticker, a * easeOut(lt / 0.7), -2, dy + (1 - easeOut(lt / 0.8)) * px(30));
+      const SIGNS = ['09', '10', '11', '12'], sg = sk === 'stamp-compass' ? pk('sign', SIGNS[[...String(label)].reduce((h, ch) => h + ch.charCodeAt(0), 0) % SIGNS.length]) : null;   // нет символа страны — указатель вместо пустого компаса (декор, ничего не утверждает)
+      fitImg(ctx, sg || stickerImg(sk), c.sticker, a * easeOut(lt / 0.7), sg ? 0 : -2, dy + (1 - easeOut(lt / 0.8)) * px(30));
       const cw = tw + 2 * pad, ch = th + 2 * pad; drawCard(ctx, card(cw, ch, { seed: 4 }), tx - pad, ty - pad, cw, ch, a, 0, dy);
       text(ctx, label, tx, ty + th * 0.72, { size: 136, fam: HEAD, weight: S.headW, color: C.green, max: c.title[2], ls: -0.02, a });
       tape(ctx, c.tape, -4, a, dy);
@@ -388,6 +396,7 @@
     }
     function finale(ctx, s, p, t, lt, dur, a, dy) {
       const c = L.fin, [rx, ry, rw, rh] = box(c.receipt);
+      const ln = pk('land', '02'); if (ln && portrait) { const bw = W, bh = Math.min(px(520), bw * ln.height / ln.width), by = H - bh; ctx.save(); ctx.globalAlpha *= a * 0.9; ctx.drawImage(ln, 0, by, bw, bh); ctx.restore(); }   // закат над хребтами — только на высоком кадре (9:16), «путешествие продолжается"
       drawCard(ctx, card(rw, rh, { seed: 30, fill: '#f6ecd0', edge: 6 }), rx, ry, rw, rh, a, 0, dy);
       const f = E.finale(s, p, t, lt, dur);
       metricCard(ctx, c.metric, { kicker: f.kicker, big: f.big, sub: f.sub }, a, (1 - easeOut(lt / 0.6)) * px(24), 0, 31);
@@ -422,7 +431,8 @@
         default: roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt });
       }
     }
-    return { draw, ready: Promise.all([READY(), ...relLoads]), isDark: (s) => FAM[s.recipe] === 'fin' };
+    const packNeeded = () => ['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12'].concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
+    return { draw, ready: Promise.all([READY(packNeeded()), ...relLoads]), isDark: (s) => FAM[s.recipe] === 'fin' };
   }
 
   window.Journal = { create, FAM };
