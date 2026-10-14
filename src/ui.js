@@ -68,8 +68,8 @@
     renderPhotos(); rebuild(true);
   }
   function renderPhotos() {
-    const box = $('photoList'); box.innerHTML = '';
-    const how = { gps: 'по GPS из фото', time: 'по времени съёмки', even: 'по порядку' };
+    const box = $('photoList'); box.innerHTML = ''; setTimeout(drawPmap, 0);
+    const how = { gps: 'по GPS из фото', time: 'по времени съёмки', even: 'по порядку', hand: 'вручную' };
     photoFiles.forEach((p, i) => {
       const row = document.createElement('div'); row.className = 'phrow';
       const img = document.createElement('img'); img.src = p.url; img.alt = '';
@@ -84,8 +84,99 @@
     });
   }
 
+  /* ---- короткий фрагмент или вся дорога ---- */
+  state.kind = 'short';
+  function setKind(k) { state.kind = k; [...$('kind').children].forEach((b) => b.classList.toggle('on', b.dataset.v === k)); }
+  [...$('kind').children].forEach((b) => (b.onclick = () => { setKind(b.dataset.v); t = 0; rebuild(); }));
+
+  /* ---- заметки на маршруте: текст + место на пути (доля 0…1) ---- */
+  state.o.tnotes = [];
+  function kmAt(f) { const R = state.route; return R ? ((R.total * f) / 1000).toFixed(R.total < 20000 ? 1 : 0).replace('.', ',') + ' км' : Math.round(f * 100) + '% пути'; }
+  function renderNotes() {
+    const box = $('tnotes'); box.innerHTML = '';
+    state.o.tnotes.forEach((n, i) => {
+      const row = document.createElement('div'); row.className = 'tnote';
+      const inp = document.createElement('input'); inp.maxLength = 40; inp.placeholder = ['Например: тут сломалась спица', 'Например: самый красивый перевал', 'Например: ночёвка у реки'][i % 3]; inp.value = n.text;
+      inp.oninput = () => { n.text = inp.value; rebuild(true); };
+      const rg = document.createElement('input'); rg.type = 'range'; rg.min = 3; rg.max = 97; rg.value = Math.round(n.f * 100); rg.setAttribute('aria-label', 'Место на маршруте');
+      const lab = document.createElement('small'); lab.textContent = 'на ' + kmAt(n.f);
+      rg.oninput = () => { n.f = rg.value / 100; lab.textContent = 'на ' + kmAt(n.f); };
+      rg.onchange = () => rebuild(true);
+      const del = document.createElement('button'); del.textContent = '×'; del.title = 'Убрать заметку'; del.onclick = () => { state.o.tnotes.splice(i, 1); renderNotes(); rebuild(true); };
+      const mid = document.createElement('div'); mid.append(inp, rg, lab); row.append(mid, del); box.appendChild(row);
+    });
+    $('addNote').hidden = state.o.tnotes.length >= 3;
+  }
+  $('addNote').onclick = () => { const k = state.o.tnotes.length; state.o.tnotes.push({ text: '', f: [0.3, 0.6, 0.85][k] || 0.5 }); renderNotes(); const ins = $('tnotes').querySelectorAll('input:not([type])'); if (ins.length) ins[ins.length - 1].focus(); };
+  renderNotes();
+
+  /* ---- карта фото: отметки можно перетащить вдоль трека ---- */
+  let pmapGeo = null, dragPin = -1;
+  function drawPmap() {
+    const R = state.route, cv = $('pmap'), box = $('pmapBox');
+    box.hidden = !R || !photoFiles.length; if (box.hidden) return;
+    const g = cv.getContext('2d'), W = cv.width, H = cv.height, pad = 28;
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const kx = Math.cos(((R.lat[0] || 0) * Math.PI) / 180);
+    for (let i = 0; i < R.n; i++) { const x = R.lon[i] * kx, y = -R.lat[i]; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    const sc = Math.min((W - 2 * pad) / Math.max(1e-9, x1 - x0), (H - 2 * pad) / Math.max(1e-9, y1 - y0)), ox = (W - (x1 - x0) * sc) / 2, oy = (H - (y1 - y0) * sc) / 2;
+    const P = (i) => [ox + (R.lon[i] * kx - x0) * sc, oy + (-R.lat[i] - y0) * sc];
+    const step = Math.max(1, Math.floor(R.n / 1500)), pts = []; for (let i = 0; i < R.n; i += step) pts.push([i, ...P(i)]); pts.push([R.n - 1, ...P(R.n - 1)]);
+    pmapGeo = { pts };
+    g.clearRect(0, 0, W, H); g.fillStyle = '#efe9dc'; g.fillRect(0, 0, W, H);
+    g.lineJoin = g.lineCap = 'round'; g.strokeStyle = '#b23a1f'; g.lineWidth = 4; g.beginPath(); pts.forEach(([, x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+    const [sx, sy] = P(0), [ex, ey] = P(R.n - 1); g.fillStyle = '#fff'; g.strokeStyle = '#b23a1f'; g.lineWidth = 3; [[sx, sy], [ex, ey]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 6, 0, 6.2832); g.fill(); g.stroke(); });
+    photoFiles.forEach((p, k) => {
+      if (p.s == null) return; let best = pts[0]; for (const q of pts) if (Math.abs(R.D[q[0]] - p.s) < Math.abs(R.D[best[0]] - p.s)) best = q;
+      p._xy = [best[1], best[2]]; const im = p._img || (p._img = Object.assign(new Image(), { src: p.url, onload: drawPmap }));
+      g.save(); g.translate(best[1], best[2]); g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 8; g.fillRect(-26, -64, 52, 52); g.shadowColor = 'transparent';
+      if (im.complete && im.naturalWidth) { const s2 = Math.max(46 / im.naturalWidth, 46 / im.naturalHeight); g.save(); g.beginPath(); g.rect(-23, -61, 46, 46); g.clip(); g.drawImage(im, -im.naturalWidth * s2 / 2, -38 - im.naturalHeight * s2 / 2, im.naturalWidth * s2, im.naturalHeight * s2); g.restore(); }
+      g.beginPath(); g.moveTo(-8, -12); g.lineTo(8, -12); g.lineTo(0, 0); g.closePath(); g.fill();
+      g.fillStyle = '#b23a1f'; g.font = '700 14px system-ui'; g.textAlign = 'center'; g.fillText(String(k + 1), 0, -68); g.restore();
+    });
+  }
+  const pmapPt = (e) => { const cv = $('pmap'), r = cv.getBoundingClientRect(); return [((e.clientX - r.left) * cv.width) / r.width, ((e.clientY - r.top) * cv.height) / r.height]; };
+  $('pmap').addEventListener('pointerdown', (e) => {
+    const [x, y] = pmapPt(e); let best = -1, bd = 40;
+    photoFiles.forEach((p, k) => { if (!p._xy) return; const d = Math.hypot(p._xy[0] - x, p._xy[1] - 38 - y); if (d < bd) { bd = d; best = k; } });
+    if (best >= 0) { dragPin = best; $('pmap').setPointerCapture(e.pointerId); e.preventDefault(); }
+  });
+  $('pmap').addEventListener('pointermove', (e) => {
+    if (dragPin < 0 || !pmapGeo) return; const [x, y] = pmapPt(e); let best = pmapGeo.pts[0], bd = Infinity;
+    for (const q of pmapGeo.pts) { const d = (q[1] - x) ** 2 + (q[2] - y) ** 2; if (d < bd) { bd = d; best = q; } }
+    const p = photoFiles[dragPin]; p.s = state.route.D[best[0]]; p.how = 'hand'; drawPmap();
+  });
+  const pmapUp = () => { if (dragPin < 0) return; dragPin = -1; state.o.photos = photoFiles.map((p) => ({ url: p.url, s: p.s, caption: p.caption, credit: p.credit || '' })); renderPhotos(); rebuild(true); };
+  window.__pmapPins = () => photoFiles.map((q) => q._xy || null);   // для проверки перетаскивания
+  $('pmap').addEventListener('pointerup', pmapUp); $('pmap').addEventListener('pointercancel', pmapUp);
+
+  /* ---- настроение: три места для стикеров (обложка, прибытие, финал) ---- */
+  const STK = [...['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((n) => 'sticker/' + n), ...['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((n) => 'icon/' + n), ...['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((n) => 'sign/' + n)];
+  const MOODS = [
+    { name: 'Как в стиле', set: [null, null, null] },
+    { name: 'Поход', set: ['sticker/05', 'sign/02', 'icon/11'] },
+    { name: 'Дорога', set: ['sticker/10', 'sign/09', 'sticker/01'] },
+    { name: 'Горы', set: ['sticker/06', 'sign/10', 'icon/08'] },
+    { name: 'Кругосветка', set: ['sticker/11', 'sticker/02', 'sticker/03'] },
+    { name: 'Фотоохота', set: ['sticker/07', 'icon/02', 'sticker/12'] },
+  ];
+  const SLOT_NAMES = ['Обложка', 'Прибытие', 'Финал'];
+  state.o.stickers = [null, null, null]; let slotOn = 0;
+  const stkUrl = (id) => 'art/pack/' + id + '.webp';
+  function renderMood() {
+    $('moods').innerHTML = ''; MOODS.forEach((m) => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = m.name; b.classList.toggle('on', m.set.every((x, i) => x === state.o.stickers[i])); b.onclick = () => { state.o.stickers = [...m.set]; renderMood(); rebuild(true); }; $('moods').appendChild(b); });
+    $('slots').innerHTML = ''; SLOT_NAMES.forEach((nm, i) => {
+      const b = document.createElement('button'); b.className = 'slot' + (i === slotOn ? ' on' : ''); const id = state.o.stickers[i];
+      b.innerHTML = (id ? `<img src="${stkUrl(id)}" alt="">` : '<i>—</i>') + `<span>${nm}</span>`; b.title = 'Выбрать стикер для: ' + nm;
+      b.onclick = () => { if (slotOn === i && id) { state.o.stickers[i] = null; renderMood(); rebuild(true); return; } slotOn = i; renderMood(); };   // повторное нажатие убирает стикер
+      $('slots').appendChild(b);
+    });
+    if (!$('stk').children.length) STK.forEach((id) => { const b = document.createElement('button'); b.dataset.id = id; b.innerHTML = `<img src="${stkUrl(id)}" alt="" loading="lazy">`; b.onclick = () => { state.o.stickers[slotOn] = id; slotOn = Math.min(2, slotOn + 1); renderMood(); rebuild(true); }; $('stk').appendChild(b); });
+    [...$('stk').children].forEach((b) => b.classList.toggle('on', state.o.stickers.includes(b.dataset.id)));
+  }
+  renderMood();
+
   /* ---- шаги под роликом ---- */
-  function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'story', 'look', 'more'].forEach((k) => { $('t-' + k).hidden = k !== id; }); }
+  function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'text', 'photo', 'look'].forEach((k) => { $('t-' + k).hidden = k !== id; }); if (id === 'photo') drawPmap(); }
   [...$('tabs').children].forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
 
   /* ---- загрузка ---- */
@@ -331,7 +422,7 @@
     let J = state.seriesBase, change = null;
     if (state.route && !state.routeIsDemo) {
       const seg = segOf(state.route, state.o.endName), line = seg.line;
-      const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
+      const media = [...(state.o.photos || [])].sort((a, b) => (a.s || 0) - (b.s || 0)).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
       const notes = state.o.note ? [{ text: state.o.note }] : [];
       const lastDay = [...J.days].sort((a, b) => a.day - b.day).pop();
       const gapKm = lastDay ? window.RouteLib.hav({ lon: lastDay.line[lastDay.line.length - 1][0], lat: lastDay.line[lastDay.line.length - 1][1] }, { lon: line[0][0], lat: line[0][1] }) / 1000 : 0;
@@ -367,10 +458,19 @@
     const inp = seriesInput(), change = inp.change, lastSeg = [...inp.J.days].sort((a, b) => a.day - b.day).pop();
     const J = { ...inp.J, profile: profileFor(inp.J, lastSeg) };
     $('pHint').hidden = J.id === 'my';
-    const res = window.Director.direct(J, state.etype, { aspect: state.fmt === 'v' ? '9:16' : '16:9' });
+    // фрагмент — короткая серия про сегодняшний участок; вся дорога — сначала весь путь, потом участок; у героя по постам — только трейлер
+    state.etype = J.schematic ? 'story-so-far' : state.kind === 'long' ? 'new-viewer' : 'returning-viewer'; $('etype').value = state.etype;
+    $('kind').hidden = !!J.schematic;
+    const res = window.Director.direct(J, state.etype, { aspect: state.fmt === 'v' ? '9:16' : '16:9', dur: state.etype === 'returning-viewer' && !J.schematic ? [18, 24, 20, 28] : null });   // фрагмент — короткий ролик ~20–28 с
     state.lastEp = { res, change, J };
     renderSeriesPanel(res, change, J);
-    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false }, w, h);
+    const R = state.route && !state.routeIsDemo ? state.route : state.demoDay ? state.route : null, tot = R ? R.total : 0;
+    const extra = {
+      trackNotes: (state.o.tnotes || []).filter((n) => n.text.trim()).map((n) => ({ f: n.f, text: n.text.trim() })),
+      photoPins: tot ? (state.o.photos || []).filter((p) => p.s != null).map((p) => ({ f: Math.min(1, Math.max(0, p.s / tot)), url: p.url })) : [],
+      stickers: (state.o.stickers || []).map((x) => x || null),
+    };
+    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, ...extra }, w, h);
   }
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {
@@ -413,7 +513,7 @@
   async function loadSeries() {
     try {
       state.seriesBase = await (await fetch('data/demo-journey.json')).json();
-      state.etype = 'returning-viewer'; $('etype').value = 'returning-viewer';
+      setKind('short');
       if (state.routeIsDemo) { state.route = null; state.routeIsDemo = false; }
       $('info').hidden = false;
       $('info').innerHTML = `<span><b>${state.seriesBase.title}</b> — демо-путешествие</span><span>46 дней · вымышленный путешественник на реальных дорогах</span>`;
@@ -437,7 +537,7 @@
     const J = state.seriesBase, days = [...J.days].sort((a, b) => a.day - b.day), last = days[days.length - 1];
     if (!last) return { J, change: null };
     const prev = { ...J, days: days.slice(0, -1), checkpoints: (J.checkpoints || []).filter((c) => c.day < last.day), media: (J.media || []).filter((m) => m.day < last.day), notes: (J.notes || []).filter((n) => n.day < last.day) };
-    const media = (state.o.photos || []).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
+    const media = [...(state.o.photos || [])].sort((a, b) => (a.s || 0) - (b.s || 0)).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
     const notes = state.o.note ? [{ text: state.o.note }] : [];
     const pl = days[days.length - 2], gapKm = pl ? window.RouteLib.hav({ lon: pl.line[pl.line.length - 1][0], lat: pl.line[pl.line.length - 1][1] }, { lon: last.line[0][0], lat: last.line[0][1] }) / 1000 : 0;
     const res = window.Director.addDay(prev, { ...last, to: state.o.endName || last.to || null }, media, notes);
@@ -527,7 +627,7 @@
     const last = got[got.length - 1];
     state.route = last.r; state.routeIsDemo = false;
     // многодневный файл: зрителю сначала нужен весь путь, потом последний день
-    state.etype = multi >= 3 ? 'new-viewer' : 'returning-viewer'; $('etype').value = state.etype;
+    setKind(multi >= 3 ? 'long' : 'short');
     if (!touched.endName) { state.o.endName = ''; $('endName').value = ''; }
     saveOwn(); nameDays(); placePhotos(); refreshModes(); setMode('series'); play(true);
     $('continue').hidden = true;
@@ -538,11 +638,11 @@
     state.seriesBase = J; state.route = null; state.routeIsDemo = false; state.demoDay = false;
     photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = ''; $('note').value = ''; state.demoNote = false;
     state.o.endName = ''; $('endName').value = ''; touched.endName = false;
-    state.etype = 'story-so-far'; $('etype').value = 'story-so-far';
+    setKind('long');
     $('continue').hidden = true; refreshModes(); setMode('series'); play(true);
   };
-  $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; if (isOwn()) loadSeries().then(() => $('day47').click()); };
-  { const J = loadOwnSaved(); if (J) { $('continue').hidden = false; $('continue').textContent = `Продолжить моё путешествие · ${J.days.length} ${J.days.length % 10 === 1 && J.days.length % 100 !== 11 ? 'день' : J.days.length % 10 >= 2 && J.days.length % 10 <= 4 && (J.days.length % 100 < 10 || J.days.length % 100 >= 20) ? 'дня' : 'дней'}`; } }
+  $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; $('resetOwn').hidden = true; if (isOwn()) loadSeries().then(() => $('day47').click()); };
+  { const J = loadOwnSaved(); if (J) { $('resetOwn').hidden = false; $('continue').hidden = false; $('continue').textContent = `Продолжить моё путешествие · ${J.days.length} ${J.days.length % 10 === 1 && J.days.length % 100 !== 11 ? 'день' : J.days.length % 10 >= 2 && J.days.length % 10 <= 4 && (J.days.length % 100 < 10 || J.days.length % 100 >= 20) ? 'дня' : 'дней'}`; } }
   $('day47').onclick = async () => {
     try {
       if (!state.seriesBase || state.seriesBase.schematic || state.mode !== 'series') await loadSeries();   // демо-день 47 — только к демо-путешествию, не к кругосветке героя
@@ -555,7 +655,6 @@
       placePhotos(); }
     catch (e) { showErr('Не удалось загрузить день 47: ' + e.message); }
   };
-  $('relief').onchange = () => { state.relief = $('relief').value !== 'off'; t = 0; rebuild(); };
   // на телефоне по умолчанию HD 720: быстрее и меньше памяти (Full HD остаётся в «Ещё → Качество»)
   try { if (matchMedia('(pointer: coarse)').matches) $('res').value = 'sd'; } catch (e) { /* без media queries */ }
   $('etype').onchange = () => { state.etype = $('etype').value; t = 0; rebuild(); };
@@ -626,7 +725,7 @@
     try {
       const d = await (await fetch('data/journey-wahrider.json')).json();
       state.seriesBase = heroJourney(d); state.route = null; state.routeIsDemo = false;
-      state.etype = 'story-so-far'; $('etype').value = 'story-so-far';
+      setKind('long');
       $('info').hidden = false; $('info').innerHTML = '<span><b>Кругосветка @wahrider</b> — трейлер по постам канала</span>';
       refreshModes(); setMode('series'); play(true);
     }

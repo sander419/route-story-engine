@@ -74,7 +74,7 @@
     return e;
   }
 
-  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true }, W, H) {
+  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, trackNotes = [], photoPins = [], stickers = [] }, W, H) {
     /* Лицо героя (не меняется от стиля к стилю): знак, цвет, имя. Стиль карты — одежда. */
     const S0 = window.RS.STYLES[styleId] || window.RS.STYLES.night, PF = journey.profile || {};
     const S = PF.color ? heroTint(S0, PF.color) : S0;
@@ -291,7 +291,14 @@
     ['brush', 'hud', 'glow', 'fog'].forEach((k) => { if (D[k]) decoImg[k] = img('art/pack/' + D[k] + '.webp'); });
     const ctryOfDay = (day) => (journey.dayNotes && journey.dayNotes[day != null ? day : today.day]) || today.country || null;
     const flagsLoad = window.Flags ? window.Flags.preload([...new Set(plan.beats.map((b) => ctryOfDay(b.params && b.params.day)).filter(Boolean))]) : Promise.resolve();
-    let assetsReady = Promise.all([flagsLoad, ...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
+    // заметки на маршруте, отметки фото и стикеры настроения — от пользователя (шаги «Текст», «Фото», «Оформление»)
+    const NOTES = [...trackNotes].sort((a, b) => a.f - b.f), PINS = photoPins.map((q) => ({ ...q, e: img(q.url) })), STKS = [0, 1, 2].map((i) => (stickers[i] ? img('art/pack/' + stickers[i] + '.webp') : null));
+    const stk = (i) => (STKS[i] && STKS[i].ok ? STKS[i].img : null);
+    function ptAtF(f) {   // точка сегодняшнего пути на доле f длины
+      const Lt = todayCum[todayCum.length - 1] * Math.min(1, Math.max(0, f)); let i = 1; while (i < todayCum.length - 1 && todayCum[i] < Lt) i++;
+      const k = Math.min(1, Math.max(0, (Lt - todayCum[i - 1]) / Math.max(1e-12, todayCum[i] - todayCum[i - 1]))); return [lerp(todayPts[i - 1][0], todayPts[i][0], k), lerp(todayPts[i - 1][1], todayPts[i][1], k)];
+    }
+    let assetsReady = Promise.all([...PINS.map((q) => q.e.p), ...STKS.filter(Boolean).map((e) => e.p), flagsLoad, ...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
 
     /* ---- типографика ---- */
     function T(ctx, str, x, y, a) {
@@ -351,6 +358,35 @@
       ctx.shadowColor = 'transparent'; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.fillStyle = 'rgba(255,255,255,.10)'; ctx.fillRect(-w / 2, -h / 2, w, h * 0.5);
       ctx.restore(); return true;
     }
+    // выноска заметки на треке: точка на пути, тонкая линия и карточка с текстом в духе стиля
+    function noteCallout(ctx, x, y, text, a, opt = {}) {
+      if (a <= 0.01) return;
+      const size = (portrait ? 46 : 40) * u, fam = opt.hand ? '"Marck Script", cursive' : S.fBody, wt = opt.hand ? 400 : 700;
+      ctx.save(); ctx.font = `${wt} ${size}px ${fam}`; const tw = Math.min(ctx.measureText(text).width, W * 0.62), padX = 26 * u, bh = size * 1.7, bw = tw + padX * 2;
+      const right = x < W * 0.5, bx = Math.max(mx * 0.6, Math.min(W - mx * 0.6 - bw, right ? x + 40 * u : x - 40 * u - bw)), by = Math.max(H * (portrait ? 0.13 : 0.17), y - 150 * u - bh);   // ниже строки с именем героя
+      ctx.globalAlpha = a; ctx.strokeStyle = opt.ink || S.accent; ctx.lineWidth = 3 * u; ctx.setLineDash([8 * u, 7 * u]); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(right ? bx + 24 * u : bx + bw - 24 * u, by + bh); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(x, y, 11 * u, 0, 6.2832); ctx.fillStyle = opt.ink || S.accent; ctx.fill(); ctx.lineWidth = 4 * u; ctx.strokeStyle = opt.card || '#ffffff'; ctx.stroke();
+      ctx.translate(bx + bw / 2, by + bh / 2); ctx.rotate(((right ? -1.5 : 1.5) * Math.PI) / 180); ctx.translate(-bw / 2, -bh / 2);
+      ctx.shadowColor = 'rgba(0,0,0,.32)'; ctx.shadowBlur = 18 * u; ctx.shadowOffsetY = 8 * u; ctx.fillStyle = opt.card || (S.paper ? '#fbf7ee' : 'rgba(8,14,28,.82)');
+      ctx.beginPath(); ctx.roundRect(0, 0, bw, bh, opt.hand ? 4 * u : 16 * u); ctx.fill(); ctx.shadowColor = 'transparent';
+      ctx.fillStyle = opt.ink || S.accent; ctx.fillRect(0, 0, 7 * u, bh);
+      ctx.fillStyle = opt.text || (S.paper ? S.ink : '#ffffff'); ctx.textBaseline = 'middle'; ctx.fillText(text, padX, bh / 2 + 2 * u, tw); ctx.restore();
+    }
+    // отметка фото на треке: маленький полароид на ножке
+    function photoPin(ctx, x, y, im, a) {
+      if (a <= 0.01 || !im) return; const s0 = (portrait ? 96 : 84) * u, fr = 8 * u, top = y - 28 * u - s0 - fr * 2;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(x, top + (s0 + fr * 2) / 2); ctx.rotate((-4 * Math.PI) / 180); ctx.translate(-x, -(top + (s0 + fr * 2) / 2));
+      ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 6 * u; ctx.fillStyle = '#ffffff'; ctx.fillRect(x - s0 / 2 - fr, top, s0 + fr * 2, s0 + fr * 2.8); ctx.shadowColor = 'transparent';
+      const sc = Math.max(s0 / im.width, s0 / im.height); ctx.save(); ctx.beginPath(); ctx.rect(x - s0 / 2, top + fr, s0, s0); ctx.clip(); ctx.drawImage(im, x - (im.width * sc) / 2, top + fr + s0 / 2 - (im.height * sc) / 2, im.width * sc, im.height * sc); ctx.restore();
+      ctx.restore(); ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(x - 9 * u, y - 28 * u); ctx.lineTo(x + 9 * u, y - 28 * u); ctx.lineTo(x, y - 4 * u); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+    // стикер настроения: с тенью и лёгким наклоном, «выпрыгивает» при появлении
+    function stickerAt(ctx, im, cx, cy, sz, rot, a, lt) {
+      if (!im || a <= 0.01) return; const pop = 0.82 + 0.18 * sine(Math.min(1, (lt || 1) / 0.5)), k = im.width / im.height, w = (k >= 1 ? sz : sz * k) * pop, h = (k >= 1 ? sz / k : sz) * pop;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(cx, cy); ctx.rotate((rot * Math.PI) / 180); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 20 * u; ctx.shadowOffsetY = 10 * u; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore();
+    }
+    // какие заметки видны при раскрытии пути tr: видна последняя пройденная, прежняя гаснет
+    const noteAlpha = (i, tr) => { const n = NOTES[i], nx = NOTES[i + 1]; return smooth((tr - n.f) / 0.03) * (nx ? 1 - smooth((tr - nx.f) / 0.03) : 1); };
     let LT_NO_SCRIM = false, mapCache = null, lastCam = null;
     const HAND = '"Marck Script", "RS Geologica", "Segoe Script", cursive';
     // строки с цифрами — данные: шрифт S.fNum с табличными цифрами; слова (места, заголовки) — S.fHead с трекингом заголовка −2 %
@@ -552,6 +588,12 @@
           ctx.restore();
         }
       }
+      // заметки и отметки фото пользователя на сегодняшнем пути
+      if (LY.hud && !TR && (NOTES.length || PINS.length) && FAMR(s) && todayPts.length > 1) {
+        const tr = todayReveal(t), fa = vis(lt, s.durationSec, 0);
+        PINS.forEach((q) => { if (!q.e.ok) return; const pt = ptAtF(q.f); photoPin(ctx, X(pt), Y(pt), q.e.img, fa * smooth((tr - q.f) / 0.03)); });
+        NOTES.forEach((n, i) => { const pt = ptAtF(n.f); noteCallout(ctx, X(pt), Y(pt), n.text, fa * noteAlpha(i, tr), D.redField ? { ink: S.accent, card: '#f1eee6', text: S.ink } : {}); });
+      }
       // места по пути: появляются, когда линия до них дошла, и держатся не меньше ~3 с
       if (LY.hud && s.recipe === 'route-reveal' && s.follow && su >= s.move) {
         const F = s.follow, x = followX(s, su), sec = (v) => v * F.dur;
@@ -596,18 +638,21 @@
       ctx.restore();
     }
 
+    const FAMR = (sh) => ['route-reveal', 'camera-follow', 'weather-card', 'time-on-road', 'distance-counter', 'high-point'].includes(sh.recipe);   // кадры сегодняшнего пути
     function hud(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, p = s.params || {}, a = vis(lt, dur), dy = rise(lt);
       const loopDay = !!today.loop;
       const route2 = loopDay ? [fromLabel || toLabel, 'кольцо'].filter(Boolean).join(' · ') : [fromLabel, toLabel].filter(Boolean).join(' → ');
       switch (s.recipe) {
         case 'day-card':
+          if (stk(0)) stickerAt(ctx, stk(0), portrait ? W / 2 : W - mx - 220 * u, portrait ? H * 0.74 : H * 0.72, (portrait ? 380 : 300) * u, -5, vis(lt, s.durationSec, 0.2), lt);
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
           if (p.hook) hookCard(ctx, a, dy, ['день ' + p.day, route2].filter(Boolean).join(' · '), p.hook, NAME);
           else hookCard(ctx, a, dy, route2 || journey.title, 'День ' + p.day, NAME);
           flagStamp(ctx, ctryOfDay(p.day), W - mx - (portrait ? 110 : 120) * u, mx + (portrait ? 280 : 170) * u, (portrait ? 200 : 170) * u, 6, a);
           break;
         case 'trip-title': {
+          if (stk(0)) stickerAt(ctx, stk(0), portrait ? W / 2 : W - mx - 220 * u, portrait ? H * 0.74 : H * 0.72, (portrait ? 380 : 300) * u, -5, vis(lt, s.durationSec, 0.2), lt);
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
           const head = p.from && p.to && p.from !== p.to && !loopDay ? `${p.from} → ${p.to}` : p.to || p.from || p.name || journey.title || 'Маршрут';
           const kmS = (loopDay && head.toLowerCase() !== 'кольцо' ? 'кольцо · ' : '') + fmtN(p.km, p.km < 100 ? 1 : 0) + ' км';
@@ -634,6 +679,7 @@
           lowerThird(ctx, vis(lt, dur, s.move * dur * 0.7), rise(lt, s.move * dur * 0.7), 'высшая точка дня', fmtN(p.ele) + ' м', p.km != null ? `на ${fmtN(p.km)}-м километре` : '');
           break;
         case 'season-card':
+          if (stk(0)) stickerAt(ctx, stk(0), portrait ? W / 2 : W - mx - 220 * u, portrait ? H * 0.74 : H * 0.72, (portrait ? 380 : 300) * u, -5, vis(lt, s.durationSec, 0.2), lt);
           dim(ctx, 0.5 * vis(lt, dur, 0), TR);
           hookCard(ctx, a, dy, NAME || p.traveler || 'история путешествия', p.title || '', p.line || `${p.days} ${daysWord(p.days)} · ${fmtN(p.totalKm)} км`);
           break;
@@ -653,7 +699,8 @@
         case 'checkpoint-arrival':
           lowerThird(ctx, a, dy, p.kind === 'milestone' ? 'веха' : p.kind === 'chapter' ? 'новая глава' : loopDay ? 'круг замкнулся' : 'прибытие', p.label, p.kind === 'milestone' ? 'на пути' : single ? (dateRu(today.date) || '') : 'день ' + today.day);
           flagStamp(ctx, ctryOfDay(p.day), mx + (portrait ? 120 : 100) * u, H - (portrait ? 740 : 540) * u + dy, (portrait ? 190 : 150) * u, -5, a * sine((lt - 0.3) / 0.7));   // над надзаголовком, слева — не заходит на указатель
-          if (signImg.ok && !D.redField) { const sz = (portrait ? 420 : 300) * u, k = signImg.img.width / signImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a * sine(lt / 0.8); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 26 * u; ctx.drawImage(signImg.img, W - mx - w2, H - (portrait ? 860 : 500) * u + dy, w2, h2); ctx.restore(); }   // указатель — украшение момента прибытия, ничего не утверждает
+          if (stk(1)) stickerAt(ctx, stk(1), W - mx - (portrait ? 170 : 150) * u, H - (portrait ? 720 : 400) * u + dy, (portrait ? 330 : 260) * u, 6, a * sine((lt - 0.2) / 0.6), lt);
+          else if (signImg.ok && !D.redField) { const sz = (portrait ? 420 : 300) * u, k = signImg.img.width / signImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a * sine(lt / 0.8); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 26 * u; ctx.drawImage(signImg.img, W - mx - w2, H - (portrait ? 860 : 500) * u + dy, w2, h2); ctx.restore(); }   // указатель — украшение момента прибытия, ничего не утверждает
           break;
         case 'photo-reveal': case 'highlights-reel': {
           const ids = (p.mediaIds || []).filter((id) => mediaById[id]), n = ids.length; if (!n) break;
@@ -730,6 +777,7 @@
           break;
         }
         case 'pullback': case 'progress-poster': {
+          if (stk(2)) stickerAt(ctx, stk(2), W - mx - (portrait ? 150 : 170) * u, portrait ? H * 0.3 : H * 0.3, (portrait ? 300 : 260) * u, 7, s.recipe === 'pullback' ? smooth((su - 0.62) / 0.18) : vis(lt, s.durationSec), lt);
           const pa = s.recipe === 'pullback' ? smooth((su - 0.62) / 0.18) * (1 - smooth((lt - (dur - 0.4)) / 0.4)) : a;
           const NEXT = PF.next ? 'дальше — ' + PF.next : 'продолжение следует →';
           const dayRes = p.newKm != null ? ['день ' + p.day, '+' + fmtN(p.newKm, p.newKm < 100 ? 1 : 0) + ' км', p.time].filter(Boolean).join(' · ') : 'день ' + p.day;
@@ -763,7 +811,7 @@
         reveal: (t) => todayReveal(t),
         wxPackId,
         routeNames: () => route2T() || journey.title || '',
-        relief, bboxToday: () => bbox(todayPts), bboxAll: () => bbox(allPts), famsInPlan: () => shots.map(famOf),
+        relief, notes: NOTES, pins: PINS, noteAlpha, stk, ptAtF, bboxToday: () => bbox(todayPts), bboxAll: () => bbox(allPts), famsInPlan: () => shots.map(famOf),
         journeyName: () => journey.title || route2T() || '',
         recapPoint: (s, lt, dur) => { const r = recapState(s, lt / dur), st = s.stops[r.k]; if (!st) return null; const pv = r.k > 0 ? s.stops[r.k - 1].cam : null, f = sine(r.f / 0.32); return pv ? [pv.cx + (st.cam.cx - pv.cx) * f, pv.cy + (st.cam.cy - pv.cy) * f] : [st.cam.cx, st.cam.cy]; },   // маркер скользит к следующей остановке вместе с камерой, а не прыгает
         photoDate: (m, s) => (journey.schematic || s.recipe === 'highlights-reel' ? DL(m.day) : [DL(today.day), dateRu(today.date)].filter(Boolean).join(' · ')),

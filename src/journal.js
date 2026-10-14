@@ -213,6 +213,29 @@
       else { ctx.beginPath(); ctx.arc(x, y, 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
       ctx.restore();
     }
+    function trackDeco(ctx, proj, tr, a, box) {
+      if (!E.notes.length && !E.pins.length) return; const [bx, by, bw, bh] = box;
+      E.pins.forEach((q) => {
+        if (!q.e.ok) return; const pa = a * smooth((tr - q.f) / 0.03), pt = proj(E.ptAtF(q.f)); if (!pt || pa <= 0.01) return;
+        const im = q.e.img, s0 = px(portrait ? 96 : 84), fr = px(9), x = pt[0], top = pt[1] - px(30) - s0 - fr * 2;
+        ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, top + s0 / 2); ctx.rotate((-5 * Math.PI) / 180); ctx.translate(-x, -(top + s0 / 2));
+        ctx.shadowColor = 'rgba(40,28,10,.4)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 7 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(x - s0 / 2 - fr, top, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
+        const sc = Math.max(s0 / im.width, s0 / im.height); ctx.save(); ctx.beginPath(); ctx.rect(x - s0 / 2, top + fr, s0, s0); ctx.clip(); ctx.drawImage(im, x - (im.width * sc) / 2, top + fr + s0 / 2 - (im.height * sc) / 2, im.width * sc, im.height * sc); ctx.restore();
+        ctx.restore(); tape(ctx, [(x - px(40)) / u, (top - px(16)) / u, 80, 34], -8, pa);
+        ctx.save(); ctx.globalAlpha *= pa; ctx.beginPath(); ctx.arc(x, pt[1], px(9), 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = px(5); ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore();
+      });
+      E.notes.forEach((n, i) => {
+        const na = a * E.noteAlpha(i, tr), pt = proj(E.ptAtF(n.f)); if (!pt || na <= 0.01) return;
+        const size = px(portrait ? 58 : 48); ctx.save(); ctx.font = `400 ${size}px ${HAND}`; const tw = Math.min(ctx.measureText(n.text).width, bw - px(80)); ctx.restore();
+        const cw = tw + px(56), ch = size * 1.6, right = pt[0] < bx + bw / 2;
+        const cx0 = Math.max(bx + px(10), Math.min(bx + bw - cw - px(10), right ? pt[0] + px(30) : pt[0] - px(30) - cw)), cy0 = Math.max(by + px(10), pt[1] - px(130) - ch);
+        ctx.save(); ctx.globalAlpha *= na; ctx.setLineDash([px(9), px(8)]); ctx.strokeStyle = C.accent; ctx.lineWidth = px(4); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(right ? cx0 + px(30) : cx0 + cw - px(30), cy0 + ch); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.arc(pt[0], pt[1], px(11), 0, 6.2832); ctx.fillStyle = C.accent; ctx.fill(); ctx.lineWidth = px(5); ctx.strokeStyle = C.card; ctx.stroke(); ctx.restore();
+        drawCard(ctx, card(cw, ch, { seed: 40 + i, edge: 3 }), cx0, cy0, cw, ch, na, right ? -1.5 : 1.5, 0);
+        text(ctx, n.text, cx0 + px(28), cy0 + ch * 0.66, { size: size / u, fam: HAND, weight: 400, color: C.ink, max: tw / u, a: na });
+        tape(ctx, [(cx0 + cw * 0.5 - px(50)) / u, (cy0 - px(18)) / u, 100, 40], right ? -6 : 6, na);
+      });
+    }
     function sketch(ctx, coreBox, sets, tr, t, a, opts = {}) {
       const F = fitPts(sets.flatMap((s) => [s.pts]), coreBox), today = sets.find((s) => s.today) || sets[sets.length - 1];
       for (const s of sets) {
@@ -227,6 +250,7 @@
       if (opts.mark) { const m = F(opts.mark); ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); ctx.moveTo(m[0], m[1] - 34 * u); ctx.lineTo(m[0] + 26 * u, m[1] + 14 * u); ctx.lineTo(m[0] - 26 * u, m[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.lineJoin = 'round'; ctx.stroke(); ctx.restore(); }
       if (opts.stop) { const m = F(opts.stop), pulse = (t / 2) % 1; ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); ctx.arc(m[0], m[1], (20 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = C.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha *= 1 - pulse; ctx.stroke(); ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(m[0], m[1], 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore(); }
       heroAt(ctx, q[0], q[1], a, t);
+      if (opts.deco) trackDeco(ctx, (pp) => F(pp), tr, a, box(coreBox));
     }
 
     /* ---------- стикеры: страна — культурный предмет как контекст; события — только по данным ---------- */
@@ -286,6 +310,7 @@
       if (ciso && flagOf(ciso, 'flag')) pinFlag(ctx, ciso, bx + bw - px(70), by + px(10) + dy, 170, 6, a);
       else tape(ctx, [bx / u + bw / u * 0.58, by / u - 36, 288, 80], -4, a, dy);
       ctx0 = ctx;
+      if (E.stk(0)) fitImg(ctx, E.stk(0), portrait ? [60, (fr ? fr.bottom / u : 1500) - 260, 330, 330] : [(fcx - fw * 0.62) / u, (fr ? fr.bottom / u : 900) - 250, 280, 280], a * easeOut((lt - 0.3) / 0.6), -6, dy + (1 - easeOut((lt - 0.3) / 0.7)) * px(30));   // стикер настроения
       if (!fr) heroBox(c.hero, a, dy + (1 - easeOut(lt / 0.8)) * px(30), 0);
       else if (E.MARK && E.MARK !== 'dot') heroBox(portrait ? [720, (fr.bottom / u) - 300, 280, 380] : [(fcx + fw * 0.3) / u, (fr.bottom / u) - 300, 240, 320], a, dy + (1 - easeOut(lt / 0.8)) * px(30), 4);   // знак героя — наклейкой на углу коллажа
     }
@@ -333,6 +358,7 @@
       const mark = (pt, tri) => { const q = pt && P(pt[0], pt[1]); if (!q) return; if (tri) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - 34 * u); ctx.lineTo(q[0] + 26 * u, q[1] + 14 * u); ctx.lineTo(q[0] - 26 * u, q[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.stroke(); } else { const pulse = (t / 2) % 1; ctx.beginPath(); ctx.arc(q[0], q[1], (20 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = C.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha *= 1 - pulse; ctx.stroke(); ctx.globalAlpha /= Math.max(1e-3, 1 - pulse); ctx.beginPath(); ctx.arc(q[0], q[1], 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); } };
       mark(opts.mark, true); mark(opts.stop, false);
       if (hd) { const q = P(hd.x, hd.y); if (q) heroAt(ctx, q[0], q[1], 1, t, 0.9); }
+      if (!jr) trackDeco(ctx, (pp) => P(pp[0], pp[1]), tr, 1, [0, 0, iw, ih]);
       ctx.restore();
       ctx.save(); ctx.globalAlpha *= a; ctx.lineWidth = px(5); ctx.strokeStyle = C.ink; ctx.strokeRect(ix, iy, iw, ih); ctx.restore();
       text(ctx, 'Рельеф: SRTM · AWS Terrain Tiles · вертикаль ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
@@ -347,7 +373,7 @@
       const ropts = { mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
       if (!reliefView(ctx, jr, sets, tr, t, a, ropts, c)) {
         ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip();
-        sketch(ctx, c.core, sets, tr, t, a, ropts);
+        sketch(ctx, c.core, sets, tr, t, a, { ...ropts, deco: !jr });
         ctx.restore();
       }
       text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(c.names[1]) + px(54), { size: 56, weight: 500, color: C.ink, max: c.names[2], a, fam: BODY });
@@ -361,7 +387,7 @@
       const label = E.arrivalLabel(s, p), country = E.countryOf(s, p), sk = placeSticker(label, country);
       const [sx, sy, sw, sh] = box(c.sticker); const pb = [sx - px(24), sy - px(24), sw + px(48), sh + px(48)];
       const SIGNS = ['09', '10', '11', '12'], sg = sk === 'stamp-compass' ? pk('sign', SIGNS[[...String(label)].reduce((h, ch) => h + ch.charCodeAt(0), 0) % SIGNS.length]) : null;   // нет символа страны — указатель вместо пустого компаса (декор, ничего не утверждает)
-      const pic = sg || stickerImg(sk), pop = (1 - easeOut(lt / 0.8)) * px(30);
+      const pic = E.stk(1) || sg || stickerImg(sk), pop = (1 - easeOut(lt / 0.8)) * px(30);   // стикер настроения важнее указателя и символа страны
       const fr = framed(ctx, 'compass-map', portrait ? W / 2 : px(1480), portrait ? sy + sh / 2 + dy : px(560) + dy, portrait ? W * 1.1 : px(900), portrait ? 1.2 : -1.5, a, (g, x, y, w, h) => {
         const wash = art('wash.webp'); if (wash) { g.save(); g.globalAlpha *= 0.45; g.drawImage(wash, x - w * 0.1, y + h * 0.2, w * 1.2, h * 0.6); g.restore(); }
         if (pic) { const sc = Math.min((w * 0.78) / pic.width, (h * 0.8) / pic.height), dw = pic.width * sc, dh = pic.height * sc; g.save(); g.globalAlpha *= easeOut(lt / 0.7); g.shadowColor = 'rgba(30,20,8,.3)'; g.shadowBlur = 18 * u; g.shadowOffsetY = 10 * u; g.drawImage(pic, x + (w - dw) / 2, y + (h - dh) / 2 + pop, dw, dh); g.restore(); }
@@ -460,7 +486,7 @@
       const [nx, ny, nw] = box(c.next);
       ctx.save(); ctx.globalAlpha *= a; ctx.strokeStyle = C.accent; ctx.lineWidth = 3 * u; ctx.setLineDash([10 * u, 10 * u]); ctx.beginPath(); ctx.moveTo(nx, ny - px(12) + dy); ctx.lineTo(nx + nw, ny - px(12) + dy); ctx.stroke(); ctx.restore();
       text(ctx, f.next, nx, ny + px(70), { size: 76, fam: HAND, weight: 400, color: C.accent, max: c.next[2], a });
-      const comp = stickerImg('stamp-compass'); if (comp) fitImg(ctx, comp, c.compass, a, 8, dy);
+      const comp = E.stk(2) || stickerImg('stamp-compass'); if (comp) fitImg(ctx, comp, E.stk(2) ? [c.compass[0] - 30, c.compass[1] - 30, c.compass[2] + 60, c.compass[3] + 60] : c.compass, a, 8, dy);
       if (E.MARK && (E.MARK !== 'dot')) { ctx0 = ctx; heroBox(c.hero, a, dy, -3); }   // без знака героя — один компас, без дубля
       tape(ctx, c.tape, -4, a, dy);
     }

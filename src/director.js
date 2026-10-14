@@ -357,13 +357,13 @@
         return finish(fallbackPlan(ctx, J), ctx, log, 'обязательный бит «' + beat + '» не собран');
       }
     }
-    const fit = fitDuration(shots, episodeType, spare, ctx, beats.map((b) => b[0]));
+    const fit = fitDuration(shots, episodeType, spare, ctx, beats.map((b) => b[0]), opts.dur);
     return finish(fit.shots, ctx, log, null, fit.note);
   }
 
   /* Подгонка длительности: не растягиваем ради 30 секунд; сжимаем гибкие кадры, затем убираем слабейший необязательный */
-  function fitDuration(shots, type, spare = [], ctx = null, order = []) {
-    const [pLo, pHi, hMin, hMax] = DURATION[type];
+  function fitDuration(shots, type, spare = [], ctx = null, order = [], dur = null) {
+    const [pLo, pHi, hMin, hMax] = dur || DURATION[type];   // dur — свой коридор длительности (короткий фрагмент)
     let list = shots.map((s) => ({ ...s }));
     const sum = () => list.reduce((a, s) => a + s.durationSec, 0);
     const notes = [];
