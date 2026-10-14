@@ -620,7 +620,7 @@
       }
       LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
       }
-      if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: S.dim, align: 'center', alpha: 0.75, shadow: false });
+      if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: J ? J.isDark(s) ? '#fff7e8' : '#162822' : S.dim, align: 'center', alpha: 0.75, shadow: false });
       const SIGM = MARK && MARK !== 'dot';
       if (LY.hud && !J && (SIGM || NAME) && shots.length > 1 && t >= shots[0].t1 - 0.3) {   // в «Дневнике» имя и день — в шапке страницы
         const sa = smooth((t - (shots[0].t1 - 0.3)) / 0.8), onPh = s.recipe === 'photo-reveal' || s.recipe === 'highlights-reel' || (J && J.isDark(s));

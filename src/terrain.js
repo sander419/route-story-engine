@@ -55,7 +55,7 @@
       const dzdx = ((at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1))) / (8 * mpp) * exS;
       const dzdy = ((at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1))) / (8 * mpp) * exS;
       const slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx), s = Math.max(0, Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - asp));
-      const wet = water[i] || h <= 0; let c = wet ? [128, 165, 174] : ramp(tint(h)); const sh = 0.78 + 0.30 * s;
+      const wet = water[i] || h <= 0; let c = wet ? [128, 165, 174] : ramp(tint(h)); const sh = 0.60 + 0.56 * s;
       let r = c[0] * sh, gg = c[1] * sh, b = c[2] * sh;
       if (h > 0 && (Math.floor(h / step) !== Math.floor(at(x + 1, y) / step) || Math.floor(h / step) !== Math.floor(at(x, y + 1) / step))) { r *= 0.96; gg *= 0.96; b *= 0.96; }   // контурная линия
       sr += r; sg2 += gg; sb += b;
@@ -105,7 +105,7 @@ in vec3 p; in vec3 n; in vec2 t; uniform mat4 m; out vec3 vn; out vec2 vt; out f
       g.attachShader(pr, sh(g.FRAGMENT_SHADER, `#version 300 es
 precision highp float; in vec3 vn; in vec2 vt; in float vw; uniform sampler2D tex; uniform vec2 res; uniform float dist; out vec4 o;
 void main(){
-  vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.84+0.22*d);
+  vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.76+0.34*d);
   if(abs(vn.y)<0.001){ c=texture(tex,vt).rgb*0.42; c=mix(c,vec3(0.30,0.24,0.18),0.45); }
   float edgeP=min(min(vt.x,1.0-vt.x),min(vt.y,1.0-vt.y)); float a=abs(vn.y)<0.001?1.0:smoothstep(0.0,0.05,edgeP);   // край рельефа растворяется в фон окна, без резкой диагонали
   o=vec4(c*a,a);
