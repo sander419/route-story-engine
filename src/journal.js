@@ -16,7 +16,7 @@
   const LAY = {
     v: {
       cover: { head: [164, 320, 752, 128], dest: [164, 464, 752, 216], hero: [344, 744, 440, 696], wash: [96, 660, 920, 840], tape: [232, 724, 288, 80] },
-      road: { map: [96, 416, 888, 848], core: [192, 592, 696, 544], names: [164, 448, 752, 72], metric: [96, 1292, 888, 0], tape: [652, 392, 288, 80], sticker: [716, 1160, 220, 220] },
+      road: { map: [96, 262, 888, 1002], core: [192, 430, 696, 700], names: [164, 294, 752, 72], metric: [96, 1292, 888, 0], tape: [652, 238, 288, 80], sticker: [716, 1160, 220, 220] },
       photo: { card: [156, 396, 768, 1120], win: [188, 428, 704, 880], cap: [188, 1340, 704, 96], date: [188, 1452, 704, 56], tape: [392, 356, 288, 80] },
       arrival: { title: [164, 320, 752, 172], sticker: [196, 556, 688, 688], date: [164, 1308, 752, 56], tape: [600, 536, 288, 80] },
       elev: { metric: [164, 336, 752, 0], prof: [96, 660, 888, 752], core: [192, 756, 696, 560], cap: [164, 1444, 752, 72], tape: [196, 636, 288, 80] },
@@ -24,11 +24,11 @@
       counter: 180, spine: 64,
     },
     h: {
-      cover: { head: [452, 330, 752, 128], dest: [452, 474, 752, 216], hero: [1204, 220, 412, 652], wash: [952, 100, 824, 864], tape: [1120, 200, 288, 80] },   // карточка ниже — по центру рядом с коллажем
-      road: { map: [288, 156, 1280, 704], core: [480, 292, 864, 480], names: [452, 188, 960, 72], metric: [1068, 576, 680, 0], tape: [1248, 132, 288, 80], sticker: [1560, 520, 200, 200] },
+      cover: { head: [190, 330, 760, 128], dest: [190, 474, 760, 216], hero: [1204, 220, 412, 652], wash: [952, 100, 824, 864], tape: [1120, 200, 288, 80] },   // карточка ниже — по центру рядом с коллажем
+      road: { map: [128, 150, 1120, 820], core: [230, 290, 920, 560], names: [190, 182, 980, 72], metric: [1284, 300, 560, 0], tape: [890, 126, 288, 80], sticker: [1560, 520, 200, 200] },
       photo: { card: [620, 132, 672, 872], win: [652, 164, 608, 608], cap: [652, 804, 608, 96], date: [652, 916, 608, 56], tape: [828, 92, 288, 80] },
       arrival: { title: [452, 220, 752, 172], sticker: [948, 432, 480, 480], date: [452, 456, 432, 56], tape: [1108, 412, 288, 80] },
-      elev: { metric: [452, 168, 864, 0], prof: [352, 492, 1280, 396], core: [480, 572, 1020, 260], cap: [452, 952, 1016, 72], tape: [452, 468, 288, 80] },
+      elev: { metric: [200, 140, 700, 0], prof: [140, 360, 1640, 600], core: [260, 460, 1400, 400], cap: [260, 900, 1400, 60], tape: [1300, 336, 288, 80] },
       fin: { receipt: [320, 192, 1280, 696], metric: [452, 268, 840, 0], next: [452, 590, 1016, 96], hero: [1352, 500, 320, 504], compass: [1148, 680, 244, 244], tape: [420, 152, 288, 80] },
       counter: 136, spine: 64,
     },
@@ -382,7 +382,7 @@
       const spec = E.metric(s, p, t, lt, dur); const ma = E.vis(lt, dur); const sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
       const mh2 = metricCard(ctx, c.metric, spec, ma * env, (1 - easeOut(lt / 0.6)) * px(24), -1, 11);
       const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], ma * env, 6, 0);
-      else if (E.MARK === 'unicycle' && E.uni() && portrait && mh2) fitImg(ctx, E.uni(), [c.metric[0] + c.metric[2] - 250, c.metric[1] + mh2 / u - 40, 240, 300], ma * env, 5, (1 - easeOut(lt / 0.8)) * px(30));   // уницикл под карточкой километров, справа — не на тексте
+      else if (E.MARK === 'unicycle' && E.uni() && mh2) fitImg(ctx, E.uni(), [c.metric[0] + c.metric[2] - 250, c.metric[1] + mh2 / u + 14, 240, 300], ma * env, 5, (1 - easeOut(lt / 0.8)) * px(30));   // уницикл под карточкой километров, справа — не на тексте
     }
     function arrival(ctx, s, p, a, dy, lt) {
       const c = L.arrival, [tx, ty, tw, th] = box(c.title), pad = px(32);
@@ -390,7 +390,7 @@
       const [sx, sy, sw, sh] = box(c.sticker); const pb = [sx - px(24), sy - px(24), sw + px(48), sh + px(48)];
       const SIGNS = ['09', '10', '11', '12'], sg = sk === 'stamp-compass' ? pk('sign', SIGNS[[...String(label)].reduce((h, ch) => h + ch.charCodeAt(0), 0) % SIGNS.length]) : null;   // нет символа страны — указатель вместо пустого компаса (декор, ничего не утверждает)
       const pic = E.stk(1) || sg || stickerImg(sk), pop = (1 - easeOut(lt / 0.8)) * px(30);   // стикер настроения важнее указателя и символа страны
-      const fr = framed(ctx, 'compass-map', portrait ? W / 2 : px(1480), portrait ? sy + sh / 2 + dy : px(560) + dy, portrait ? W * 1.1 : px(900), portrait ? 1.2 : -1.5, a, (g, x, y, w, h) => {
+      const fr = framed(ctx, 'compass-map', portrait ? W / 2 : px(1480), portrait ? sy + sh / 2 + px(110) + dy : px(560) + dy, portrait ? W * 1.1 : px(900), portrait ? 1.2 : -1.5, a, (g, x, y, w, h) => {
         const wash = art('wash.webp'); if (wash) { g.save(); g.globalAlpha *= 0.45; g.drawImage(wash, x - w * 0.1, y + h * 0.2, w * 1.2, h * 0.6); g.restore(); }
         if (pic) { const sc = Math.min((w * 0.78) / pic.width, (h * 0.8) / pic.height), dw = pic.width * sc, dh = pic.height * sc; g.save(); g.globalAlpha *= easeOut(lt / 0.7); g.shadowColor = 'rgba(30,20,8,.3)'; g.shadowBlur = 18 * u; g.shadowOffsetY = 10 * u; g.drawImage(pic, x + (w - dw) / 2, y + (h - dh) / 2 + pop, dw, dh); g.restore(); }
       });
@@ -418,7 +418,7 @@
       const dy = (1 - easeOut(l2 / 0.7)) * px(48), rot = (k % 2 ? 1 : -1) * 2;
       const fid = k % 2 ? 'photo-frame' : 'polaroid', fimg = pk('frame', fid);
       if (fimg) {
-        const fw = portrait ? W * 1.12 : px(1240), fcy = portrait ? H * 0.42 : H * 0.44, e = E.img(m.url), zoom = 1.02 + 0.05 * clamp(l2 / slot, 0, 1);
+        const fw = portrait ? W * 1.12 : px(1240), fcy = portrait ? H * 0.47 : H * 0.46, e = E.img(m.url), zoom = 1.02 + 0.05 * clamp(l2 / slot, 0, 1);
         const fr = framed(ctx, fid, W / 2 + (portrait ? 0 : -px(40)), fcy + dy, fw, rot * 0.6, a, (g, x, y, w, h) => {
           if (e.ok) { const im = e.img, sc = Math.max(w / im.width, h / im.height) * zoom; g.drawImage(im, x + (w - im.width * sc) / 2, y + (h - im.height * sc) / 2, im.width * sc, im.height * sc); }
           if (m.credit) { g.save(); g.font = `500 ${px(22)}px ${BODY}`; g.fillStyle = 'rgba(255,255,255,.92)'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 6 * u; g.fillText(m.credit, x + px(14), y + h - px(14), w - px(28)); g.restore(); }
@@ -493,6 +493,17 @@
       tape(ctx, c.tape, -4, a, dy);
     }
 
+    /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
+    function pageHeader(ctx, s, p, dark, t) {
+      if (FAM[s.recipe] === 'cover' && t < 3) return;   // на обложке своя крупная надпись
+      const x0 = px(L.spine) + px(portrait ? 44 : 60), x1 = W - px(portrait ? 56 : 80), y = px(portrait ? 168 : 96), a = smooth((t - 0.3) / 0.6);
+      const ink = dark ? '#f1e6cf' : C.accent, sec = dark ? 'rgba(241,230,207,.75)' : C.secondary;
+      const left = E.journey.schematic ? (E.NAME || 'путь') : 'День ' + E.today.day, right = E.dateLine(s, p) || '';
+      text(ctx, left, x0, y, { size: portrait ? 64 : 56, fam: HAND, weight: 400, color: ink, a, max: 520 });
+      if (right) text(ctx, right, x1, y, { size: portrait ? 34 : 30, weight: 500, color: sec, align: 'right', a, max: 460 });
+      if (E.NAME && !E.journey.schematic) { ctx.save(); ctx.font = `400 ${px(portrait ? 64 : 56)}px ${HAND}`; const lw = ctx.measureText(left).width; ctx.restore(); text(ctx, '· ' + E.NAME, x0 + lw + px(16), y, { size: portrait ? 40 : 34, fam: HAND, weight: 400, color: sec, a, max: 380 }); }
+      ctx.save(); ctx.globalAlpha = a * 0.5; ctx.strokeStyle = dark ? 'rgba(241,230,207,.5)' : 'rgba(31,78,90,.35)'; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(x0, y + px(22)); ctx.lineTo(x1, y + px(22)); ctx.stroke(); ctx.restore();
+    }
     /* ---------- кадр ---------- */
     function draw(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, fam = FAM[s.recipe] || 'road', p = s.params || {};
@@ -503,6 +514,7 @@
       const env = clamp(Math.min(smooth(rlt / 0.5), 1 - smooth((rlt - (rdur - 0.3)) / 0.3)), 0, 1);
       const a = env, dy = (1 - easeOut(rlt / 0.7)) * px(36);
       ctx0 = ctx;
+      pageHeader(ctx, s, p, dark, t);
       switch (fam) {
         case 'cover': cover(ctx, s, p, a, dy, rlt); break;
         case 'road': roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt }); break;
