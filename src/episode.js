@@ -394,7 +394,7 @@
       const maxW = W - 2 * mx; let size = (portrait ? 118 : 124) * u, lines = [];
       for (let k = 0; k < 8; k++) {
         ctx.font = `${S.headW} ${size}px ${S.fHead}`; lines = []; let cur = '';
-        for (const w of String(text).split(/\s+/)) { const tt = cur ? cur + ' ' + w : w; if (ctx.measureText(tt).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tt; }
+        for (const w of String(text).replace(/(\d)[ ]+(км|м|ч|мин|с|%|°)(?![а-яёa-z])/gi, '$1 $2').split(/ +/)) { const tt = cur ? cur + ' ' + w : w; if (ctx.measureText(tt).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tt; }
         lines.push(cur);
         if (lines.length <= 3 && lines.every((ln) => ctx.measureText(ln).width <= maxW)) break; size *= 0.9;
       }

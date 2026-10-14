@@ -259,7 +259,7 @@
     const weatherSticker = () => { const W0 = E.WX; if (!W0) return null; const id = wxId(W0); if (id && pk('wx', id)) return { pack: pk('wx', id) }; if (W0.precip >= 2) return info && info.events.rain; if (W0.wind >= 3) return info && info.events.wind; return null; };
 
     function wrapLines(ctx, str, weight, size, fam, maxW, maxLines) {
-      ctx.save(); ctx.font = `${weight} ${size}px ${fam}`; const words = String(str).split(/\s+/), lines = []; let cur = '';
+      ctx.save(); ctx.font = `${weight} ${size}px ${fam}`; const words = String(str).replace(/(\d)[ ]+(км|м|ч|мин|с|%|°)(?![а-яёa-z])/gi, '$1 $2').split(/ +/), lines = []; let cur = '';   // число и единица не разрываются
       for (const w of words) { const tt = cur ? cur + ' ' + w : w; if (ctx.measureText(tt).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tt; }
       lines.push(cur); ctx.restore(); return lines.length <= maxLines && lines.every((l) => { ctx.save(); ctx.font = `${weight} ${size}px ${fam}`; const ok = ctx.measureText(l).width <= maxW; ctx.restore(); return ok; }) ? lines : null;
     }
