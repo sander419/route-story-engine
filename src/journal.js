@@ -266,20 +266,21 @@
     }
     function cover(ctx, s, p, a, dy, lt) {
       const ct = E.coverTexts(s, p), sets = s.recipe === 'season-card' ? E.allSets() : [E.todaySet()];
-      const area = [0, 200, W / u, H / u - 280], c = { map: area, names: [0, 0, 0, 0] };
-      if (!reliefView(ctx, s.recipe === 'season-card', sets, 1, 0, a, { deco: false, lt: lt * 1.4 }, c)) sketch(ctx, portrait ? [140, 760, 800, 740] : [900, 220, 850, 650], sets, 1, lt, a);
-      imageShade(ctx, a);
-      const x = px(86), top = px(portrait ? 340 : 310), tw = portrait ? 908 : 1000;
-      text(ctx, ct.from, x, top, { size: 42, weight: 500, max: tw, color: AP.photoText, a });
-      let size = ct.small ? 140 : 186, lines;
+      const area = [0, portrait ? 760 : 300, W / u, H / u - (portrait ? 760 : 300)], c = { map: area, names: [0, 0, 0, 0] };   // карта под текстом, а не за ним
+      if (!reliefView(ctx, s.recipe === 'season-card', sets, 1, 0, a, { deco: false, lt, amp: 0.4 }, c)) sketch(ctx, portrait ? [140, 760, 800, 740] : [900, 220, 850, 650], sets, 1, lt, a);
+      { const g = ctx.createLinearGradient(0, px(portrait ? 740 : 280), 0, px(portrait ? 1060 : 520)); g.addColorStop(0, window.Appearance.rgba(AP.shade, 1)); g.addColorStop(1, window.Appearance.rgba(AP.shade, 0)); ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = g; ctx.fillRect(0, px(portrait ? 740 : 280), W, px(portrait ? 320 : 240)); ctx.fillRect(0, 0, W, px(portrait ? 740 : 280)); ctx.restore(); }
+      ctx.save(); ctx.globalAlpha *= a * 0.12; ctx.fillStyle = AP.shade; ctx.fillRect(0, 0, W, H); ctx.restore();   // карта — только фон: затемнена, чтобы текст читался
+      const x = px(86), tw = portrait ? 908 : 1000, f = (d, len = 0.8) => a * smooth(clamp((lt - d) / len, 0, 1));   // текст выходит по очереди: откуда → куда → факты
+      const top = px(portrait ? 330 : 120);
+      text(ctx, ct.from, x, top, { size: 46, weight: 500, max: tw, color: AP.photoText, a: f(0.1, 0.6) });
+      let size = ct.small ? 130 : 170, lines;
       while (!(lines = wrapLines(ctx, ct.to, HW, px(size), HEAD, px(tw), 3)) && size > 60) size -= 6;
-      const titleY = top + px(size + 52);
-      (lines || [ct.to]).forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.04), { size, weight: HW, fam: HEAD, max: tw, ls: -.035, color: AP.photoText, a }));
-      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = C.accent; ctx.fillRect(x, H - px(portrait ? 380 : 200), px(100), px(10)); ctx.restore();
-      text(ctx, E.dateLine(s, p), x, H - px(portrait ? 290 : 120), { size: 38, color: AP.photoText, max: tw, a });
-      const T = s.recipe === 'season-card' ? terr.all : terr.today;
-      if (T) text(ctx, 'AWS Terrain Tiles · высоты ×' + T.exag, x, H - px(portrait ? 112 : 54), { size: 24, color: AP.photoText, max: tw, a });
-      if (E.stk(0)) fitImg(ctx, E.stk(0), [W / u - 220, H / u - 340, 130, 130], a, 0, 0, false);
+      const titleY = top + px(size + 40);
+      (lines || [ct.to]).forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.04), { size, weight: HW, fam: HEAD, max: tw, ls: -.035, color: AP.photoText, a: f(0.35, 0.6) }));
+      const fy = titleY + px(size * 1.04) * ((lines || [1]).length - 1) + px(110);
+      ctx.save(); ctx.globalAlpha *= f(0.7, 0.6); ctx.fillStyle = C.accent; ctx.fillRect(x, fy - px(56), px(100), px(10)); ctx.restore();
+      const facts = [p && p.km ? Math.round(p.km) + ' км' : null, E.dateLine(s, p)].filter(Boolean).join('  ·  ');
+      text(ctx, facts, x, fy + px(30), { size: 50, weight: 600, color: AP.photoText, max: tw, a: f(0.7, 0.6) });
     }
 
     /* ---------- рельеф: настоящие высоты, 3D-вид с маршрутом поверх (Terrain), запасной вариант — эскиз ---------- */
@@ -299,8 +300,8 @@
       const a0 = today.pts[0], a1 = today.pts[today.pts.length - 1], len = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
       const heading = len > e * 0.25 ? (Math.atan2(a1[0] - a0[0], -(a1[1] - a0[1])) * 180) / Math.PI : 0;   // линия уходит от зрителя
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
-      const intro = Math.pow(1 - easeOut(clamp((opts.lt != null ? opts.lt : t) / 4.2, 0, 1)), 1.4), fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
-      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 62 + 6 * easeOut(t / 14) - 22 * intro, bearing: heading + 9 * Math.sin(t * 0.17) - 22 * intro, fov: 38 };   // въезд: из высоты и сбоку — вниз и к маршруту, дальше медленный облёт
+      const amp = opts.amp || 0, intro = 1 - smooth(clamp((opts.lt != null ? opts.lt : t) / 5, 0, 1)), fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
+      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 62 + 6 * easeOut(t / 14) - 22 * amp * intro, bearing: heading + 9 * Math.sin(t * 0.17) - 22 * amp * intro, fov: 38 };   // въезд: из высоты и сбоку — вниз и к маршруту, дальше медленный облёт
       {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
         const smp = [], upto = !jr && hd ? hd.i : Infinity;
         for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
@@ -311,7 +312,7 @@
           if (r <= 1.02) break; cam.dist *= Math.min(1.8, r);
         }
       }
-      cam.dist *= 1 + 0.35 * intro;
+      cam.dist *= 1 + 0.35 * amp * intro;
       const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
       ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = (T.tex && T.tex.avg) || '#b4ba94'; ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // фон окна — средний цвет самой текстуры: край модели не виден   // подложка окна: по углам рельефа не видно светлого пятна
       ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
