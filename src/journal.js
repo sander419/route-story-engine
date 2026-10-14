@@ -266,23 +266,26 @@
       g.addColorStop(.55, window.Appearance.rgba(AP.shade,.06)); g.addColorStop(1, window.Appearance.rgba(AP.shade,.94));
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
     }
-    function cover(ctx, s, p, a, dy, lt) {
-      const ct = E.coverTexts(s, p), sets = s.recipe === 'season-card' ? E.allSets() : [E.todaySet()];
-      const area = [0, portrait ? 760 : 300, W / u, H / u - (portrait ? 760 : 300)], c = { map: area, names: [0, 0, 0, 0] };   // карта под текстом, а не за ним
-      if (!reliefView(ctx, s.recipe === 'season-card', sets, 1, 0, a, { deco: false, lt, amp: 0.4 }, c)) sketch(ctx, portrait ? [140, 760, 800, 740] : [900, 220, 850, 650], sets, 1, lt, a);
-      { const g = ctx.createLinearGradient(0, px(portrait ? 740 : 280), 0, px(portrait ? 1060 : 520)); g.addColorStop(0, window.Appearance.rgba(AP.shade, 1)); g.addColorStop(1, window.Appearance.rgba(AP.shade, 0)); ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = g; ctx.fillRect(0, px(portrait ? 740 : 280), W, px(portrait ? 320 : 240)); ctx.fillRect(0, 0, W, px(portrait ? 740 : 280)); ctx.restore(); }
-      ctx.save(); ctx.globalAlpha *= a * 0.12; ctx.fillStyle = AP.shade; ctx.fillRect(0, 0, W, H); ctx.restore();   // карта — только фон: затемнена, чтобы текст читался
-      const x = px(86), tw = portrait ? 908 : 1000, f = (d, len = 0.8) => a * smooth(clamp((lt - d) / len, 0, 1));   // текст выходит по очереди: откуда → куда → факты
-      const top = px(portrait ? 330 : 120);
-      text(ctx, ct.from, x, top, { size: 46, weight: 500, max: tw, color: AP.photoText, a: f(0.1, 0.6) });
-      let size = ct.small ? 130 : 170, lines;
+    function cover(ctx, s, p, a, dy, lt) {   // обложка: название и главные цифры трека; самого трека здесь нет — он на следующем экране
+      const ct = E.coverTexts(s, p), x = px(86), tw = portrait ? 908 : 1700, f = (d, len = 0.6) => a * smooth(clamp((lt - d) / len, 0, 1));
+      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = AP.bg; ctx.fillRect(0, 0, W, H);
+      const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, window.Appearance.rgba(AP.accent, 0.0)); g.addColorStop(1, window.Appearance.rgba(AP.accent, 0.16)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+      const top = px(portrait ? 300 : 230);
+      text(ctx, ct.from, x, top, { size: 46, weight: 500, max: tw, color: AP.muted, a: f(0.1) });
+      let size = ct.small ? 132 : portrait ? 170 : 150, lines;
       while (!(lines = wrapLines(ctx, ct.to, HW, px(size), HEAD, px(tw), 3)) && size > 60) size -= 6;
-      const titleY = top + px(size + 40);
-      (lines || [ct.to]).forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.04), { size, weight: HW, fam: HEAD, max: tw, ls: -.035, color: AP.photoText, a: f(0.35, 0.6) }));
-      const fy = titleY + px(size * 1.04) * ((lines || [1]).length - 1) + px(110);
-      ctx.save(); ctx.globalAlpha *= f(0.7, 0.6); ctx.fillStyle = C.accent; ctx.fillRect(x, fy - px(56), px(100), px(10)); ctx.restore();
-      const facts = [p && p.km ? Math.round(p.km) + ' км' : null, E.dateLine(s, p)].filter(Boolean).join('  ·  ');
-      text(ctx, facts, x, fy + px(30), { size: 50, weight: 600, color: AP.photoText, max: tw, a: f(0.7, 0.6) });
+      const titleY = top + px(size + 40), ls = lines || [ct.to];
+      ls.forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.04), { size, weight: HW, fam: HEAD, max: tw, ls: -.035, color: AP.text, a: f(0.3) }));
+      const fy = titleY + px(size * 1.04) * (ls.length - 1) + px(portrait ? 130 : 110);
+      ctx.save(); ctx.globalAlpha *= f(0.6); ctx.fillStyle = AP.accent; ctx.fillRect(x, fy - px(60), px(100), px(10)); ctx.restore();
+      const km = p && p.km ? Math.round(p.km) : null, items = [km ? [km + ' км', 'дистанция'] : null, p && p.time ? [p.time, 'в пути'] : null, p && p.gain ? ['+' + p.gain + ' м', 'набор высоты'] : null, p && p.maxEle ? [p.maxEle + ' м', 'высшая точка'] : null].filter(Boolean).slice(0, 4);
+      if (!items.length) { text(ctx, E.dateLine(s, p), x, fy + px(40), { size: 54, weight: 600, color: AP.text, max: tw, a: f(0.7) }); return; }
+      items.forEach(([v, l], i) => {
+        const d = 0.7 + i * 0.18, cw = portrait ? 0 : (px(1700) / items.length), X = portrait ? x : x + i * cw, Y = portrait ? fy + px(i * 215) : fy + px(60);
+        text(ctx, v, X, Y + px(110), { size: portrait ? 118 : 104, weight: 700, fam: NUM, max: portrait ? tw : cw / u - 30, color: AP.text, a: f(d) });
+        text(ctx, l.toUpperCase(), X, Y + px(portrait ? 164 : 160), { size: 32, weight: 600, ls: .12, color: AP.accent, max: portrait ? tw : cw / u - 30, a: f(d + 0.1) });
+      });
+      text(ctx, E.dateLine(s, p), x, H - px(portrait ? 150 : 90), { size: 40, color: AP.muted, max: tw, a: f(1.1) });
     }
 
     /* ---------- рельеф: настоящие высоты, 3D-вид с маршрутом поверх (Terrain), запасной вариант — эскиз ---------- */
