@@ -22,12 +22,13 @@
   )]).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
+  const SKIN = { journal: 'coast', night: 'forest', paper: 'clay', editorial: 'chalk' };   // стиль = палитра по умолчанию + набор значков; раскладка и камера у всех одни
   const swatch = { journal: 'linear-gradient(135deg,#152a32 0%,#152a32 45%,#93a18d 45%,#93a18d 78%,#cbb48f 78%)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
     b.innerHTML = `<div class="sw" style="background:${swatch[id]}"></div><span>${s.name}</span>`;
-    b.onclick = () => { state.styleId = id; $('iconLibrary').textContent = window.StyleIcons.familyName(id); [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
+    b.onclick = () => { state.styleId = id; const pk = SKIN[id]; if (pk) { state.appearance = { ...state.appearance, ...AP.palettes[pk], preset: pk }; saveAppearance(); } $('iconLibrary').textContent = window.StyleIcons.familyName(id); [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
     $('styles').appendChild(b);
   });
 

@@ -71,6 +71,7 @@
       scrim: [244, 232, 203], paper: true, credit: '',
     },
     paper: {
+      journal: true,   // единый движок «Дневника»: стиль = палитра + значки
       name: 'Атлас',
       bg: '#efe6d2',
       vec: { water: '#bcd3d6', waterLine: '#8fb0b3', park: 'rgba(170,180,120,.26)', urban: 'rgba(190,160,110,.2)', road: 'rgba(120,90,50,.3)', rail: 'rgba(120,90,50,.25)', border: 'rgba(120,70,40,.5)', label: '#2a1c12', halo: 'rgba(239,230,210,.92)', peak: '#7c2d12' },
@@ -84,6 +85,7 @@
       deco: { brush: 'banner/x12', brushInk: '#fffaf0', border: true, rose: true },   // надзаголовок на оранжевом мазке кисти
     },
     night: {
+      journal: true,   // единый движок «Дневника»: стиль = палитра + значки
       name: 'Полночь',
       bg: '#0a1428',
       bgGrad: ['#0d1b36', '#0a1730', '#0b1e3a'],
@@ -97,7 +99,8 @@
       scrim: [4, 8, 18], credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
       deco: { brush: 'banner/04', brushInk: '#ffffff', plate: 'glass', glow: 'vfx/01', fog: 'fog/01' },   // стеклянная плашка под титром, тёплое свечение головы
     },
-    editorial: {   // «Журнал V3»: токены выбранного направления (бумага #F1EEE6, чернила #222725, акцент #C23E28); векторная карта движка, без фото и ИИ-иллюстраций
+    editorial: {
+      journal: true,   // единый движок «Дневника»: стиль = палитра + значки   // «Журнал V3»: токены выбранного направления (бумага #F1EEE6, чернила #222725, акцент #C23E28); векторная карта движка, без фото и ИИ-иллюстраций
       name: 'Журнал V3',
       bg: '#f1eee6',
       vec: { water: '#d6dbd4', waterLine: '#a9b3a8', park: 'rgba(93,96,89,.10)', urban: 'rgba(34,39,37,.05)', road: 'rgba(34,39,37,.22)', rail: 'rgba(34,39,37,.18)', border: 'rgba(194,62,40,.45)', label: '#222725', halo: 'rgba(241,238,230,.92)', peak: '#5d6059' },
