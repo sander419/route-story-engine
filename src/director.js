@@ -302,8 +302,9 @@
 
   /* ================= Типы эпизода и биты ================= */
   const TYPES = {
-    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['achievement', false], ['conditions', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
-    'returning-viewer': [['hook', true], ['new-leg', true], ['achievement', false], ['conditions', false], ['fact', false], ['moment', false], ['reflection', false], ['proof', false], ['outro', true]],
+    // дуга серии: завязка → дорога → чего она стоила (набор, погода, факт) → прибытие → момент → мысль → финал
+    'new-viewer': [['hook', true], ['context', true], ['new-leg', true], ['proof', false], ['conditions', false], ['fact', false], ['achievement', false], ['moment', false], ['reflection', false], ['outro', true]],
+    'returning-viewer': [['hook', true], ['new-leg', true], ['proof', false], ['conditions', false], ['fact', false], ['achievement', false], ['moment', false], ['reflection', false], ['outro', true]],
     'story-so-far': [['hook', true], ['context', true], ['moment', false], ['proof', false], ['outro', true]],
   };
   // длительность от содержания: лучше дольше, чем мелькание (правила кадра)

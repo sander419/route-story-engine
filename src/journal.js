@@ -369,7 +369,7 @@
       const [mx, my, mw, mh] = box(c.map);
       drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, dy);
       const sets = jr ? E.allSets() : [E.todaySet()];
-      const tr = jr ? easeOut(lt / (dur * 0.6)) : E.reveal(t, s);
+      const tr = jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);   // в «Дневнике» камера не летит — путь рисуется с первой секунды кадра
       const ropts = { mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
       if (!reliefView(ctx, jr, sets, tr, t, a, ropts, c)) {
         ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip();

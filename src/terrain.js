@@ -38,13 +38,24 @@
     const span = Math.max(40, mx - Math.max(0, mn)), raw = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000], want = (T.lspan || span) / 14; let step = raw.find((s) => s >= want) || 1000;
     const lspan = Math.max(30, T.lspan || span), flat = lspan < 700, lo = T.llo != null ? T.llo : Math.max(0, mn), tint = (h) => (flat ? clamp((h - lo) / lspan, -0.2, 1.4) * 1500 : h), exS = flat ? Math.max(2, T.exag * 1.3) : ex;   // на равнине подсветка склонов сильнее   // равнина: цвет по местному диапазону высот, иначе всё одного оттенка
     let sr = 0, sg2 = 0, sb = 0;
+    // вода: в данных высот озеро и море — ровная гладь; ищем связные участки, где высота не меняется ни на сантиметр, крупнее ~0,3 % области
+    const water = new Uint8Array(W * Hh); {
+      const flatPx = new Uint8Array(W * Hh);
+      for (let y = 1; y < Hh - 1; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x, h = H[i]; if (Math.abs(H[i - 1] - h) < 0.05 && Math.abs(H[i + 1] - h) < 0.05 && Math.abs(H[i - W] - h) < 0.05 && Math.abs(H[i + W] - h) < 0.05) flatPx[i] = 1; }
+      const seen = new Uint8Array(W * Hh), stack = [], minSize = Math.max(400, W * Hh * 0.003);
+      for (let i0 = 0; i0 < W * Hh; i0++) {
+        if (!flatPx[i0] || seen[i0]) continue; const h0 = H[i0], comp = []; stack.push(i0); seen[i0] = 1;
+        while (stack.length) { const i = stack.pop(); comp.push(i); const x = i % W; for (const j of [i - 1, i + 1, i - W, i + W]) { if (j < 0 || j >= W * Hh || seen[j] || ((j === i - 1 || j === i + 1) && Math.abs((j % W) - x) !== 1)) continue; if (Math.abs(H[j] - h0) < 0.05) { seen[j] = 1; stack.push(j); } } }
+        if (comp.length >= minSize) for (const i of comp) water[i] = 1;
+      }
+    }
     const at = (x, y) => H[clamp(y, 0, Hh - 1) * W + clamp(x, 0, W - 1)];
     for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x, h = H[i];
       const dzdx = ((at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1))) / (8 * mpp) * exS;
       const dzdy = ((at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1))) / (8 * mpp) * exS;
       const slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx), s = Math.max(0, Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - asp));
-      let c = h <= 0 ? [160, 186, 190] : ramp(tint(h)); const sh = 0.5 + 0.8 * s;
+      const wet = water[i] || h <= 0; let c = wet ? [118, 166, 184] : ramp(tint(h)); const sh = 0.5 + 0.8 * s;
       let r = c[0] * sh, gg = c[1] * sh, b = c[2] * sh;
       if (h > 0 && (Math.floor(h / step) !== Math.floor(at(x + 1, y) / step) || Math.floor(h / step) !== Math.floor(at(x, y + 1) / step))) { r *= 0.80; gg *= 0.78; b *= 0.74; }   // контурная линия
       sr += r; sg2 += gg; sb += b;

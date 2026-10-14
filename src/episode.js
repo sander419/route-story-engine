@@ -65,7 +65,8 @@
   /* код погоды WMO (худший за день) → картинка набора art/pack/wx; нет кода — картинки нет */
   function wxPackId(w) {
     if (!w || w.code == null) return null; const c = w.code;
-    if (c >= 95) return 'storm'; if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow'; if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || w.precip >= 2) return 'rain';
+    const wet = w.precip == null || w.precip >= 0.5;   // код погоды — худший час; если за день почти не капало, тучу с дождём не рисуем (иначе спорит с подписью «без осадков»)
+    if (c >= 95 && wet) return 'storm'; if (((c >= 71 && c <= 77) || c === 85 || c === 86) && wet) return 'snow'; if ((((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) && wet) || w.precip >= 2) return 'rain';
     if (c === 45 || c === 48) return 'forest-fog'; if (w.wind >= 5) return 'wind-leaves'; if (c === 0) return 'sun'; if (c === 1 || c === 2) return 'sun-rays'; return 'clouds';
   }
   function img(url) {
@@ -691,7 +692,7 @@
           break;
         case 'route-reveal': case 'camera-follow': {
           const km = p.km * todayReveal(t);
-          const d0 = s.move * dur * (s.follow ? 1 : 0.85);   // титр — когда маршрут начинает рисоваться
+          const d0 = Math.min(0.5, s.move * dur);   // титр сразу: пока камера летит к участку, кадр не пустой
           const frNow = todayReveal(t), ck = [clockAt(frNow), tempAt(frNow)].filter(Boolean).join(' · ');
           lowerThird(ctx, vis(lt, dur, d0), rise(lt, d0), (single ? 'пройдено' : 'день ' + today.day) + (ck ? ' · ' + ck : ''), (single ? '' : '+') + fmtN(km, km < 100 ? 1 : 0) + ' км', route2 || 'новый участок');
           break;
@@ -778,10 +779,10 @@
         }
         case 'pullback': case 'progress-poster': {
           if (stk(2)) stickerAt(ctx, stk(2), W - mx - (portrait ? 150 : 170) * u, portrait ? H * 0.3 : H * 0.3, (portrait ? 300 : 260) * u, 7, s.recipe === 'pullback' ? smooth((su - 0.62) / 0.18) : vis(lt, s.durationSec), lt);
-          const pa = s.recipe === 'pullback' ? smooth((su - 0.62) / 0.18) * (1 - smooth((lt - (dur - 0.4)) / 0.4)) : a;
+          const pa = s.recipe === 'pullback' ? smooth((su - 0.3) / 0.18) * (1 - smooth((lt - (dur - 0.4)) / 0.4)) : a;   // итог появляется уже на отлёте камеры, без паузы
           const NEXT = PF.next ? 'дальше — ' + PF.next : 'продолжение следует →';
           const dayRes = p.newKm != null ? ['день ' + p.day, '+' + fmtN(p.newKm, p.newKm < 100 ? 1 : 0) + ' км', p.time].filter(Boolean).join(' · ') : 'день ' + p.day;
-          lowerThird(ctx, pa, s.recipe === 'pullback' ? (1 - smooth((su - 0.62) / 0.25)) * 26 * u : dy, journey.schematic ? 'и путь продолжается' : dayRes, kmText(p.totalKm), journey.schematic ? (journey.totalKmNote || '') : NEXT);
+          lowerThird(ctx, pa, s.recipe === 'pullback' ? (1 - smooth((su - 0.3) / 0.25)) * 26 * u : dy, journey.schematic ? 'и путь продолжается' : dayRes, kmText(p.totalKm), journey.schematic ? (journey.totalKmNote || '') : NEXT);
           break;
         }
         case 'journey-recap': {
