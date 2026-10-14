@@ -95,6 +95,18 @@
       fHead: '"RS DINish", "RS Geologica", "Arial Narrow", sans-serif', headW: 700, fNum: '"RS DINish", "RS Geologica", sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
       scrim: [4, 8, 18], credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
     },
+    editorial: {   // «Журнал V3»: токены выбранного направления (бумага #F1EEE6, чернила #222725, акцент #C23E28); векторная карта движка, без фото и ИИ-иллюстраций
+      name: 'Журнал V3',
+      bg: '#f1eee6',
+      vec: { water: '#d6dbd4', waterLine: '#a9b3a8', park: 'rgba(93,96,89,.10)', urban: 'rgba(34,39,37,.05)', road: 'rgba(34,39,37,.22)', rail: 'rgba(34,39,37,.18)', border: 'rgba(194,62,40,.45)', label: '#222725', halo: 'rgba(241,238,230,.92)', peak: '#5d6059' },
+      ghost: 'rgba(93,96,89,.45)', ghostW: 5, ghostDash: [4, 14],
+      line: { stops: ['#c23e28', '#c23e28'], glow: 'rgba(241,238,230,.95)', w: 9 },
+      head: '#f1eee6', headHalo: 'rgba(194,62,40,.4)',
+      ink: '#222725', dim: 'rgba(34,39,37,.66)', accent: '#c23e28',
+      panel: 'rgba(241,238,230,.94)', panelLine: 'rgba(34,39,37,.35)',
+      fHead: '"RS Geologica", "Segoe UI", system-ui, sans-serif', headW: 700, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS DINish", "RS Geologica", system-ui, sans-serif',
+      scrim: [241, 238, 230], paper: true, credit: 'Map © OpenFreeMap, OpenStreetMap contributors',
+    },
     navigator: {
       name: 'Навигатор',
       bg: '#090e1a', bgGrad: ['#090e1a', '#0c1630', '#160d2c'], navigator: true,
@@ -105,19 +117,6 @@
       panel: 'rgba(9,14,26,.78)', panelLine: 'rgba(67,231,255,.4)',
       fHead: '"RS DINish", "RS Geologica", "Arial Narrow", sans-serif', headW: 700, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
       scrim: [9, 14, 26], credit: '',
-    },
-    sat: {
-      name: 'Спутник',
-      bg: '#10150f',
-      layers: [esri('imagery', 'World_Imagery', { filter: 'saturate(1.1) contrast(1.05)', maxZ: 17 })],
-      vec: { waterLine: 'rgba(160,220,255,.8)', road: 'rgba(255,255,255,.85)', rail: 'rgba(255,255,255,.55)', border: '#ffd27a', label: '#ffffff', halo: 'rgba(0,0,0,.75)', peak: '#ffe08a' },
-      ghost: 'rgba(255,255,255,.35)', ghostW: 6, ghostDash: null,
-      line: { stops: ['#fde047', '#fb923c'], glow: 'rgba(253,224,71,.4)', w: 10 },
-      head: '#ffffff', headHalo: 'rgba(253,224,71,.5)',
-      ink: '#ffffff', dim: 'rgba(255,255,255,.7)', accent: '#fde047',
-      panel: 'rgba(10,14,10,.7)', panelLine: 'rgba(255,255,255,.25)',
-      fHead: '"RS Geologica", "Segoe UI", system-ui, sans-serif', headW: 700, fNum: '"RS Geologica Num", "RS Geologica", system-ui, sans-serif', numW: 700, fBody: '"RS Geologica", "Segoe UI", system-ui, sans-serif',
-      scrim: [0, 0, 0], credit: 'Imagery © Esri, Maxar, Earthstar Geographics',
     },
   };
 
