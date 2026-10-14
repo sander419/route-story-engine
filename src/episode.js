@@ -335,7 +335,11 @@
       }
     }
     // текст, который меняет цвет там, где его пересекает красный круг (приём V3)
-    function withRedField(ctx, field, draw) { draw(null); if (!field) return; ctx.save(); ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.clip(); draw(D.paperInk || '#ffffff'); ctx.restore(); }
+    function withRedField(ctx, field, draw) {
+      if (!field) { draw(null); return; }
+      ctx.save(); ctx.beginPath(); ctx.rect(-W, -H, 3 * W, 3 * H); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.clip('evenodd'); draw(null); ctx.restore();   // вне круга — обычный цвет (свечение текста на красное не лезет)
+      ctx.save(); ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.clip(); draw(D.paperInk || '#ffffff'); ctx.restore();   // внутри круга — бумажный цвет
+    }
     let LT_NO_SCRIM = false, mapCache = null, lastCam = null;
     const HAND = '"Marck Script", "RS Geologica", "Segoe Script", cursive';
     // строки с цифрами — данные: шрифт S.fNum с табличными цифрами; слова (места, заголовки) — S.fHead с трекингом заголовка −2 %
@@ -369,10 +373,10 @@
         const py = 34 * u, top = ky - ks * 1.25 * u - py, bot = (sub ? base + ss * 0.3 * u : ty + ts * 0.22 * u) + py;
         plateT(ctx, mx - 44 * u, top, bw + 88 * u, bot - top);
       }
-      const fr = (portrait ? 150 : 135) * u, field = D.redField && !onPhoto ? { r: fr, x: mx + (withDigits(title) ? (portrait ? 430 : 470) * u : measureT(ctx, title, tA)) + fr * 0.15, y: ty - ts * 0.4 * u } : null;   // у счётчика ширина меняется по ходу — круг на постоянном месте, иначе прыгает
+      const fr = (portrait ? 150 : 105) * u, field = D.redField && !onPhoto ? { r: fr, x: mx + (withDigits(title) ? (portrait ? 430 : 470) * u : measureT(ctx, title, tA)) + fr * 0.15, y: ty - ts * 0.4 * u } : null;   // у счётчика ширина меняется по ходу — круг на постоянном месте, иначе прыгает
       if (field) { ctx.save(); ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.fillStyle = S.accent; ctx.fill(); ctx.restore(); }
       if ((!decoImg.brush || !decoImg.brush.ok) && !field) { ctx.fillStyle = S.accent; ctx.fillRect(mx, ky - ks * 1.5 * u, 72 * u, 7 * u); }
-      kickerT(ctx, kicker, mx, ky, { size: ks, max: maxW, shadow: !!onPhoto, shadowC: sh, color: field ? S.dim : onPhoto && S.paper ? '#ffffff' : S.accent });
+      withRedField(ctx, field, (col) => kickerT(ctx, kicker, mx, ky, { size: ks, max: maxW, shadow: !!onPhoto && !col, shadowC: sh, color: col || (field ? S.dim : onPhoto && S.paper ? '#ffffff' : S.accent) }));
       withRedField(ctx, field, (col) => {
         T(ctx, title, mx, ty, { ...tA, color: col || ink, shadowC: sh, shadow: !!onPhoto && !col });
         if (sub) T(ctx, sub, mx, base, { ...sA, color: col || dimC, shadowC: sh, shadow: !!onPhoto && !col });
@@ -400,9 +404,9 @@
       }
       const lh = size * 1.12, blockH = lines.length * lh, cy = H * (portrait ? 0.46 : 0.5) + dy, top = cy - blockH / 2, mr = (portrait ? 92 : 78) * u;
       ctx.save(); ctx.globalAlpha = a; if (MARK) drawMark(ctx, MARK, W / 2, top - 120 * u - mr, mr, MCOL, 0); ctx.restore();
-      const field = D.redField ? { r: (portrait ? 430 : 330) * u, x: W - mx - (portrait ? 60 : 300) * u, y: top + blockH * 0.25 } : null;   // большой красный круг справа, как на обложке V3
+      const field = D.redField ? { r: (portrait ? 430 : 210) * u, x: W - mx - (portrait ? 60 : 120) * u, y: top + blockH * (portrait ? 0.25 : 0.35) } : null;   // большой красный круг справа, как на обложке V3
       if (field) { ctx.save(); ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.fillStyle = S.accent; ctx.fill(); ctx.restore(); }
-      kickerT(ctx, kicker, W / 2, top - 44 * u, { size: 32, align: 'center', alpha: a, max: maxW, color: field ? S.dim : S.accent });
+      withRedField(ctx, field, (col) => kickerT(ctx, kicker, W / 2, top - 44 * u, { size: 32, align: 'center', alpha: a, max: maxW, color: col || (field ? S.dim : S.accent) }));
       withRedField(ctx, field, (col) => lines.forEach((ln, i) => T(ctx, ln, W / 2, top + lh * (i + 0.82), { size: size / u, fam: S.fHead, weight: S.headW, ls: -0.02 * (size / u), align: 'center', alpha: a, color: col || undefined, shadow: col ? false : undefined })));
       T(ctx, sub, W / 2, top + blockH + 62 * u, { size: 40, weight: 600, align: 'center', alpha: a * 0.9, max: maxW });
     }
