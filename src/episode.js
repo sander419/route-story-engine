@@ -374,8 +374,8 @@
         ctx.fillStyle = g; ctx.fillRect(0, y0, W, H - y0);
       }
       if (onPhoto) {   // тёмная подложка под подписью: светлое фото не должно съедать белый текст
-        const y0 = ky - 300 * u, g = ctx.createLinearGradient(0, y0, 0, H);
-        g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,.72)');
+        const y0 = ky - 380 * u, g = ctx.createLinearGradient(0, y0, 0, H);
+        g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.4, 'rgba(0,0,0,.5)'); g.addColorStop(1, 'rgba(0,0,0,.82)');
         ctx.fillStyle = g; ctx.fillRect(0, y0, W, H - y0);
       }
       const tA = { size: ts, ...headStyle(title, ts), max: maxW }, sA = { size: ss, weight: 500, max: maxW };
