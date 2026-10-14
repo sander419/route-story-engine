@@ -235,3 +235,9 @@ button:active:not(:disabled){transform:scale(.96)}
 .palette-field{display:grid;grid-template-columns:minmax(0,1fr) 48px 100px;align-items:center;gap:8px;font-size:14px}
 .palette-field input[type=color]{width:48px;height:44px;padding:4px;border:1px solid var(--field);border-radius:8px;background:var(--card);cursor:pointer}
 .palette-field input[type=text]{width:100%;min-height:44px;padding:8px;border:1px solid var(--field);border-radius:8px;background:var(--card);font-size:16px}
+.screens{display:grid;gap:var(--space-1)}
+.srow{display:flex;align-items:center;gap:var(--space-2);min-height:44px;font-size:var(--text-sm)}
+.srow span{flex:1}
+.srow small{opacity:.65;min-width:52px;text-align:right}
+.srow.off{opacity:.55}
+.srow button{min-width:44px;min-height:40px;padding:0 var(--space-2)}

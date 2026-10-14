@@ -230,6 +230,29 @@
     l.append(cb, document.createTextNode(nm)); if (k === 'stickers' && !window.StyleIcons.legacyEnabled) l.hidden = true; $('shows').appendChild(l);
   });
 
+  /* ---- экраны ролика: скрыть необязательные, сделать любой дольше или короче ---- */
+  const RN = { 'day-card': 'Обложка', 'trip-title': 'Обложка', 'season-card': 'Обложка', 'progress-overview': 'Путь до сегодня', 'overview-to-detail': 'Переход к дню', 'route-reveal': 'Дорога', 'camera-follow': 'Дорога', 'elevation-profile': 'Профиль высот', 'weather-card': 'Погода', 'time-on-road': 'Время в пути', 'high-point': 'Высшая точка', 'distance-counter': 'Километры', 'checkpoint-arrival': 'Прибытие', 'photo-reveal': 'Фото', 'note-card': 'Заметка', 'highlights-reel': 'Фото пути', 'pullback': 'Финал', 'progress-poster': 'Финал', 'journey-recap': 'Вехи пути', 'day-summary': 'Итог дня' };
+  const LOCKED = new Set(['day-card', 'trip-title', 'season-card', 'progress-overview', 'overview-to-detail', 'route-reveal', 'camera-follow', 'pullback', 'progress-poster', 'journey-recap', 'day-summary']);
+  state.edits = { off: {}, dur: {} };
+  function applyEdits(plan) {
+    const E = state.edits; state.fullBeats = plan.beats;
+    let t = 0; const beats = plan.beats.filter((b) => !E.off[b.recipe] || LOCKED.has(b.recipe)).map((b) => { const d = Math.max(1.5, Math.min(15, b.durationSec + (E.dur[b.recipe] || 0))); const o = { ...b, startSec: Math.round(t * 100) / 100, durationSec: Math.round(d * 100) / 100 }; t += d; return o; });
+    return { ...plan, beats, durationSec: Math.round(t * 100) / 100 };
+  }
+  function renderScreens() {
+    const box = $('screens'); if (!box) return; box.innerHTML = ''; const E = state.edits;
+    (state.fullBeats || []).forEach((b) => {
+      const off = !!E.off[b.recipe] && !LOCKED.has(b.recipe), d = Math.max(1.5, Math.min(15, b.durationSec + (E.dur[b.recipe] || 0)));
+      const row = document.createElement('div'); row.className = 'srow' + (off ? ' off' : '');
+      const name = document.createElement('span'); name.textContent = RN[b.recipe] || b.recipe;
+      const time = document.createElement('small'); time.textContent = off ? 'скрыт' : d.toFixed(1).replace('.', ',') + ' с';
+      const mk = (txt, title, fn, dis) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'ghost'; x.textContent = txt; x.title = title; x.disabled = !!dis; x.onclick = () => { fn(); t = 0; rebuild(); }; return x; };
+      row.append(name, time, mk('−', 'Короче на 0,5 с', () => { E.dur[b.recipe] = (E.dur[b.recipe] || 0) - 0.5; }, off || d <= 1.5), mk('+', 'Дольше на 0,5 с', () => { E.dur[b.recipe] = (E.dur[b.recipe] || 0) + 0.5; }, off || d >= 15));
+      if (!LOCKED.has(b.recipe)) row.append(mk(off ? 'Вернуть' : 'Скрыть', off ? 'Показать экран' : 'Убрать экран из ролика', () => { E.off[b.recipe] = !off; }));
+      box.appendChild(row);
+    });
+  }
+
   /* ---- шаги под роликом ---- */
   function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'text', 'photo', 'look'].forEach((k) => { $('t-' + k).hidden = k !== id; }); if (id === 'photo') drawPmap(); }
   [...$('tabs').children].forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
@@ -529,7 +552,7 @@
     state.etype = J.schematic ? 'story-so-far' : state.kind === 'long' ? 'new-viewer' : 'returning-viewer'; $('etype').value = state.etype;
     $('kind').hidden = !!J.schematic;
     const res = window.Director.direct(J, state.etype, { aspect: state.fmt === 'v' ? '9:16' : '16:9', dur: state.etype === 'returning-viewer' && !J.schematic ? [18, 24, 20, 28] : null });   // фрагмент — короткий ролик ~20–28 с
-    state.lastEp = { res, change, J };
+    res.plan = applyEdits(res.plan); state.lastEp = { res, change, J }; renderScreens();
     renderSeriesPanel(res, change, J);
     const R = state.route && !state.routeIsDemo ? state.route : state.demoDay ? state.route : null, tot = R ? R.total : 0;
     const extra = {
