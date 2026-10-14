@@ -1,5 +1,5 @@
 {
- "total": 309324,
+ "total": 641028,
  "fonts": {
   "RS Geologica": {
    "file": "geologica.woff2",
@@ -30,6 +30,24 @@
    "bytes": 27276,
    "modified": false,
    "missingGlyphs": "−→"
+  },
+  "Cormorant Garamond": {
+   "file": "cormorant-garamond.woff2",
+   "bytes": 209396,
+   "modified": false,
+   "missingGlyphs": ""
+  },
+  "Onest": {
+   "file": "onest.woff2",
+   "bytes": 84192,
+   "modified": false,
+   "missingGlyphs": ""
+  },
+  "Prata": {
+   "file": "prata.woff2",
+   "bytes": 38116,
+   "modified": false,
+   "missingGlyphs": "→≈№"
   }
  }
 }

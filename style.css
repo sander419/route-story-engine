@@ -219,3 +219,19 @@ button:active:not(:disabled){transform:scale(.96)}
 @media(min-width:1000px){.app{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}.stage{padding:24px}#cv{max-height:calc(100vh - 210px)}}
 @media(max-width:640px){.top{padding-top:16px;padding-bottom:16px}.tag{margin-left:0;text-align:left}.stage{padding:12px;border-radius:16px;position:static}#cv{max-height:40vh}.tab{padding:16px;gap:16px}.actions{padding:16px}.ctrl{padding-top:4px}.tabs button{min-height:64px}}
 @media(prefers-reduced-motion:reduce){button:active:not(:disabled){transform:none}}
+
+/* Настройка шрифтов и палитры ролика. */
+.appearance{border-top:1px solid var(--line);padding-top:16px}
+.appearance summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}
+.appearance summary::before{content:'›';display:inline-block;margin-right:8px;font-size:22px;line-height:1}
+.appearance[open]>summary::before,.appearance details[open]>summary::before{transform:rotate(90deg)}
+.appearance-body{display:grid;gap:16px;padding-top:12px}
+.palette-presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.palette-presets button{padding:8px;text-align:left;display:grid;gap:8px;font-size:14px}
+.palette-presets button.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.palette-sample{display:flex;align-items:center;justify-content:space-between;font-size:28px;padding:12px;border-left:4px solid;border-radius:4px}
+.palette-sample i{display:block;width:24px;height:24px;border-radius:50%}
+.palette-fields{display:grid;gap:12px;margin-top:12px}
+.palette-field{display:grid;grid-template-columns:minmax(0,1fr) 48px 100px;align-items:center;gap:8px;font-size:14px}
+.palette-field input[type=color]{width:48px;height:44px;padding:4px;border:1px solid var(--field);border-radius:8px;background:var(--card);cursor:pointer}
+.palette-field input[type=text]{width:100%;min-height:44px;padding:8px;border:1px solid var(--field);border-radius:8px;background:var(--card);font-size:16px}

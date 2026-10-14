@@ -4,3 +4,8 @@
 @font-face{font-family:'RS DINish';src:url('dinish.woff2') format('woff2');font-weight:400 800;font-style:normal;font-display:block}
 @font-face{font-family:'Yeseva One';src:url('yeseva-one.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
 @font-face{font-family:'Marck Script';src:url('marck-script.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
+
+/* Без изменений из локальной коллекции Obsidian; лицензии OFL рядом. */
+@font-face{font-family:'Cormorant Garamond';src:url('cormorant-garamond.woff2') format('woff2');font-weight:300 700;font-style:normal;font-display:block}
+@font-face{font-family:'Onest';src:url('onest.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:'Prata';src:url('prata.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}

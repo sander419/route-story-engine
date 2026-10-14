@@ -75,10 +75,12 @@
     return e;
   }
 
-  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, trackNotes = [], photoPins = [], stickers = [], showFlags = true, showRelief = true }, W, H) {
+  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, trackNotes = [], photoPins = [], stickers = [], showFlags = true, showRelief = true, appearance = null }, W, H) {
     /* Лицо героя (не меняется от стиля к стилю): знак, цвет, имя. Стиль карты — одежда. */
     const S0 = window.RS.STYLES[styleId] || window.RS.STYLES.night, PF = journey.profile || {};
-    const S = PF.color ? heroTint(S0, PF.color) : S0;
+    const palette = window.Appearance.normalize(appearance);
+    const baseStyle = PF.color ? heroTint(S0, PF.color) : S0;
+    const S = (appearance || S0.journal) ? window.Appearance.style(baseStyle, palette) : baseStyle;
     const u = Math.min(W, H) / 1080, portrait = H > W, mx = (portrait ? 72 : 110) * u;
     const ax = W / 2, ay = portrait ? H * 0.44 : H * 0.47;
     const days = [...journey.days].sort((a, b) => a.day - b.day);
@@ -620,7 +622,7 @@
       }
       LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
       }
-      if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: J ? J.isDark(s) ? '#fff7e8' : '#162822' : S.dim, align: 'center', alpha: 0.75, shadow: false });
+      if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: J ? J.footerColor(s) : S.dim, align: 'center', alpha: 0.75, shadow: false });
       const SIGM = MARK && MARK !== 'dot';
       if (LY.hud && !J && (SIGM || NAME) && shots.length > 1 && t >= shots[0].t1 - 0.3) {   // в «Дневнике» имя и день — в шапке страницы
         const sa = smooth((t - (shots[0].t1 - 0.3)) / 0.8), onPh = s.recipe === 'photo-reveal' || s.recipe === 'highlights-reel' || (J && J.isDark(s));
@@ -809,7 +811,7 @@
       const famOf = (s) => window.Journal.FAM[s.recipe] || 'road';
       const NEXT = () => (PF.next ? 'Дальше — ' + PF.next : 'Продолжение следует →');
       const bridge = {
-        W, H, u, portrait, S, HAND, MARK, MCOL, NAME, drawMark, journey, today, days, maxKm, mediaById, img, DL, fmtN, daysWord, toLabel, vis,
+        W, H, u, portrait, S, HAND, MARK, MCOL, NAME, drawMark, journey, today, days, maxKm, mediaById, img, DL, fmtN, daysWord, toLabel, vis, appearance: palette,
         get WX() { return WX; }, at: shotAt,
         run: (s) => { const i = shots.indexOf(s), f = famOf(s); let a = i, b = i; while (a > 0 && famOf(shots[a - 1]) === f) a--; while (b < shots.length - 1 && famOf(shots[b + 1]) === f) b++; return { t0: shots[a].t0, t1: shots[b].t1, shots: shots.slice(a, b + 1) }; },
         todaySet: () => ({ pts: todayPts, brk: todayBrk, cum: todayCum, today: true }),
@@ -860,7 +862,7 @@
         },
       };
       J = window.Journal.create(bridge);
-      const base = assetsReady; assetsReady = Promise.all([base, J.ready]);
+      const base = assetsReady; assetsReady = Promise.all([base, J.ready, window.Appearance.ready()]);
     }
 
     return { draw, tilesAt, cam, duration, W, H, get assetsReady() { return assetsReady; }, plan, events: [] };

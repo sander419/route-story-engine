@@ -48,5 +48,13 @@ const bbox = `(() => { const px = (lon) => ((lon + 180) / 360) * 256, py = (lat)
   const e2 = await p.evaluate(() => (document.getElementById('err').hidden ? '' : document.getElementById('err').textContent));
   ok(!e2 && !errs.length, `экспорт «Дневника» без рельефа проходит (запасной эскиз)${e2 ? ': ' + e2 : ''}${errs.length ? ' · ' + errs[0] : ''}`); await c.close();
 }
+{ // Сервер высот завис: запросы удерживаются без ответа, но сцена должна перейти к эскизу.
+  const c = await b.newContext(); await c.route('**/elevation-tiles-prod/**', () => {});
+  const p = await c.newPage(); await p.goto(URL_);
+  await p.waitForFunction(() => window.Terrain && window.__app && window.__app.state.lastEp, null, { timeout: 90000 });
+  const t0 = Date.now(), empty = await p.evaluate(async bb => (await window.Terrain.load(eval(bb))) === null, bbox);
+  ok(empty && Date.now() - t0 < 14000, 'зависший сервис высот не блокирует сцену дольше 14 секунд');
+  await c.close();
+}
 await b.close();
 console.log(bad ? `\nПАДЕНИЙ: ${bad}` : '\nВСЕ ПРОВЕРКИ ПРОШЛИ'); process.exit(bad ? 1 : 0);

@@ -6,7 +6,7 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const smooth = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
   const easeOut = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
-  const C = { paper: '#162822', card: '#162822', ink: '#fff7e8', secondary: '#b9c7ba', accent: '#f48145', green: '#fff7e8', gold: '#bd552f', blue: '#718e91', desk: '#25332f', guide: '#abb4ab' };   // палитра рамок-коллажей: бумага, бирюза, жжёный оранжевый
+  const DEFAULT_C = { paper: '#162822', card: '#162822', ink: '#fff7e8', secondary: '#b9c7ba', accent: '#f48145', green: '#fff7e8', gold: '#bd552f', blue: '#718e91', desk: '#25332f', guide: '#abb4ab' };   // палитра рамок-коллажей: бумага, бирюза, жжёный оранжевый
   const ART = 'art/';
   const CELL = 0.66;   // ширина цифры в em: у всех цифр счётчика одна ячейка, число не «дрожит» (токены V2: typography.canvasNumbers)
 
@@ -56,11 +56,12 @@
   const rngOf = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
   function create(E) {
-    const { W, H, u, portrait, S } = E;
+    const { W, H, u, portrait, S } = E, AP = window.Appearance.normalize(E.appearance);
+    const C = { ...DEFAULT_C, paper: AP.bg, card: AP.bg, ink: AP.text, secondary: AP.muted, accent: AP.accent, green: AP.text, guide: AP.muted, route: AP.route };
     const L = portrait ? LAY.v : LAY.h;
     const px = (v) => v * u;
     const box = (b) => b.map((v) => v * u);
-    const HEAD = S.fBody, NUM = S.fNum, BODY = S.fBody, HAND = S.fBody;
+    const HEAD = S.fHead, NUM = S.fNum, BODY = S.fBody, HAND = S.fBody, HW = S.headW;
 
     /* ---------- заготовленные слои (рисуем один раз, потом drawImage) ---------- */
     const cache = new Map();
@@ -213,7 +214,7 @@
       }
       if (tr <= 0) return;
       const hd = headAt(today.pts, today.cum, tr), q = F([hd.x, hd.y]);
-      const st = stroke(ctx, today.pts, today.brk, F, hd.i, 12 * u, C.accent, E.journey.schematic ? [26 * u, 18 * u] : null, a);
+      const st = stroke(ctx, today.pts, today.brk, F, hd.i, 12 * u, C.route, E.journey.schematic ? [26 * u, 18 * u] : null, a);
       if (st) { ctx.lineTo(q[0], q[1]); ctx.shadowColor = 'rgba(163,63,40,.35)'; ctx.shadowBlur = 8 * u; st.end(); }
       const s0 = F(today.pts[0]); ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); ctx.arc(s0[0], s0[1], 16 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore();
       if (opts.mark) { const m = F(opts.mark); ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); ctx.moveTo(m[0], m[1] - 34 * u); ctx.lineTo(m[0] + 26 * u, m[1] + 14 * u); ctx.lineTo(m[0] - 26 * u, m[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.lineJoin = 'round'; ctx.stroke(); ctx.restore(); }
@@ -259,8 +260,8 @@
     function imageShade(ctx, a = 1) {
       ctx.save(); ctx.globalAlpha *= a;
       const g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, 'rgba(8,20,15,.84)'); g.addColorStop(.3, 'rgba(8,20,15,.12)');
-      g.addColorStop(.55, 'rgba(8,20,15,.06)'); g.addColorStop(1, 'rgba(8,20,15,.94)');
+      g.addColorStop(0, window.Appearance.rgba(AP.shade,.84)); g.addColorStop(.3, window.Appearance.rgba(AP.shade,.12));
+      g.addColorStop(.55, window.Appearance.rgba(AP.shade,.06)); g.addColorStop(1, window.Appearance.rgba(AP.shade,.94));
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
     }
     function cover(ctx, s, p, a, dy, lt) {
@@ -269,15 +270,15 @@
       if (!reliefView(ctx, s.recipe === 'season-card', sets, 1, 0, a, { deco: false }, c)) sketch(ctx, portrait ? [140, 760, 800, 740] : [900, 220, 850, 650], sets, 1, lt, a);
       imageShade(ctx, a);
       const x = px(86), top = px(portrait ? 340 : 310), tw = portrait ? 908 : 1000;
-      text(ctx, ct.from, x, top, { size: 42, weight: 500, max: tw, color: '#fff7e8', a });
+      text(ctx, ct.from, x, top, { size: 42, weight: 500, max: tw, color: AP.photoText, a });
       let size = ct.small ? 140 : 186, lines;
-      while (!(lines = wrapLines(ctx, ct.to, 700, px(size), HEAD, px(tw), 3)) && size > 60) size -= 6;
+      while (!(lines = wrapLines(ctx, ct.to, HW, px(size), HEAD, px(tw), 3)) && size > 60) size -= 6;
       const titleY = top + px(size + 52);
-      (lines || [ct.to]).forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.04), { size, weight: 700, fam: HEAD, max: tw, ls: -.035, color: '#fff7e8', a }));
+      (lines || [ct.to]).forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.04), { size, weight: HW, fam: HEAD, max: tw, ls: -.035, color: AP.photoText, a }));
       ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = C.accent; ctx.fillRect(x, H - px(portrait ? 380 : 200), px(100), px(10)); ctx.restore();
-      text(ctx, E.dateLine(s, p), x, H - px(portrait ? 290 : 120), { size: 38, color: '#fff7e8', max: tw, a });
+      text(ctx, E.dateLine(s, p), x, H - px(portrait ? 290 : 120), { size: 38, color: AP.photoText, max: tw, a });
       const T = s.recipe === 'season-card' ? terr.all : terr.today;
-      if (T) text(ctx, 'AWS Terrain Tiles · высоты ×' + T.exag, x, H - px(portrait ? 112 : 54), { size: 24, color: '#fff7e8', max: tw, a });
+      if (T) text(ctx, 'AWS Terrain Tiles · высоты ×' + T.exag, x, H - px(portrait ? 112 : 54), { size: 24, color: AP.photoText, max: tw, a });
       if (E.stk(0)) fitImg(ctx, E.stk(0), [W / u - 220, H / u - 340, 130, 130], a, 0, 0, false);
     }
 
@@ -285,8 +286,8 @@
     const terr = { today: null, all: null }, relLoads = [];
     if (E.relief !== false && window.Terrain) {
       const fams = new Set(E.famsInPlan());
-      if (fams.has('road')) relLoads.push(window.Terrain.load(E.bboxToday()).then((T) => { terr.today = T; }));
-      if (fams.has('jroad')) relLoads.push(window.Terrain.load(E.bboxAll()).then((T) => { terr.all = T; }));
+      if (fams.has('road')) relLoads.push(window.Terrain.load(E.bboxToday(), { land: AP.land, water: AP.water }).then((T) => { terr.today = T; }));
+      if (fams.has('jroad')) relLoads.push(window.Terrain.load(E.bboxAll(), { land: AP.land, water: AP.water }).then((T) => { terr.all = T; }));
     }
     function reliefView(ctx, jr, sets, tr, t, a, opts, c) {
       const T = jr ? terr.all : terr.today; if (!T || !window.Terrain) return false;
@@ -318,7 +319,7 @@
       for (const s of sets) if (s !== today) { poly(s.pts, s.brk, null); if (E.journey.schematic) ctx.setLineDash([14 * u, 10 * u]); ctx.strokeStyle = 'rgba(244,232,203,.85)'; ctx.lineWidth = 7 * u; ctx.stroke(); ctx.strokeStyle = 'rgba(89,80,61,.85)'; ctx.lineWidth = 3.5 * u; ctx.stroke(); ctx.setLineDash([]); }
       if (hd) {
         poly(today.pts, today.brk, hd.i, [hd.x, hd.y]); if (E.journey.schematic) ctx.setLineDash([26 * u, 18 * u]);
-        ctx.strokeStyle = 'rgba(255,244,217,.92)'; ctx.lineWidth = 20 * u; ctx.stroke(); ctx.strokeStyle = C.accent; ctx.lineWidth = 12 * u; ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = 'rgba(255,244,217,.92)'; ctx.lineWidth = 20 * u; ctx.stroke(); ctx.strokeStyle = C.route; ctx.lineWidth = 12 * u; ctx.stroke(); ctx.setLineDash([]);
         const s0 = P(today.pts[0][0], today.pts[0][1]); if (s0) { ctx.beginPath(); ctx.arc(s0[0], s0[1], 16 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
       }
       const mark = (pt, tri) => { const q = pt && P(pt[0], pt[1]); if (!q) return; if (tri) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - 34 * u); ctx.lineTo(q[0] + 26 * u, q[1] + 14 * u); ctx.lineTo(q[0] - 26 * u, q[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.stroke(); } else { const pulse = (t / 2) % 1; ctx.beginPath(); ctx.arc(q[0], q[1], (20 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = C.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha *= 1 - pulse; ctx.stroke(); ctx.globalAlpha /= Math.max(1e-3, 1 - pulse); ctx.beginPath(); ctx.arc(q[0], q[1], 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); } };
@@ -374,8 +375,8 @@
       const x = px(86), y = portrait ? px(480) : px(380), width = W / u - 172;
       text(ctx, E.kindWord(s, p).toUpperCase(), x, y - px(100), { size: 30, color: C.accent, ls: .1, a });
       let size = 140, lines;
-      while (!(lines = wrapLines(ctx, label, 500, px(size), HEAD, px(width), 3)) && size > 60) size -= 8;
-      (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.15), { size, fam: HEAD, weight: 500, max: width, a }));
+      while (!(lines = wrapLines(ctx, label, HW, px(size), HEAD, px(width), 3)) && size > 60) size -= 8;
+      (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.15), { size, fam: HEAD, weight: HW, max: width, a }));
       text(ctx, E.dateLine(s, p), x, y + px(140 + (lines || [label]).length * size), { size: 36, color: C.secondary, max: width, a });
       if (E.stk(1)) fitImg(ctx, E.stk(1), [W / u - 200, H / u - 300, 110, 110], a, 0, 0, false);
     }
@@ -397,9 +398,9 @@
       let size = px(portrait ? 76 : 64), lines;
       while (!(lines = wrapLines(ctx, cap, 600, size, BODY, max, 3)) && size > px(30)) size *= .9;
       const captionY = H - px(portrait ? 330 : 300) - ((lines || [cap]).length - 1) * size * 1.15;
-      (lines || [cap]).forEach((ln, i) => text(ctx, ln, x, captionY + i * size * 1.15, { size: size / u, weight: 600, color: '#fff7e8', max: max / u }));
-      text(ctx, E.photoDate(m, s), x, H - px(190), { size: 30, color: '#fff7e8', max: max / u });
-      if (m.credit) text(ctx, m.credit, x, H - px(112), { size: 24, color: '#fff7e8', max: max / u });
+      (lines || [cap]).forEach((ln, i) => text(ctx, ln, x, captionY + i * size * 1.15, { size: size / u, weight: 600, color: AP.photoText, max: max / u }));
+      text(ctx, E.photoDate(m, s), x, H - px(190), { size: 30, color: AP.photoText, max: max / u });
+      if (m.credit) text(ctx, m.credit, x, H - px(112), { size: 24, color: AP.photoText, max: max / u });
       ctx.restore();
     }
     function elevation(ctx, s, p, t, lt, dur, a, dy, layout = L.elev) {
@@ -412,7 +413,7 @@
         const ex = gi >= pr.length - 1 ? X(pr.length - 1) : lerp(X(gi), X(gi + 1), gf), ey = gi >= pr.length - 1 ? Y(pr[pr.length - 1]) : lerp(Y(pr[gi]), Y(pr[gi + 1]), gf);
         ctx.save(); ctx.globalAlpha *= a; ctx.translate(0, dy);
         ctx.beginPath(); ctx.moveTo(cx, cy + chh); ctx.lineTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineTo(ex, cy + chh); ctx.closePath();
-        ctx.fillStyle = 'rgba(82,126,133,.30)'; ctx.fill();
+        ctx.fillStyle = window.Appearance.rgba(AP.route, .18); ctx.fill();
         ctx.beginPath(); ctx.moveTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = (c.small ? 6 : 12) * u; ctx.strokeStyle = C.accent; ctx.stroke();
         const mi = pr.indexOf(hi);
         if (p.maxEle != null && g >= mi) { const ma = smooth((g - mi) / 3); ctx.globalAlpha *= ma; ctx.beginPath(); ctx.arc(X(mi), Y(hi), 14 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
@@ -426,7 +427,7 @@
       const c = L.road, [mx, my, mw, mh] = box(c.map); drawCard(ctx, card(mw, mh, { seed: 15, grid: true }), mx, my, mw, mh, a, 0, dy);
       const days = E.days, n = days.length, bw = px(c.core[2]), bx = px(c.core[0]), by = px(c.core[1] + c.core[3]), hh = px(c.core[3]), step = bw / n, w = Math.max(3 * u, step * 0.66), mxk = E.maxKm;
       ctx.save(); ctx.globalAlpha *= a; ctx.translate(0, dy);
-      days.forEach((d, i) => { const grow = easeOut(lt / 1.8 - (i / n) * 0.5), rest = d.km < 1, isT = d.day === E.today.day, h = rest ? 6 * u : Math.max(6 * u, (d.km / mxk) * hh * grow); ctx.fillStyle = isT ? C.accent : rest ? C.guide : 'rgba(39,78,69,.78)'; ctx.fillRect(bx + i * step + (step - w) / 2, by - h, w, h); });
+      days.forEach((d, i) => { const grow = easeOut(lt / 1.8 - (i / n) * 0.5), rest = d.km < 1, isT = d.day === E.today.day, h = rest ? 6 * u : Math.max(6 * u, (d.km / mxk) * hh * grow); ctx.fillStyle = isT ? C.accent : rest ? C.guide : window.Appearance.rgba(AP.muted,.78); ctx.fillRect(bx + i * step + (step - w) / 2, by - h, w, h); });
       ctx.restore(); tape(ctx, c.tape, 3, a, dy);
       metricCard(ctx, c.metric, { kicker: 'день за днём', big: `${n} ${E.daysWord(n)}`, sub: 'высота столбика — километры за день' }, a * E.vis(lt, dur, 0.4), (1 - easeOut(lt / 0.6)) * px(24), -1, 17);
     }
@@ -440,8 +441,8 @@
       tape(ctx, [x / u + 120, y / u - 30, 288, 80], -4, a, dy);
     }
     function finale(ctx, s, p, t, lt, dur, a, dy) {
-      const f = E.finale(s, p, t, lt, dur), x = px(86), width = W / u - 172, ink = '#162822';
-      ctx.save(); ctx.fillStyle = C.accent; ctx.fillRect(0, 0, W, H); ctx.restore();
+      const f = E.finale(s, p, t, lt, dur), x = px(86), width = W / u - 172, ink = AP.finalText;
+      ctx.save(); ctx.fillStyle = AP.finalBg; ctx.fillRect(0, 0, W, H); ctx.restore();
       text(ctx, s.recipe === 'day-summary' ? 'ПРОЙДЕНО ЗА ДЕНЬ' : 'ВСЕГО ЗА ПУТЕШЕСТВИЕ', x, px(portrait ? 350 : 270), { size: 32, weight: 600, color: ink, ls: .07, a });
       const match = String(f.big).match(/^(.*?)\s*(км)$/), number = match ? match[1] : f.big;
       text(ctx, number, x, px(portrait ? 760 : 620), { size: portrait ? 330 : 390, fam: NUM, weight: 700, color: ink, max: width, ls: -.045, a });
@@ -458,10 +459,10 @@
 
     /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
     function pageHeader(ctx, s, p, dark, t) {
-      const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? '#162822' : '#fff7e8';
+      const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? AP.finalText : FAM[s.recipe] === 'cover' || FAM[s.recipe] === 'photo' ? AP.photoText : C.ink;
       text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 30, weight: 500, max: portrait ? 470 : 900, color: ink });
       text(ctx, E.journey.schematic ? 'ИСТОРИЯ ПУТИ' : 'ДЕНЬ ' + E.today.day, right, y, { size: 28, weight: 500, align: 'right', max: 390, color: ink });
-      ctx.save(); ctx.strokeStyle = fin ? 'rgba(22,40,34,.24)' : 'rgba(255,247,232,.24)'; ctx.lineWidth = px(1); ctx.beginPath(); ctx.moveTo(x, y + px(34)); ctx.lineTo(right, y + px(34)); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.strokeStyle = window.Appearance.rgba(ink, .24); ctx.lineWidth = px(1); ctx.beginPath(); ctx.moveTo(x, y + px(34)); ctx.lineTo(right, y + px(34)); ctx.stroke(); ctx.restore();
     }
     /* ---------- кадр ---------- */
     function memories(ctx, s, p, t, lt, dur, a, dy, run) {
@@ -473,8 +474,8 @@
       const x = px(86), y = portrait ? px(300) : px(260), width = W / u - 172;
       if (label) {
         let size = portrait ? 100 : 90, lines;
-        while (!(lines = wrapLines(ctx, label, 500, px(size), HEAD, px(width), portrait ? 1 : 3)) && size > 32) size -= 4;
-        (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.17), { size, fam: HEAD, weight: 500, max: width, color: '#fff7e8', a }));
+        while (!(lines = wrapLines(ctx, label, HW, px(size), HEAD, px(width), portrait ? 1 : 3)) && size > 32) size -= 4;
+        (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.17), { size, fam: HEAD, weight: HW, max: width, color: AP.photoText, a }));
       }
       const iso = ar && countryIso(E.countryOf(ar, ar.params));
       if (iso && E.showFlags) pinFlag(ctx, iso, portrait ? W - px(110) : px(120), portrait ? px(400) : px(340), 64, 0, a);
@@ -515,7 +516,7 @@
       ctx.save(); ctx.globalAlpha *= 1 - smooth(dt / TURN); ctx.drawImage(turnCanvas, 0, 0); ctx.restore();
     }
     const packNeeded = () => (['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here']).concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
-    return { draw, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads]), isDark: s => FAM[s.recipe] !== 'fin' };
+    return { draw, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads]), isDark: s => FAM[s.recipe] !== 'fin', footerColor: s => FAM[s.recipe] === 'fin' ? AP.finalText : ['cover','photo'].includes(FAM[s.recipe]) ? AP.photoText : AP.text };
   }
 
   window.Journal = { create, FAM };

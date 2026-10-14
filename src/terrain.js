@@ -7,10 +7,13 @@
   const TILE = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/';
   const WORLD_M = 40075016.686 / 256;   // метров на Меркатор-единицу на экваторе
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
-  const tiles = new Map(), cache = new Map();
+  const tiles = new Map(), cache = new Map(), paintedKeys = [];
   const loadTile = (z, x, y) => {
     const k = `${z}/${x}/${y}`; let p = tiles.get(k);
-    if (!p) { p = new Promise((res) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = `${TILE}${k}.png`; }); tiles.set(k, p); }
+    if (!p) { p = new Promise((res) => {
+      const im = new Image(), timer = setTimeout(() => res(null), 8000);
+      im.crossOrigin = 'anonymous'; im.onload = () => { clearTimeout(timer); res(im); }; im.onerror = () => { clearTimeout(timer); res(null); }; im.src = `${TILE}${k}.png`;
+    }); tiles.set(k, p); }
     return p;
   };
   const latOf = (y) => (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / 256))) * 180) / Math.PI;
@@ -55,7 +58,7 @@
       const dzdx = ((at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1))) / (8 * mpp) * exS;
       const dzdy = ((at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1))) / (8 * mpp) * exS;
       const slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx), s = Math.max(0, Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - asp));
-      const wet = water[i] || h <= 0; let c = wet ? [128, 165, 174] : ramp(tint(h)); const sh = 0.60 + 0.56 * s;
+      const wet = water[i] || h <= 0; let c = wet ? [128, 165, 174] : ramp(tint(h)); if (wet && T.water) c = T.water; else if (!wet && T.land) { const f = clamp((h - lo) / lspan,0,1) * .18; c = T.land.map(v => v + (235-v)*f); } const sh = 0.60 + 0.56 * s;
       let r = c[0] * sh, gg = c[1] * sh, b = c[2] * sh;
       if (h > 0 && (Math.floor(h / step) !== Math.floor(at(x + 1, y) / step) || Math.floor(h / step) !== Math.floor(at(x, y + 1) / step))) { r *= 0.96; gg *= 0.96; b *= 0.96; }   // контурная линия
       sr += r; sg2 += gg; sb += b;
@@ -66,7 +69,18 @@
 
   /* ---- загрузка: плитки → высоты → сетка → текстура ---- */
   async function load(b, opts = {}) {
-    const r = region(b); if (!r) return null; const key = keyOf(r) + '|' + (opts.exag || 'auto'); if (cache.has(key)) return cache.get(key);
+    const r = region(b); if (!r) return null; const key = keyOf(r) + '|' + (opts.exag || 'auto') + '|' + (opts.land || '') + '|' + (opts.water || ''); if (cache.has(key)) return cache.get(key);
+    if (opts.land || opts.water) {
+      // Смена палитры переиспользует высоты: не копируем большие массивы и не читаем тайлы заново.
+      const job = load(b, { exag: opts.exag }).then(base => {
+        if (!base) return null;
+        const rgb = h => /^#[0-9a-f]{6}$/i.test(h || '') ? [1,3,5].map(i => parseInt(h.slice(i,i+2),16)) : null;
+        const T = { ...base, _gl: null, land: rgb(opts.land), water: rgb(opts.water) }; T.tex = bake(T); return T;
+      });
+      cache.set(key, job); paintedKeys.push(key);
+      if (paintedKeys.length > 8) cache.delete(paintedKeys.shift());
+      return job;
+    }
     const job = (async () => {
       const cv = document.createElement('canvas'); cv.width = r.nx * 256; cv.height = r.ny * 256; const g = cv.getContext('2d', { willReadFrequently: true });
       const jobs = []; let ok = 0;
@@ -81,6 +95,8 @@
       const hSpan = Math.max(1, hMx - Math.max(0, hMn)), n = 2 ** r.z, ux = (256 / n) / 256, lat = latOf(r.cy), mPerUnit = WORLD_M * Math.cos((lat * Math.PI) / 180);
       const exag = opts.exag || (hSpan < 90 ? 5 : hSpan < 400 ? 3 : 2);   // чем площе местность, тем сильнее растягиваем вертикаль; на подписи кадра пишется настоящее число
       const T = { z: r.z, W, H: Hh, N: W, heights, mPerUnit, mpp: mPerUnit * ux, exag, lspan: hSpan, llo: Math.max(0, hMn), hs: (exag / mPerUnit), x0: (r.ax * 256) / n, y0: (r.ay * 256) / n, wU: (W * ux), hU: (Hh * ux), cx: r.cx, cy: r.cy };
+      const rgb = h => /^#[0-9a-f]{6}$/i.test(h || '') ? [1,3,5].map(i => parseInt(h.slice(i,i+2),16)) : null;
+      T.land = rgb(opts.land); T.water = rgb(opts.water);
       T.tex = bake(T);
       let mn = 1e9, mx = -1e9; for (const v of heights) { if (v < mn) mn = v; if (v > mx) mx = v; } T.hmin = mn; T.hmax = mx;
       return T;

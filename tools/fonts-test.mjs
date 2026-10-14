@@ -20,11 +20,11 @@ ok(external.length === 0, `запросов к Google Fonts: ${external.length}`
 
 // 1. все гарнитуры загружены (через document.fonts, а не check(): check() для незагруженных возвращает true)
 const faces = await p.evaluate(async () => {
-  const want = ['400 40px "Yeseva One"', '400 40px "Marck Script"', '700 40px "RS DINish"', '400 40px "RS Geologica"', '700 40px "RS Geologica"', '700 40px "RS Geologica Num"'];
+  const want = ['400 40px "Yeseva One"', '400 40px "Marck Script"', '700 40px "RS DINish"', '400 40px "RS Geologica"', '700 40px "RS Geologica"', '700 40px "RS Geologica Num"', '600 40px "Cormorant Garamond"', '400 40px "Prata"', '400 40px "Onest"'];
   for (const w of want) await document.fonts.load(w, 'АаЯя0123');
   return [...document.fonts].map((f) => `${f.family.replace(/"/g, '')}|${f.status}`);
 });
-for (const fam of ['Yeseva One', 'Marck Script', 'RS DINish', 'RS Geologica', 'RS Geologica Num']) {
+for (const fam of ['Yeseva One', 'Marck Script', 'RS DINish', 'RS Geologica', 'RS Geologica Num', 'Cormorant Garamond', 'Prata', 'Onest']) {
   ok(faces.some((f) => f === `${fam}|loaded`), `загружен: ${fam}`);
 }
 
@@ -34,7 +34,7 @@ const m = await p.evaluate(() => {
   const w = (font, t) => { ctx.font = font; return ctx.measureText(t).width; };
   const applied = (fam, wt) => Math.abs(w(`${wt} 100px "${fam}", serif`, 'Самарканд Бухара') - w(`${wt} 100px "НетТакогоШрифта", serif`, 'Самарканд Бухара')) > 1;
   const spread = (fam, wt) => { const ws = [...'0123456789'].map((d) => w(`${wt} 100px "${fam}", serif`, d)); return +(Math.max(...ws) - Math.min(...ws)).toFixed(2); };
-  for (const [fam, wt] of [['Yeseva One', 400], ['Marck Script', 400], ['RS DINish', 700], ['RS Geologica', 400], ['RS Geologica', 700], ['RS Geologica Num', 600], ['RS Geologica Num', 700]]) out[`${fam} ${wt}`] = { applied: applied(fam, wt), spread: spread(fam, wt) };
+  for (const [fam, wt] of [['Yeseva One', 400], ['Marck Script', 400], ['RS DINish', 700], ['RS Geologica', 400], ['RS Geologica', 700], ['RS Geologica Num', 600], ['RS Geologica Num', 700], ['Cormorant Garamond', 600], ['Prata',400], ['Onest',400]]) out[`${fam} ${wt}`] = { applied: applied(fam, wt), spread: spread(fam, wt) };
   return out;
 });
 for (const [k, v] of Object.entries(m)) ok(v.applied, `на canvas применяется: ${k}`);

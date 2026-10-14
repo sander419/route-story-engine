@@ -7,9 +7,9 @@
 <meta name="description" content="Загрузите трек путешествия — Route Story сам смонтирует ролик для Reels и YouTube.">
 <link rel="preload" href="fonts/geologica.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/dinish.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=10141012">
+<link rel="stylesheet" href="fonts/fonts.css?v=10151502">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=10151404">
+<link rel="stylesheet" href="style.css?v=10151502">
 </head>
 <body>
 <header class="top">
@@ -100,6 +100,21 @@
     <div class="tab" id="t-look" hidden>
       <div class="f">Стиль</div>
       <div class="styles" id="styles"></div>
+      <details class="appearance" id="appearanceBox" open>
+        <summary>Шрифты и цвета ролика</summary>
+        <div class="appearance-body">
+          <div class="two">
+            <label class="f">Заголовки<select id="headingFont"></select></label>
+            <label class="f">Текст<select id="bodyFont"></select></label>
+          </div>
+          <small class="hint">Шрифты из вашей коллекции Typography Collection 2026. Цифры — DINish.</small>
+          <div class="palette-presets" id="palettePresets" aria-label="Готовые палитры"></div>
+          <details><summary>Свои цвета</summary><div class="palette-fields" id="paletteFields"></div></details>
+          <small class="hint" id="paletteContrast" role="status"></small>
+          <small class="hint">Полная настройка — в «Дневнике». В других стилях применяются общие шрифты и цвета; отдельный декор сохраняется. Фотографии сохраняют свои цвета.</small>
+          <button class="ghost" id="appearanceReset" type="button">Сбросить шрифты и цвета</button>
+        </div>
+      </details>
       <div class="f">Формат</div>
       <div class="seg" id="fmt">
         <button data-v="v" class="on">9:16 · Reels, Shorts</button>
@@ -115,7 +130,7 @@
       <div class="seg seg4" id="pMark">
         <button data-v="unicycle" class="on">Уницикл</button><button data-v="bike">Велосипед</button><button data-v="walk">Пешком</button><button data-v="dot">Точка</button>
       </div>
-      <div class="f">Цвет пути</div>
+      <div class="f">Цвет знака</div>
       <div class="colors" id="pColor"></div>
       <small class="hint" id="pHint" hidden>В примерах знак и цвет заданы заранее. Ваши настройки применятся к вашему треку.</small>
     </div>
@@ -162,14 +177,15 @@
 <script src="src/scene.js?v=10144300"></script>
 <script src="src/journey.js?v=10141012"></script>
 <script src="src/director.js?v=10150600"></script>
-<script src="src/terrain.js?v=10151501"></script>
+<script src="src/terrain.js?v=10151502"></script>
 <script src="src/flags.js?v=10143900"></script>
-<script src="src/journal.js?v=10151501"></script>
-<script src="src/episode.js?v=10151501"></script>
+<script src="src/appearance.js?v=10151502"></script>
+<script src="src/journal.js?v=10151502"></script>
+<script src="src/episode.js?v=10151502"></script>
 <script src="src/exif.js?v=10141012"></script>
 <script src="src/audio.js?v=10141012"></script>
 <script src="src/export.js?v=10141012"></script>
 <script src="src/layers-export.js?v=10141012"></script>
-<script src="src/ui.js?v=10151404"></script>
+<script src="src/ui.js?v=10151502"></script>
 </body>
 </html>

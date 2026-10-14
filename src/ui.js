@@ -16,13 +16,13 @@
   const previewSize = () => (state.fmt === 'v' ? [540, 960] : [960, 540]);
 
   /* ---- шрифты ---- */
-  const fontsReady = Promise.all(
+  const fontsReady = Promise.all([window.Appearance.ready(), Promise.all(
     ['400 40px "Yeseva One"', '400 40px "Marck Script"', '700 40px "RS DINish"', '400 30px "RS Geologica"', '500 30px "RS Geologica"', '600 30px "RS Geologica"', '700 30px "RS Geologica"', '700 40px "RS Geologica Num"']
       .map((f) => document.fonts.load(f, 'АаЯя Aa 0123').catch(() => {}))
-  ).then(() => document.fonts.ready).catch(() => {});
+  )]).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
-  const swatch = { journal: 'linear-gradient(135deg,#f2f0e9 0%,#f2f0e9 40%,#9cafaa 40%,#9cafaa 78%,#bd552f 78%)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)' };
+  const swatch = { journal: 'linear-gradient(135deg,#152a32 0%,#152a32 45%,#93a18d 45%,#93a18d 78%,#cbb48f 78%)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
@@ -30,6 +30,47 @@
     b.onclick = () => { state.styleId = id; [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
     $('styles').appendChild(b);
   });
+
+  /* ---- шрифты и палитра: одинаковые для предпросмотра и экспорта ---- */
+  const AP = window.Appearance, APKEY = 'rs-appearance-v1';
+  try { state.appearance = AP.normalize(JSON.parse(localStorage.getItem(APKEY) || 'null')); }
+  catch (e) { state.appearance = AP.normalize(AP.defaults); }
+  const apLabels = { bg: 'Фон окружения', text: 'Основной текст', muted: 'Подписи', accent: 'Акценты', route: 'Маршрут', land: 'Суша', water: 'Вода', shade: 'Подложка карты и фото', photoText: 'Текст на карте и фото', finalBg: 'Фон финала', finalText: 'Текст финала' };
+  function syncAppearance() {
+    const a = state.appearance; $('headingFont').value = a.heading; $('bodyFont').value = a.body;
+    for (const k of AP.colorKeys) { $('ap-' + k).value = a[k]; $('hex-' + k).value = a[k]; }
+    for (const b of $('palettePresets').children) { const on = b.dataset.palette === a.preset; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.querySelector('.palette-sample').style.fontFamily = AP.fonts[a.heading].family; }
+    const pairs = [[a.bg,a.text,'текст'],[a.bg,a.muted,'подписи'],[a.finalBg,a.finalText,'финал'],[a.shade,a.photoText,'текст поверх фото']];
+    const low = pairs.filter(([bg,fg]) => AP.contrast(bg,fg) < 4.5).map(q => q[2]);
+    $('paletteContrast').textContent = low.length ? 'Низкий контраст: ' + low.join(', ') + '. Выберите более светлый текст или более тёмный фон.' : 'Текст и фон: контраст не ниже 4,5:1.';
+  }
+  let appearanceTimer = null;
+  function saveAppearance() {
+    state.appearance = AP.normalize(state.appearance);
+    try { localStorage.setItem(APKEY, JSON.stringify(state.appearance)); } catch (e) { /* приватный режим: настройки работают до закрытия страницы */ }
+    syncAppearance(); clearTimeout(appearanceTimer); appearanceTimer = setTimeout(() => rebuild(true), 180);
+  }
+  for (const id of ['headingFont','bodyFont']) {
+    const select = $(id);
+    for (const [key,font] of Object.entries(AP.fonts)) { if (id === 'bodyFont' && !['onest','geologica','din'].includes(key)) continue; const opt = document.createElement('option'); opt.value = key; opt.textContent = font.name; select.appendChild(opt); }
+    select.onchange = () => { state.appearance[id === 'headingFont' ? 'heading' : 'body'] = select.value; saveAppearance(); };
+  }
+  for (const [key,palette] of Object.entries(AP.palettes)) {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.palette = key;
+    b.innerHTML = `<span class="palette-sample" style="background:${palette.bg};color:${palette.text};border-color:${palette.accent}">Аа <i style="background:${palette.finalBg}"></i></span><span>${palette.name}</span>`;
+    b.onclick = () => { state.appearance = { ...state.appearance, ...palette, preset:key }; saveAppearance(); }; $('palettePresets').appendChild(b);
+  }
+  for (const k of AP.colorKeys) {
+    const row = document.createElement('div'); row.className = 'palette-field';
+    const label = document.createElement('label'); label.htmlFor = 'ap-' + k; label.textContent = apLabels[k]; row.appendChild(label);
+    const color = document.createElement('input'); color.type = 'color'; color.id = 'ap-' + k; row.appendChild(color);
+    const hex = document.createElement('input'); hex.type = 'text'; hex.id = 'hex-' + k; hex.maxLength = 7; hex.setAttribute('aria-label', apLabels[k] + ' HEX'); hex.spellcheck = false; row.appendChild(hex);
+    color.oninput = () => { state.appearance[k] = color.value; state.appearance.preset = 'custom'; saveAppearance(); };
+    hex.onchange = () => { if (/^#[0-9a-f]{6}$/i.test(hex.value)) { state.appearance[k] = hex.value; state.appearance.preset = 'custom'; saveAppearance(); } else { hex.value = state.appearance[k]; } };
+    $('paletteFields').appendChild(row);
+  }
+  $('appearanceReset').onclick = () => { state.appearance = AP.normalize(AP.defaults); saveAppearance(); };
+  syncAppearance();
 
   /* ---- поля ---- */
   ['title', 'subtitle', 'startName', 'endName'].forEach((k) => {
@@ -489,7 +530,7 @@
     const extra = {
       trackNotes: state.show.notes ? (state.o.tnotes || []).filter((n) => n.text.trim()).map((n) => ({ f: n.f, text: n.text.trim() })) : [],
       photoPins: tot && state.show.photos ? (state.o.photos || []).filter((p) => p.s != null).map((p) => ({ f: Math.min(1, Math.max(0, p.s / tot)), url: p.url })) : [],
-      stickers: state.show.stickers ? (state.o.stickers || []).map((x) => x || null) : [], showFlags: state.show.flags, showRelief: state.show.relief,
+      stickers: state.show.stickers ? (state.o.stickers || []).map((x) => x || null) : [], showFlags: state.show.flags, showRelief: state.show.relief, appearance: state.appearance,
     };
     return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, ...extra }, w, h);
   }

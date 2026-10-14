@@ -87,6 +87,9 @@ def main(collection):
     for name, src, dst in [
         ("Yeseva One", "yeseva-one/YesevaOne-Regular.woff2", "yeseva-one.woff2"),
         ("Marck Script", "marck-script/MarckScript-Regular.woff2", "marck-script.woff2"),
+        ("Cormorant Garamond", "cormorant-garamond/CormorantGaramond[wght].woff2", "cormorant-garamond.woff2"),
+        ("Onest", "onest/Onest[wght].woff2", "onest.woff2"),
+        ("Prata", "prata/Prata-Regular.woff2", "prata.woff2"),
     ]:
         shutil.copyfile(col / src, OUT / dst)
         report[name] = {"file": dst, "bytes": (OUT / dst).stat().st_size, "modified": False}
@@ -95,12 +98,17 @@ def main(collection):
         lic = sorted((col / d).glob("LICENSE*"))[0]
         shutil.copyfile(lic, OUT / "licenses" / out)
     # 4) css
+    for family in ["cormorant-garamond", "onest", "prata"]:
+        shutil.copyfile(col / family / "LICENSE.txt", OUT / ("LICENSE-" + family + ".txt"))
     css = """/* Шрифты проекта: хранятся в репозитории, из сети не грузятся. Сборка — tools/build-fonts.py. */
 @font-face{font-family:'RS Geologica';src:url('geologica.woff2') format('woff2');font-weight:400 800;font-style:normal;font-display:block}
 @font-face{font-family:'RS Geologica Num';src:url('geologica-num.woff2') format('woff2');font-weight:400 800;font-style:normal;font-display:block}
 @font-face{font-family:'RS DINish';src:url('dinish.woff2') format('woff2');font-weight:400 800;font-style:normal;font-display:block}
 @font-face{font-family:'Yeseva One';src:url('yeseva-one.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
 @font-face{font-family:'Marck Script';src:url('marck-script.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
+@font-face{font-family:'Cormorant Garamond';src:url('cormorant-garamond.woff2') format('woff2');font-weight:300 700;font-style:normal;font-display:block}
+@font-face{font-family:'Onest';src:url('onest.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:'Prata';src:url('prata.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block}
 """
     (OUT / "fonts.css").write_text(css, encoding="utf-8")
     # 5) покрытие глифов строк продукта
