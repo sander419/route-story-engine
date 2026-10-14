@@ -657,7 +657,8 @@
     let J = null;
     if (S.journal && window.Journal) {
       const loopDay = !!today.loop;
-      const route2T = () => (loopDay ? [fromLabel || toLabel, 'кольцо'].filter(Boolean).join(' · ') : [fromLabel, toLabel].filter(Boolean).join(' → '));
+      // длинная строка «откуда → куда» мелкеет до нечитаемого: тогда оставляем только конечный пункт
+      const route2T = () => { if (loopDay) return [fromLabel || toLabel, 'кольцо'].filter(Boolean).join(' · '); const full = [fromLabel, toLabel].filter(Boolean).join(' → '); return full.length > 34 && toLabel ? toLabel : full; };
       const famOf = (s) => window.Journal.FAM[s.recipe] || 'road';
       const NEXT = () => (PF.next ? 'Дальше — ' + PF.next : 'Продолжение следует →');
       const bridge = {
