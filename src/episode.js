@@ -286,7 +286,10 @@
     const tilesAt = (t) => (S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : []);
     const allMediaIds = [...new Set(shots.flatMap((s) => s.params.mediaIds || []))];
     const wxId = wxPackId(WX), wxImg = wxId ? img('art/pack/wx/' + wxId + '.webp') : null, signImg = img('art/pack/sign/' + ['09', '10', '11', '12'][[...String(journey.id || journey.title || '')].reduce((h, ch) => h + ch.charCodeAt(0), 0) % 4] + '.webp');
-    let assetsReady = Promise.all([...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p]);
+    // оформление стиля (scene.js → deco): мазок кисти под надзаголовком, HUD-рамка, свечение головы — из набора art/pack
+    const D = S.deco || {}, decoImg = {};
+    ['brush', 'hud', 'glow'].forEach((k) => { if (D[k]) decoImg[k] = img('art/pack/' + D[k] + '.webp'); });
+    let assetsReady = Promise.all([...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
 
     /* ---- типографика ---- */
     function T(ctx, str, x, y, a) {
@@ -299,6 +302,40 @@
       if (a.max) { const w = ctx.measureText(str).width; if (w > a.max) ctx.font = `${wt} ${size * (a.max / w)}px ${fam}`; }
       ctx.fillText(str, x, y); ctx.restore();
     }
+    function measureT(ctx, str, a) {   // ширина надписи так же, как её нарисует T (с учётом сжатия до max)
+      if (str == null || str === '') return 0;
+      ctx.save(); const size = (a.size || 40) * u; ctx.font = `${a.weight || 700} ${size}px ${a.fam || S.fBody}`; ctx.letterSpacing = (a.ls || 0) * u + 'px';
+      const w = ctx.measureText(str).width; ctx.restore(); return a.max ? Math.min(w, a.max) : w;
+    }
+    // надзаголовок: на мазке кисти, если он есть у стиля, иначе цветом акцента
+    function kickerT(ctx, str, x, y, o) {
+      if (!str) return false; str = str.toUpperCase();
+      const b = decoImg.brush, ls = o.size * 0.05;
+      if (b && b.ok) {
+        const w = measureT(ctx, str, { size: o.size, weight: 800, ls, max: o.max }), padX = o.size * 1.1 * u, bh = o.size * 2.4 * u, bw = w + padX * 2;
+        const x0 = o.align === 'center' ? x - bw / 2 : x - padX * 0.45, tx = o.align === 'center' ? x : x0 + padX;
+        ctx.save(); if (o.alpha != null) ctx.globalAlpha *= o.alpha; ctx.drawImage(b.img, x0, y - o.size * u * 0.36 - bh / 2, bw, bh); ctx.restore();
+        T(ctx, str, tx, y, { size: o.size, weight: 800, color: D.brushInk || '#ffffff', ls, align: o.align, alpha: o.alpha, max: o.max, shadow: false });
+        return true;
+      }
+      T(ctx, str, x, y, { size: o.size, weight: 700, color: o.color || S.accent, ls, align: o.align, alpha: o.alpha, max: o.max, shadow: o.shadow, shadowC: o.shadowC });
+      return false;
+    }
+    // подложка под блок титра: тёмное стекло или неоновая HUD-рамка (растягивается по ширине без искажения углов)
+    function plateT(ctx, x, y, w, h) {
+      if (D.plate === 'glass') {
+        ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, w, h, 24 * u); ctx.fillStyle = 'rgba(6,12,26,.62)'; ctx.fill();
+        ctx.lineWidth = 1.5 * u; ctx.strokeStyle = 'rgba(255,255,255,.10)'; ctx.stroke(); ctx.fillStyle = S.accent; ctx.fillRect(x, y + 26 * u, 6 * u, h - 52 * u); ctx.restore();
+      } else if (D.plate === 'hud' && decoImg.hud && decoImg.hud.ok) {
+        // видимая рамка картинки — строки 55–150 из 215 (измерено по альфе): масштабируем так, чтобы рамка обняла весь блок
+        const im = decoImg.hud.img, sw = im.width, sh = im.height, f0 = 55 / 215, f1 = 150 / 215, cap = sw * 0.2;
+        const hd = h / (f1 - f0), yd = y - hd * f0, capD = cap * (hd / sh); x -= 34 * u; w = Math.max(w + 68 * u, capD * 2 + 10);
+        ctx.save(); ctx.fillStyle = 'rgba(4,10,24,.6)'; ctx.fillRect(x + 34 * u, y + 16 * u, w - 68 * u, h - 32 * u);
+        ctx.drawImage(im, 0, 0, cap, sh, x, yd, capD, hd); ctx.drawImage(im, cap, 0, sw - 2 * cap, sh, x + capD, yd, w - 2 * capD, hd); ctx.drawImage(im, sw - cap, 0, cap, sh, x + w - capD, yd, capD, hd); ctx.restore();
+      }
+    }
+    // текст, который меняет цвет там, где его пересекает красный круг (приём V3)
+    function withRedField(ctx, field, draw) { draw(null); if (!field) return; ctx.save(); ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.clip(); draw(D.paperInk || '#ffffff'); ctx.restore(); }
     let LT_NO_SCRIM = false, mapCache = null, lastCam = null;
     const HAND = '"Marck Script", "RS Geologica", "Segoe Script", cursive';
     // строки с цифрами — данные: шрифт S.fNum с табличными цифрами; слова (места, заголовки) — S.fHead с трекингом заголовка −2 %
@@ -326,17 +363,27 @@
         g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,.72)');
         ctx.fillStyle = g; ctx.fillRect(0, y0, W, H - y0);
       }
-      ctx.fillStyle = S.accent; ctx.fillRect(mx, ky - ks * 1.5 * u, 72 * u, 7 * u);
-      T(ctx, kicker && kicker.toUpperCase(), mx, ky, { size: ks, weight: 700, color: S.accent, ls: ks * 0.05, max: maxW, shadow: !!onPhoto, shadowC: sh });
-      T(ctx, title, mx, ty, { size: ts, ...headStyle(title, ts), max: maxW, color: ink, shadowC: sh, shadow: !!onPhoto });
-      if (sub) T(ctx, sub, mx, base, { size: ss, weight: 500, color: dimC, max: maxW, shadowC: sh, shadow: !!onPhoto });
+      const tA = { size: ts, ...headStyle(title, ts), max: maxW }, sA = { size: ss, weight: 500, max: maxW };
+      if (D.plate) {   // подложка по фактической ширине текста
+        const bw = Math.max(measureT(ctx, title, tA), measureT(ctx, sub, sA), measureT(ctx, kicker && kicker.toUpperCase(), { size: ks, weight: 800, ls: ks * 0.05 }) + ks * 2.2 * u);
+        const py = 34 * u, top = ky - ks * 1.25 * u - py, bot = (sub ? base + ss * 0.3 * u : ty + ts * 0.22 * u) + py;
+        plateT(ctx, mx - 44 * u, top, bw + 88 * u, bot - top);
+      }
+      const fr = (portrait ? 150 : 135) * u, field = D.redField && !onPhoto ? { r: fr, x: mx + (withDigits(title) ? (portrait ? 430 : 470) * u : measureT(ctx, title, tA)) + fr * 0.15, y: ty - ts * 0.4 * u } : null;   // у счётчика ширина меняется по ходу — круг на постоянном месте, иначе прыгает
+      if (field) { ctx.save(); ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.fillStyle = S.accent; ctx.fill(); ctx.restore(); }
+      if ((!decoImg.brush || !decoImg.brush.ok) && !field) { ctx.fillStyle = S.accent; ctx.fillRect(mx, ky - ks * 1.5 * u, 72 * u, 7 * u); }
+      kickerT(ctx, kicker, mx, ky, { size: ks, max: maxW, shadow: !!onPhoto, shadowC: sh, color: field ? S.dim : onPhoto && S.paper ? '#ffffff' : S.accent });
+      withRedField(ctx, field, (col) => {
+        T(ctx, title, mx, ty, { ...tA, color: col || ink, shadowC: sh, shadow: !!onPhoto && !col });
+        if (sub) T(ctx, sub, mx, base, { ...sA, color: col || dimC, shadowC: sh, shadow: !!onPhoto && !col });
+      });
       ctx.restore();
     }
     function centerTitle(ctx, a, dy, kicker, big, sub, bigSize) {
       if (a <= 0.01) return;
       const my = H * (portrait ? 0.45 : 0.47) + dy;
       ctx.save(); ctx.globalAlpha = a;
-      T(ctx, kicker && kicker.toUpperCase(), W / 2, my - bigSize * 0.62 * u, { size: 34, weight: 700, color: S.accent, ls: 34 * 0.05, align: 'center' });
+      kickerT(ctx, kicker, W / 2, my - bigSize * 0.62 * u, { size: 34, align: 'center' });
       T(ctx, big, W / 2, my + bigSize * 0.28 * u, { size: bigSize, ...headStyle(big, bigSize), align: 'center', max: W - 2 * mx });
       T(ctx, sub, W / 2, my + bigSize * 0.28 * u + 70 * u, { size: 40, weight: 600, align: 'center', max: W - 2 * mx, alpha: 0.9 });
       ctx.restore();
@@ -353,8 +400,10 @@
       }
       const lh = size * 1.12, blockH = lines.length * lh, cy = H * (portrait ? 0.46 : 0.5) + dy, top = cy - blockH / 2, mr = (portrait ? 92 : 78) * u;
       ctx.save(); ctx.globalAlpha = a; if (MARK) drawMark(ctx, MARK, W / 2, top - 120 * u - mr, mr, MCOL, 0); ctx.restore();
-      T(ctx, kicker && kicker.toUpperCase(), W / 2, top - 44 * u, { size: 32, weight: 700, color: S.accent, ls: 32 * 0.05, align: 'center', alpha: a, max: maxW });
-      lines.forEach((ln, i) => T(ctx, ln, W / 2, top + lh * (i + 0.82), { size: size / u, fam: S.fHead, weight: S.headW, ls: -0.02 * (size / u), align: 'center', alpha: a }));
+      const field = D.redField ? { r: (portrait ? 430 : 330) * u, x: W - mx - (portrait ? 60 : 300) * u, y: top + blockH * 0.25 } : null;   // большой красный круг справа, как на обложке V3
+      if (field) { ctx.save(); ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(field.x, field.y, field.r, 0, 6.2832); ctx.fillStyle = S.accent; ctx.fill(); ctx.restore(); }
+      kickerT(ctx, kicker, W / 2, top - 44 * u, { size: 32, align: 'center', alpha: a, max: maxW, color: field ? S.dim : S.accent });
+      withRedField(ctx, field, (col) => lines.forEach((ln, i) => T(ctx, ln, W / 2, top + lh * (i + 0.82), { size: size / u, fam: S.fHead, weight: S.headW, ls: -0.02 * (size / u), align: 'center', alpha: a, color: col || undefined, shadow: col ? false : undefined })));
       T(ctx, sub, W / 2, top + blockH + 62 * u, { size: 40, weight: 600, align: 'center', alpha: a * 0.9, max: maxW });
     }
     function dim(ctx, a, TR) { if (TR || a <= 0.01) return; ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = `rgb(${S.scrim.join(',')})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
@@ -459,6 +508,7 @@
           ctx.beginPath(); ctx.arc(X0, Y0, (18 + 36 * pulse) * u, 0, 6.2832); ctx.fillStyle = S.headHalo; ctx.globalAlpha = 0.7 * (1 - pulse); ctx.fill(); ctx.globalAlpha = 1;
           // старт дня — кольцо в начале линии (финиш отмечает «голова»)
           ctx.beginPath(); ctx.arc(X(todayPts[0]), Y(todayPts[0]), 11 * u, 0, 6.2832); ctx.fillStyle = S.paper ? '#fbf3df' : '#0b1220'; ctx.fill(); ctx.lineWidth = 5 * u; ctx.strokeStyle = S.line.stops[0]; ctx.stroke();
+          if (decoImg.glow && decoImg.glow.ok && !TR) { const gs = (portrait ? 240 : 210) * u * (1 + 0.07 * Math.sin(t * 2.4)); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.8; ctx.drawImage(decoImg.glow.img, X0 - gs / 2, Y0 - gs / 2, gs, gs); ctx.restore(); }   // свечение головы маршрута
           if (MARK) drawMark(ctx, MARK, X0, Y0, (portrait ? 48 : 44) * u, MCOL, tr * (today.km || 0) * 0.35 + t * 0.6);   // по карте едет знак героя, а не точка
           else { ctx.beginPath(); ctx.arc(X0, Y0, 15 * u, 0, 6.2832); ctx.fillStyle = S.head; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = S.line.stops[S.line.stops.length - 1]; ctx.stroke(); }
         }
