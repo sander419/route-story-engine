@@ -259,7 +259,7 @@
     }
     function reliefView(ctx, jr, sets, tr, t, a, opts, c) {
       const T = jr ? terr.all : terr.today; if (!T || !window.Terrain) return false;
-      const [mx, my, mw, mh] = box(c.map), ix = mx + px(18), iy = my + px(18), iw = mw - px(36), ih = mh - px(36);
+      const [mx, my, mw, mh] = box(c.map), nb = box(c.names), ix = mx + px(18), iy = Math.max(my + px(18), nb[1] + nb[3] + px(14)), iw = mw - px(36), ih = my + mh - px(46) - iy;   // окно рельефа начинается под подписью маршрута
       const today = sets.find((s) => s.today) || sets[sets.length - 1], use = jr ? sets : [today];
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       for (const s of use) for (const p of s.pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
@@ -267,8 +267,8 @@
       const a0 = today.pts[0], a1 = today.pts[today.pts.length - 1], len = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
       const heading = len > e * 0.25 ? (Math.atan2(a1[0] - a0[0], -(a1[1] - a0[1])) * 180) / Math.PI : 0;   // линия уходит от зрителя
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
-      const fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.8 : 0.95);
-      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.8 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.8 * follow), dist, pitch: 54 + 8 * easeOut(t / 14), bearing: heading + 7 * Math.sin(t * 0.32), fov: 38 };
+      const fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
+      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.8 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.8 * follow), dist, pitch: 60 + 8 * easeOut(t / 14), bearing: heading + 7 * Math.sin(t * 0.32), fov: 38 };
       const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
       ctx.save(); ctx.globalAlpha *= a; ctx.drawImage(cv, ix, iy);
       ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
@@ -284,6 +284,7 @@
       mark(opts.mark, true); mark(opts.stop, false);
       if (hd) { const q = P(hd.x, hd.y); if (q) heroAt(ctx, q[0], q[1], 1, t, 0.9); }
       ctx.restore();
+      ctx.save(); ctx.globalAlpha *= a; ctx.lineWidth = px(5); ctx.strokeStyle = C.ink; ctx.strokeRect(ix, iy, iw, ih); ctx.restore();
       text(ctx, 'Рельеф: SRTM · AWS Terrain Tiles · вертикаль ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
       return true;
     }
@@ -291,8 +292,6 @@
       const c = L.road, env = rs.env, a = env, dy = (1 - easeOut(rs.lt / 0.7)) * px(36);
       const [mx, my, mw, mh] = box(c.map);
       drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, dy);
-      text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(c.names[1]) + px(54), { size: 56, weight: 500, color: C.ink, max: c.names[2], a, fam: BODY });
-      tape(ctx, c.tape, 3, a, dy);
       const sets = jr ? E.allSets() : [E.todaySet()];
       const tr = jr ? easeOut(lt / (dur * 0.6)) : E.reveal(t, s);
       const ropts = { mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
@@ -301,6 +300,8 @@
         sketch(ctx, c.core, sets, tr, t, a, ropts);
         ctx.restore();
       }
+      text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(c.names[1]) + px(54), { size: 56, weight: 500, color: C.ink, max: c.names[2], a, fam: BODY });
+      tape(ctx, c.tape, 3, a, dy);
       const spec = E.metric(s, p, t, lt, dur); const ma = E.vis(lt, dur); const sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
       const mh2 = metricCard(ctx, c.metric, spec, ma * env, (1 - easeOut(lt / 0.6)) * px(24), -1, 11);
       if (sticker && stickerImg(sticker)) fitImg(ctx, stickerImg(sticker), [c.metric[0] + c.metric[2] - 190, c.metric[1] - 150, 200, 200], ma * env, 6, 0);   // на уголке карточки, поверх текста не лежит

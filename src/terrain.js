@@ -34,7 +34,7 @@
   const ramp = (h) => { if (h <= RAMP[0][0]) return RAMP[0][1]; for (let i = 1; i < RAMP.length; i++) if (h <= RAMP[i][0]) { const a = RAMP[i - 1], b = RAMP[i], t = (h - a[0]) / (b[0] - a[0]); return [a[1][0] + (b[1][0] - a[1][0]) * t, a[1][1] + (b[1][1] - a[1][1]) * t, a[1][2] + (b[1][2] - a[1][2]) * t]; } return RAMP[RAMP.length - 1][1]; };
   function bake(T) {
     const W = T.W, Hh = T.H, H = T.heights, mpp = T.mpp, cv = document.createElement('canvas'); cv.width = W; cv.height = Hh; const g = cv.getContext('2d'), id = g.createImageData(W, Hh);
-    const az = (315 * Math.PI) / 180, alt = (38 * Math.PI) / 180, ex = 2.0; let mn = 1e9, mx = -1e9; for (const v of H) { if (v < mn) mn = v; if (v > mx) mx = v; }
+    const az = (315 * Math.PI) / 180, alt = (24 * Math.PI) / 180, ex = 2.0; let mn = 1e9, mx = -1e9; for (const v of H) { if (v < mn) mn = v; if (v > mx) mx = v; }
     const span = Math.max(40, mx - Math.max(0, mn)), raw = [10, 20, 25, 50, 100, 200, 250, 500, 1000], want = span / 14; let step = raw.find((s) => s >= want) || 1000;
     const at = (x, y) => H[clamp(y, 0, Hh - 1) * W + clamp(x, 0, W - 1)];
     for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
@@ -42,7 +42,7 @@
       const dzdx = ((at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1))) / (8 * mpp) * ex;
       const dzdy = ((at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1))) / (8 * mpp) * ex;
       const slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx), s = Math.max(0, Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - asp));
-      let c = h <= 0 ? [160, 186, 190] : ramp(h); const sh = 0.46 + 0.72 * s;
+      let c = h <= 0 ? [160, 186, 190] : ramp(h); const sh = 0.5 + 0.8 * s;
       let r = c[0] * sh, gg = c[1] * sh, b = c[2] * sh;
       if (h > 0 && (Math.floor(h / step) !== Math.floor(at(x + 1, y) / step) || Math.floor(h / step) !== Math.floor(at(x, y + 1) / step))) { r *= 0.80; gg *= 0.78; b *= 0.74; }   // контурная линия
       const k = i * 4; id.data[k] = Math.min(255, r); id.data[k + 1] = Math.min(255, gg); id.data[k + 2] = Math.min(255, b); id.data[k + 3] = 255;
@@ -52,7 +52,7 @@
 
   /* ---- загрузка: плитки → высоты → сетка → текстура ---- */
   async function load(b, opts = {}) {
-    const r = region(b); if (!r) return null; const key = keyOf(r) + '|' + (opts.exag || 3); if (cache.has(key)) return cache.get(key);
+    const r = region(b); if (!r) return null; const key = keyOf(r) + '|' + (opts.exag || 4.5); if (cache.has(key)) return cache.get(key);
     const job = (async () => {
       const cv = document.createElement('canvas'); cv.width = r.nx * 256; cv.height = r.ny * 256; const g = cv.getContext('2d', { willReadFrequently: true });
       const jobs = []; let ok = 0;
@@ -60,7 +60,7 @@
       await Promise.all(jobs); if (ok < jobs.length * 0.6) return null;
       const W = cv.width, Hh = cv.height, px = g.getImageData(0, 0, W, Hh).data, heights = new Float32Array(W * Hh);
       for (let i = 0; i < W * Hh; i++) heights[i] = px[i * 4] * 256 + px[i * 4 + 1] + px[i * 4 + 2] / 256 - 32768;
-      const n = 2 ** r.z, ux = (256 / n) / 256, lat = latOf(r.cy), mPerUnit = WORLD_M * Math.cos((lat * Math.PI) / 180), exag = opts.exag || 3;
+      const n = 2 ** r.z, ux = (256 / n) / 256, lat = latOf(r.cy), mPerUnit = WORLD_M * Math.cos((lat * Math.PI) / 180), exag = opts.exag || 4.5;
       const T = { z: r.z, W, H: Hh, N: W, heights, mPerUnit, mpp: mPerUnit * ux, exag, hs: (exag / mPerUnit), x0: (r.ax * 256) / n, y0: (r.ay * 256) / n, wU: (W * ux), hU: (Hh * ux), cx: r.cx, cy: r.cy };
       T.tex = bake(T);
       let mn = 1e9, mx = -1e9; for (const v of heights) { if (v < mn) mn = v; if (v > mx) mx = v; } T.hmin = mn; T.hmax = mx;
@@ -86,11 +86,9 @@ in vec3 p; in vec3 n; in vec2 t; uniform mat4 m; out vec3 vn; out vec2 vt; out f
       g.attachShader(pr, sh(g.FRAGMENT_SHADER, `#version 300 es
 precision highp float; in vec3 vn; in vec2 vt; in float vw; uniform sampler2D tex; uniform vec2 res; uniform float dist; out vec4 o;
 void main(){
-  vec3 L=normalize(vec3(-0.55,0.75,-0.35)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.80+0.30*d);
-  float edgeP=min(min(vt.x,1.0-vt.x),min(vt.y,1.0-vt.y)); float a=smoothstep(0.0,0.05,edgeP);
-  vec2 s=gl_FragCoord.xy/res; float edgeS=min(min(s.x,1.0-s.x),min(s.y,1.0-s.y)); a*=smoothstep(0.0,0.10,edgeS);
-  a*=1.0-smoothstep(1.35*dist,2.6*dist,vw);
-  o=vec4(c*a,a);
+  vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.68+0.55*d);
+  if(abs(vn.y)<0.001){ c=texture(tex,vt).rgb*0.42; c=mix(c,vec3(0.30,0.24,0.18),0.45); }
+  o=vec4(c,1.0);
 }`));
       g.linkProgram(pr); if (!g.getProgramParameter(pr, g.LINK_STATUS)) throw Error('link');
       GL = { cv, g, pr, loc: { m: g.getUniformLocation(pr, 'm'), res: g.getUniformLocation(pr, 'res'), dist: g.getUniformLocation(pr, 'dist'), tex: g.getUniformLocation(pr, 'tex') } };
@@ -107,11 +105,26 @@ void main(){
       const dx = ((hm(x + 3, y) - hm(x - 3, y)) / (6 * T.mpp)) * T.exag, dz = ((hm(x, y + 3) - hm(x, y - 3)) / (6 * T.mpp)) * T.exag, l = Math.hypot(dx, 1, dz);
       nor[k * 3] = -dx / l; nor[k * 3 + 1] = 1 / l; nor[k * 3 + 2] = -dz / l; uv[k * 2] = i / (Gx - 1); uv[k * 2 + 1] = j / (Gy - 1);
     }
-    const idx = new Uint32Array((Gx - 1) * (Gy - 1) * 6); let q = 0;
+    const base = -Math.max(40, (T.hmax - Math.max(0, T.hmin)) * 0.35) * T.hs, nv = Gx * Gy, ring = [];
+    for (let i = 0; i < Gx; i++) ring.push([i, 0, 0, -1]);
+    for (let j = 1; j < Gy; j++) ring.push([Gx - 1, j, 1, 0]);
+    for (let i = Gx - 2; i >= 0; i--) ring.push([i, Gy - 1, 0, 1]);
+    for (let j = Gy - 2; j > 0; j--) ring.push([0, j, -1, 0]);
+    const R = ring.length, spos = new Float32Array(R * 3), snor = new Float32Array(R * 3), suv = new Float32Array(R * 2);
+    ring.forEach(([i, j, nx, nz], r) => { const k = j * Gx + i; spos[r * 3] = pos[k * 3]; spos[r * 3 + 1] = base; spos[r * 3 + 2] = pos[k * 3 + 2]; snor[r * 3] = nx; snor[r * 3 + 2] = nz; suv[r * 2] = uv[k * 2]; suv[r * 2 + 1] = uv[k * 2 + 1]; });
+    const P2 = new Float32Array((nv + R) * 3), N2 = new Float32Array((nv + R) * 3), U2 = new Float32Array((nv + R) * 2);
+    P2.set(pos); N2.set(nor); U2.set(uv); P2.set(spos, nv * 3); N2.set(snor, nv * 3); U2.set(suv, nv * 2);
+    /* стенка: верх — вершины рельефа по краю (их нормаль смотрит вверх, поэтому дублируем с горизонтальной нормалью) */
+    const top = ring.map(([i, j, nx, nz]) => { const k = j * Gx + i; return [pos[k * 3], pos[k * 3 + 1], pos[k * 3 + 2], nx, nz, uv[k * 2], uv[k * 2 + 1]]; });
+    const P3 = new Float32Array((nv + 2 * R) * 3), N3 = new Float32Array((nv + 2 * R) * 3), U3 = new Float32Array((nv + 2 * R) * 2);
+    P3.set(P2); N3.set(N2); U3.set(U2);
+    top.forEach((t2, r) => { const o = nv + R + r; P3[o * 3] = t2[0]; P3[o * 3 + 1] = t2[1]; P3[o * 3 + 2] = t2[2]; N3[o * 3] = t2[3]; N3[o * 3 + 2] = t2[4]; U3[o * 2] = t2[5]; U3[o * 2 + 1] = t2[6]; });
+    const idx = new Uint32Array((Gx - 1) * (Gy - 1) * 6 + R * 6); let q = 0;
     for (let j = 0; j < Gy - 1; j++) for (let i = 0; i < Gx - 1; i++) { const a = j * Gx + i, b = a + 1, c = a + Gx, d = c + 1; idx.set([a, c, b, b, c, d], q); q += 6; }
+    for (let r = 0; r < R; r++) { const r2 = (r + 1) % R, t0 = nv + R + r, t1 = nv + R + r2, b0 = nv + r, b1 = nv + r2; idx.set([t0, b0, t1, t1, b0, b1], q); q += 6; }
     const vao = g.createVertexArray(); g.bindVertexArray(vao);
     const buf = (data, name, size) => { const b = g.createBuffer(); g.bindBuffer(g.ARRAY_BUFFER, b); g.bufferData(g.ARRAY_BUFFER, data, g.STATIC_DRAW); const l = g.getAttribLocation(G.pr, name); g.enableVertexAttribArray(l); g.vertexAttribPointer(l, size, g.FLOAT, false, 0, 0); };
-    buf(pos, 'p', 3); buf(nor, 'n', 3); buf(uv, 't', 2); const ib = g.createBuffer(); g.bindBuffer(g.ELEMENT_ARRAY_BUFFER, ib); g.bufferData(g.ELEMENT_ARRAY_BUFFER, idx, g.STATIC_DRAW);
+    buf(P3, 'p', 3); buf(N3, 'n', 3); buf(U3, 't', 2); const ib = g.createBuffer(); g.bindBuffer(g.ELEMENT_ARRAY_BUFFER, ib); g.bufferData(g.ELEMENT_ARRAY_BUFFER, idx, g.STATIC_DRAW);
     const tex = g.createTexture(); g.bindTexture(g.TEXTURE_2D, tex); g.pixelStorei(g.UNPACK_FLIP_Y_WEBGL, false); g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, T.tex); g.generateMipmap(g.TEXTURE_2D);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR_MIPMAP_LINEAR); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
     return (T._gl = { ctx: g, vao, tex, count: idx.length });
@@ -133,7 +146,7 @@ void main(){
   function render(T, cam, w, h) {
     const G = gl(); if (!G || !T) return null; const g = G.g;
     w = Math.max(2, Math.round(w)); h = Math.max(2, Math.round(h)); if (G.cv.width !== w || G.cv.height !== h) { G.cv.width = w; G.cv.height = h; }
-    const U = upload(G, T); g.viewport(0, 0, w, h); g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT); g.enable(g.DEPTH_TEST); g.useProgram(G.pr); g.bindVertexArray(U.vao);
+    const U = upload(G, T); g.viewport(0, 0, w, h); g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT); g.enable(g.DEPTH_TEST); g.disable(g.CULL_FACE); g.useProgram(G.pr); g.bindVertexArray(U.vao);
     g.activeTexture(g.TEXTURE0); g.bindTexture(g.TEXTURE_2D, U.tex); g.uniform1i(G.loc.tex, 0); g.uniformMatrix4fv(G.loc.m, false, new Float32Array(viewProj(T, cam, w, h))); g.uniform2f(G.loc.res, w, h); g.uniform1f(G.loc.dist, cam.dist);
     g.drawElements(g.TRIANGLES, U.count, g.UNSIGNED_INT, 0); return G.cv;
   }
