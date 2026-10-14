@@ -137,12 +137,13 @@
     // окна рамок в долях картинки [x, y, w, h] — прозрачная область, найдена по альфа-каналу
     const FRAMES = { 'compass-map': [0.241, 0.137, 0.508, 0.643], polaroid: [0.27, 0.142, 0.489, 0.598], 'photo-frame': [0.2, 0.093, 0.583, 0.641], 'begins-here': [0.23, 0.138, 0.558, 0.604] };
     // рамка-коллаж с содержимым: inner(ctx, x, y, w, h) рисует в окне, рамка ложится сверху; cx, cy — центр, fw — ширина рамки (px)
-    function framed(ctx, id, cx, cy, fw, rot, a, inner) {
+    function framed(ctx, id, cx, cy, fw, rot, a, inner, over) {
       const im = pk('frame', id), n = FRAMES[id]; if (!im || !n) return null;
       const fh = (fw * im.height) / im.width, e = 0.008, wx = (n[0] - e) * fw, wy = (n[1] - e) * fh, ww = (n[2] + 2 * e) * fw, wh = (n[3] + 2 * e) * fh;
       ctx.save(); ctx.globalAlpha *= a; ctx.translate(cx, cy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-fw / 2, -fh / 2);
       ctx.save(); ctx.beginPath(); ctx.rect(wx, wy, ww, wh); ctx.clip(); ctx.fillStyle = C.card; ctx.fillRect(wx, wy, ww, wh); inner(ctx, wx, wy, ww, wh); ctx.restore();
       ctx.shadowColor = 'rgba(30,20,8,.38)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetX = 6 * u; ctx.shadowOffsetY = 16 * u; ctx.drawImage(im, 0, 0, fw, fh);
+      ctx.shadowColor = 'transparent'; if (over) over(ctx, fw, fh);
       ctx.restore(); return { fh, top: cy - fh / 2, bottom: cy + fh / 2 };
     }
 
@@ -414,7 +415,7 @@
     function photoScene(ctx, s, p, t, lt, dur) {
       const c = L.photo, ids = (p.mediaIds || []).filter((id) => E.mediaById[id]), n = ids.length; if (!n) return;
       const slot = dur / n; const k = Math.min(n - 1, Math.floor(lt / slot)), l2 = lt - k * slot, m = E.mediaById[ids[k]];
-      const aIn = easeOut(l2 / 0.6), aOut = 1 - smooth((l2 - (slot - 0.5)) / 0.5), a = aIn * aOut;   // каждое фото плавно уходит, смена без резкого скачка
+      const a = 1;   // фото остаётся на странице до перелистывания
       const dy = (1 - easeOut(l2 / 0.7)) * px(48), rot = (k % 2 ? 1 : -1) * 2;
       const fid = k % 2 ? 'photo-frame' : 'polaroid', fimg = pk('frame', fid);
       if (fimg) {
@@ -422,10 +423,15 @@
         const fr = framed(ctx, fid, W / 2 + (portrait ? 0 : -px(40)), fcy + dy, fw, rot * 0.6, a, (g, x, y, w, h) => {
           if (e.ok) { const im = e.img, sc = Math.max(w / im.width, h / im.height) * zoom; g.drawImage(im, x + (w - im.width * sc) / 2, y + (h - im.height * sc) / 2, im.width * sc, im.height * sc); }
           if (m.credit) { g.save(); g.font = `500 ${px(22)}px ${BODY}`; g.fillStyle = 'rgba(255,255,255,.92)'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 6 * u; g.fillText(m.credit, x + px(14), y + h - px(14), w - px(28)); g.restore(); }
+        }, (g, w, h) => {
+          // Чистое поле слева от марки: подпись повёрнута вместе с бумажной рамкой.
+          g.save(); g.translate(w * 0.5, h * 0.79); g.rotate(-8 * Math.PI / 180);
+          const cap = m.caption || E.toLabel || '', max = w * 0.31; let size = px(46), lines = wrapLines(g, cap, 400, size, HAND, max, 2);
+          while (!lines && size > px(24)) { size *= 0.9; lines = wrapLines(g, cap, 400, size, HAND, max, 2); }
+          (lines || [cap]).forEach((ln, i, arr) => text(g, ln, 0, (i - (arr.length - 1) / 2) * size * 1.05, { size: size / u, fam: HAND, color: C.ink, max: max / u, align: 'center' }));
+          g.restore();
         });
-        const capY = fr.bottom + px(portrait ? 90 : 40);
-        text(ctx, m.caption || E.toLabel || '', W / 2, capY + dy, { size: portrait ? 84 : 64, fam: HAND, weight: 400, color: C.ink, max: portrait ? 900 : 1200, align: 'center', a });
-        text(ctx, E.photoDate(m, s), W / 2, capY + px(portrait ? 70 : 54) + dy, { size: portrait ? 42 : 34, weight: 500, color: C.secondary, max: 900, align: 'center', a });
+        text(ctx, E.photoDate(m, s), W / 2, fr.bottom + px(portrait ? 62 : 38), { size: portrait ? 42 : 34, weight: 500, color: C.secondary, max: 900, align: 'center', a });
         return;
       }
       const [cx, cy, cw, chh] = box(c.card); drawCard(ctx, card(cw, chh, { seed: 20 + k, fill: '#fffaf0', edge: 1.5 }), cx, cy, cw, chh, a, rot, dy);
@@ -505,13 +511,12 @@
       ctx.save(); ctx.globalAlpha = a * 0.5; ctx.strokeStyle = dark ? 'rgba(241,230,207,.5)' : 'rgba(31,78,90,.35)'; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(x0, y + px(22)); ctx.lineTo(x1, y + px(22)); ctx.stroke(); ctx.restore();
     }
     /* ---------- кадр ---------- */
-    function draw(ctx, t, s, su, lt, TR) {
+    function drawPage(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, fam = FAM[s.recipe] || 'road', p = s.params || {};
       const dark = fam === 'fin';
       const run = E.run(s), rlt = t - run.t0, rdur = run.t1 - run.t0;   // общая огибающая семьи: страница не «мигает», пока идут кадры одной семьи подряд
-      if (dark && rlt < 0.6 && run.t0 > 0) { ctx.drawImage(pageCanvas(false), 0, 0); ctx.globalAlpha = smooth(rlt / 0.6); ctx.drawImage(pageCanvas(true), 0, 0); ctx.globalAlpha = 1; }   // тёмный финал проявляется поверх светлой страницы
-      else ctx.drawImage(pageCanvas(dark), 0, 0);
-      const env = clamp(Math.min(smooth(rlt / 0.5), 1 - smooth((rlt - (rdur - 0.3)) / 0.3)), 0, 1);
+      ctx.drawImage(pageCanvas(dark), 0, 0);
+      const env = run.t0 === 0 ? smooth(rlt / 0.5) : 1;   // страница не исчезает перед сменой разворота
       const a = env, dy = (1 - easeOut(rlt / 0.7)) * px(36);
       ctx0 = ctx;
       pageHeader(ctx, s, p, dark, t);
@@ -526,6 +531,30 @@
         case 'note': noteScene(ctx, s, p, a, dy, rlt); break;
         case 'fin': finale(ctx, s, p, t, rlt, rdur, a, dy); break;
         default: roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt });
+      }
+    }
+    const TURN = 1; let turnCanvas = null, turnAt = -1;
+    function draw(ctx, t, s, su, lt, TR) {
+      drawPage(ctx, t, s, su, lt, TR);
+      const run = E.run(s); let at = run.t0;
+      if (FAM[s.recipe] === 'photo') {
+        const ids = ((s.params || {}).mediaIds || []).filter((id) => E.mediaById[id]), slot = s.durationSec / ids.length;
+        const k = Math.min(ids.length - 1, Math.floor(lt / slot)); if (k > 0) at = s.t0 + k * slot;
+      }
+      const dt = t - at; if (at <= 0 || dt < 0 || dt >= TURN) return;
+      // Предыдущая страница заморожена у границы: результат одинаков при проигрывании и перемотке.
+      if (!turnCanvas) { turnCanvas = document.createElement('canvas'); turnCanvas.width = W; turnCanvas.height = H; }
+      if (turnAt !== at) {
+        const prevT = at - 0.0001, prev = E.at(prevT), g = turnCanvas.getContext('2d');
+        g.clearRect(0, 0, W, H); drawPage(g, prevT, prev.s, prev.u, prev.lt, TR); turnAt = at;
+      }
+      const q = smooth(dt / TURN), spine = px(L.spine), edge = lerp(W, spine, q), fold = Math.sin(q * Math.PI) * Math.min(W * 0.18, px(180));
+      ctx.save(); ctx.beginPath(); ctx.rect(spine, 0, edge - spine, H); ctx.clip(); ctx.drawImage(turnCanvas, 0, 0); ctx.restore();
+      if (fold > 0.1) {
+        // Светлая оборотная сторона и тень у сгиба; корешок дневника остаётся на месте.
+        ctx.save(); const sh = ctx.createLinearGradient(edge, 0, edge + fold * 0.35, 0); sh.addColorStop(0, 'rgba(30,20,8,.28)'); sh.addColorStop(1, 'rgba(30,20,8,0)'); ctx.fillStyle = sh; ctx.fillRect(edge, 0, fold * 0.35, H);
+        const gr = ctx.createLinearGradient(edge - fold, 0, edge, 0); gr.addColorStop(0, '#c7baa2'); gr.addColorStop(0.3, C.card); gr.addColorStop(1, '#dfd4bd'); ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.moveTo(edge, 0); ctx.lineTo(edge - fold, fold * 0.35); ctx.lineTo(edge - fold, H - fold * 0.35); ctx.lineTo(edge, H); ctx.closePath(); ctx.fill(); ctx.restore();
       }
     }
     const packNeeded = () => (['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here']).concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
