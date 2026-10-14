@@ -121,7 +121,7 @@ in vec3 p; in vec3 n; in vec2 t; uniform mat4 m; out vec3 vn; out vec2 vt; out f
       g.attachShader(pr, sh(g.FRAGMENT_SHADER, `#version 300 es
 precision highp float; in vec3 vn; in vec2 vt; in float vw; uniform sampler2D tex; uniform vec2 res; uniform float dist; out vec4 o;
 void main(){
-  vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.76+0.34*d);
+  vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb; float lu=dot(c,vec3(0.299,0.587,0.114)); c=mix(vec3(lu),c,1.35); c*=(0.50+0.80*d); c=pow(c,vec3(0.92));   // контрастнее: свет сбоку, глубокие тени, живее цвет
   if(abs(vn.y)<0.001){ c=texture(tex,vt).rgb*0.42; c=mix(c,vec3(0.30,0.24,0.18),0.45); }
   float edgeP=min(min(vt.x,1.0-vt.x),min(vt.y,1.0-vt.y)); float a=abs(vn.y)<0.001?1.0:smoothstep(0.0,0.05,edgeP);   // край рельефа растворяется в фон окна, без резкой диагонали
   o=vec4(c*a,a);

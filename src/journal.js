@@ -267,7 +267,7 @@
     function cover(ctx, s, p, a, dy, lt) {
       const ct = E.coverTexts(s, p), sets = s.recipe === 'season-card' ? E.allSets() : [E.todaySet()];
       const area = [0, 200, W / u, H / u - 280], c = { map: area, names: [0, 0, 0, 0] };
-      if (!reliefView(ctx, s.recipe === 'season-card', sets, 1, 0, a, { deco: false }, c)) sketch(ctx, portrait ? [140, 760, 800, 740] : [900, 220, 850, 650], sets, 1, lt, a);
+      if (!reliefView(ctx, s.recipe === 'season-card', sets, 1, 0, a, { deco: false, lt: lt * 1.4 }, c)) sketch(ctx, portrait ? [140, 760, 800, 740] : [900, 220, 850, 650], sets, 1, lt, a);
       imageShade(ctx, a);
       const x = px(86), top = px(portrait ? 340 : 310), tw = portrait ? 908 : 1000;
       text(ctx, ct.from, x, top, { size: 42, weight: 500, max: tw, color: AP.photoText, a });
@@ -299,8 +299,8 @@
       const a0 = today.pts[0], a1 = today.pts[today.pts.length - 1], len = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
       const heading = len > e * 0.25 ? (Math.atan2(a1[0] - a0[0], -(a1[1] - a0[1])) * 180) / Math.PI : 0;   // линия уходит от зрителя
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
-      const fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
-      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 60 + 8 * easeOut(t / 14), bearing: heading + 4 * Math.sin(t * 0.10), fov: 38 };
+      const intro = Math.pow(1 - easeOut(clamp((opts.lt != null ? opts.lt : t) / 4.2, 0, 1)), 1.4), fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
+      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 62 + 6 * easeOut(t / 14) - 22 * intro, bearing: heading + 9 * Math.sin(t * 0.17) - 22 * intro, fov: 38 };   // въезд: из высоты и сбоку — вниз и к маршруту, дальше медленный облёт
       {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
         const smp = [], upto = !jr && hd ? hd.i : Infinity;
         for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
@@ -311,6 +311,7 @@
           if (r <= 1.02) break; cam.dist *= Math.min(1.8, r);
         }
       }
+      cam.dist *= 1 + 0.35 * intro;
       const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
       ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = (T.tex && T.tex.avg) || '#b4ba94'; ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // фон окна — средний цвет самой текстуры: край модели не виден   // подложка окна: по углам рельефа не видно светлого пятна
       ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
@@ -337,7 +338,7 @@
       drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, dy);
       const sets = jr ? E.allSets() : [E.todaySet()];
       const tr = jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);   // в «Дневнике» камера не летит — путь рисуется с первой секунды кадра
-      const ropts = { mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
+      const ropts = { lt: 99, mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
       if (!reliefView(ctx, jr, sets, tr, t, a, ropts, c)) {
         ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip();
         sketch(ctx, c.core, sets, tr, t, a, { ...ropts, deco: !jr });
