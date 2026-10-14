@@ -637,7 +637,7 @@
         ctx.restore();
         if (NAME) T(ctx, NAME, mx + (SIGM ? r * 2 + 14 * u : 0), sy + 13 * u, { size: 38, weight: 700, alpha: sa, color: onPh ? '#ffffff' : S.ink, shadowC: onPh ? 'rgba(0,0,0,.7)' : undefined, max: W * 0.5 });
       }
-      T(ctx, S.credit, W / 2, H - (S.paper ? 46 : 22) * u, { size: 15, weight: 500, color: S.dim, align: 'center', alpha: 0.55, shadow: false });
+      if (!J) T(ctx, S.credit, W / 2, H - (S.paper ? 46 : 22) * u, { size: 15, weight: 500, color: S.dim, align: 'center', alpha: 0.55, shadow: false });
       // перекрёстное затухание на стыке кадров карты: прошлый кадр медленно уходит, без резкой склейки
       if (!TR && !J && !(opts && opts.noXfade) && i > 0 && lt < XFADE) {
         const k = smooth(lt / XFADE), prevT = shots[i - 1].t1 - 1e-3;

@@ -180,19 +180,21 @@
       else { ctx.beginPath(); ctx.arc(x, y, 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
       ctx.restore();
     }
+    let T0 = 0;   // время кадра для покачивания меток
     function trackDeco(ctx, proj, tr, a, box) {
       if (!E.notes.length && !E.pins.length) return; const [bx, by, bw, bh] = box;
-      E.pins.forEach((q, i) => {
+      E.pins.forEach((q, i) => {   // фото рядом с местом на маршруте: у каждой свой разброс, наклон и лёгкое покачивание; не у края кадра
         if (!q.e.ok) return; const pa = a * smooth((tr - q.f) / 0.03), pt = proj(E.ptAtF(q.f)); if (!pt || pa <= 0.01) return;
-        // Две боковые колонки: фото не лежат на треке, точное место сохраняет выноска.
-        const im = q.e.img, s0 = px(portrait ? 96 : 84), fr = px(9), left = i % 2 === 0;
-        const x = left ? bx + px(16) + s0 / 2 + fr : bx + bw - px(16) - s0 / 2 - fr;
-        const rows = Math.ceil(E.pins.length / 2), top = by + bh * ((Math.floor(i / 2) + 1) / (rows + 1)) - (s0 + fr * 3) / 2;
-        ctx.save(); ctx.globalAlpha *= pa; ctx.strokeStyle = C.accent; ctx.lineWidth = px(3); ctx.setLineDash([px(8), px(7)]); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(x + (left ? 1 : -1) * (s0 / 2 + fr), top + (s0 + fr * 3) / 2); ctx.stroke(); ctx.restore();
-        ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, top + s0 / 2); ctx.rotate(0); ctx.translate(-x, -(top + s0 / 2));
-        ctx.shadowColor = 'rgba(25,35,30,.15)'; ctx.shadowBlur = 6 * u; ctx.shadowOffsetY = 2 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(x - s0 / 2 - fr, top, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
-        const sc = Math.max(s0 / im.width, s0 / im.height); ctx.save(); ctx.beginPath(); ctx.rect(x - s0 / 2, top + fr, s0, s0); ctx.clip(); ctx.drawImage(im, x - (im.width * sc) / 2, top + fr + s0 / 2 - (im.height * sc) / 2, im.width * sc, im.height * sc); ctx.restore();
-        ctx.restore(); tape(ctx, [(x - px(40)) / u, (top - px(16)) / u, 80, 34], -8, pa);
+        const im = q.e.img, s0 = px(portrait ? 128 : 108), fr = px(9), h1 = Math.sin(i * 12.9898 + 4.1) * 43758.5453, rnd = h1 - Math.floor(h1), side = i % 2 ? 1 : -1;
+        const ang = (side > 0 ? 0 : Math.PI) + (rnd - 0.5) * 1.5, dist = px(portrait ? 190 : 170) + rnd * px(90), tt = (T0 || 0);
+        let x = pt[0] + Math.cos(ang) * dist + Math.sin(tt * 0.9 + i * 1.7) * px(4), y = pt[1] + Math.sin(ang) * dist * 0.8 + Math.sin(tt * 1.3 + i) * px(5);
+        const m = s0 / 2 + fr + px(30); x = Math.max(bx + m, Math.min(bx + bw - m, x)); y = Math.max(by + m, Math.min(by + bh - m, y));
+        const rot = (rnd - 0.5) * 0.2 + Math.sin(tt * 0.8 + i * 2.3) * 0.018, sc0 = 0.75 + 0.25 * pa;
+        ctx.save(); ctx.globalAlpha *= pa; ctx.strokeStyle = C.accent; ctx.lineWidth = px(3); ctx.setLineDash([px(8), px(7)]); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sc0, sc0);
+        ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 5 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(-s0 / 2 - fr, -s0 / 2 - fr, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
+        const sc = Math.max(s0 / im.width, s0 / im.height); ctx.beginPath(); ctx.rect(-s0 / 2, -s0 / 2, s0, s0); ctx.clip(); ctx.drawImage(im, -(im.width * sc) / 2, -(im.height * sc) / 2, im.width * sc, im.height * sc);
+        ctx.restore();
         ctx.save(); ctx.globalAlpha *= pa; ctx.beginPath(); ctx.arc(pt[0], pt[1], px(9), 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = px(5); ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore();
       });
       E.notes.forEach((n, i) => {
@@ -347,7 +349,7 @@
       const mark = (pt, tri) => { const q = pt && P(pt[0], pt[1]); if (!q) return; if (tri) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - 34 * u); ctx.lineTo(q[0] + 26 * u, q[1] + 14 * u); ctx.lineTo(q[0] - 26 * u, q[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.stroke(); } else { const pulse = (t / 2) % 1; ctx.beginPath(); ctx.arc(q[0], q[1], (20 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = C.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha *= 1 - pulse; ctx.stroke(); ctx.globalAlpha /= Math.max(1e-3, 1 - pulse); ctx.beginPath(); ctx.arc(q[0], q[1], 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); } };
       mark(opts.mark, true); mark(opts.stop, false);
       if (hd) { const q = P(hd.x, hd.y); if (q) heroAt(ctx, q[0], q[1], 1, t, 0.9); }
-      if (!jr && opts.deco !== false) trackDeco(ctx, (pp) => P(pp[0], pp[1]), tr, 1, [0, 0, iw, ih]);
+      if (!jr && opts.deco !== false) { T0 = t; trackDeco(ctx, (pp) => P(pp[0], pp[1]), tr, 1, Z ? [Z[0], Z[1], Z[2] - Z[0], Z[3] - Z[1]] : [0, 0, iw, ih]); }
       ctx.restore();
       if (Z) return true;
       ctx.save(); ctx.globalAlpha *= a; ctx.lineWidth = px(1); ctx.strokeStyle = 'rgba(37,51,47,.12)'; ctx.strokeRect(ix, iy, iw, ih); ctx.restore();
@@ -366,16 +368,16 @@
       const sets = jr ? E.allSets() : [E.todaySet()];
       const tr = jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);
       const ropts = { lt: 99, bleed: zone, mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
-      const run = E.run(s), ok = (E.relief !== false && reliefView(ctx, jr, sets, tr, t, a, ropts, c)) || reliefView(ctx, jr, sets, tr, t, a, { ...ropts, flat: true, prog: (t - run.t0) / Math.max(0.1, run.t1 - run.t0) }, c);
+      const run = E.run(s); let flatUsed = false; const ok = (E.relief !== false && reliefView(ctx, jr, sets, tr, t, a, ropts, c)) || (flatUsed = true, reliefView(ctx, jr, sets, tr, t, a, { ...ropts, flat: true, prog: (t - run.t0) / Math.max(0.1, run.t1 - run.t0) }, c));
       if (!ok) {
         const [mx, my, mw, mh] = box(c.map); drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, 0);
         ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip(); sketch(ctx, c.core, sets, tr, t, a, { ...ropts, deco: !jr }); ctx.restore();
       }
       if (ok) {   // мягкое затемнение под текстом: карта остаётся фоном, текст читается
         ctx.save(); ctx.globalAlpha *= a;
-        const sh = (x0, y0, x1, y1, k) => { const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, window.Appearance.rgba(AP.shade, k)); g.addColorStop(1, window.Appearance.rgba(AP.shade, 0)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); };
-        sh(0, 0, 0, px(portrait ? 460 : 300), 0.9);
-        if (portrait) sh(0, H, 0, H - px(820), 0.96); else { sh(W, 0, W - px(780), 0, 0.96); sh(0, H, 0, H - px(220), 0.7); }
+        const sh = (x0, y0, x1, y1, k) => { const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, window.Appearance.rgba(AP.bg, k)); g.addColorStop(1, window.Appearance.rgba(AP.bg, 0)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); };
+        sh(0, 0, 0, px(portrait ? 520 : 340), 0.94);
+        if (portrait) sh(0, H, 0, H - px(900), 0.97); else { sh(W, 0, W - px(820), 0, 0.97); sh(0, H, 0, H - px(240), 0.8); }
         ctx.restore();
       }
       flat = !!ok;
@@ -385,7 +387,7 @@
       if (prev && ma < 1) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * (1 - ma));
       roadFact(ctx, s, p, t, lt, dur, ma * env);
       flat = false;
-      if (ok) { const T = jr ? terr.all : terr.today; if (T) text(ctx, 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag, px(60), H - px(36), { size: 26, weight: 400, color: C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
+      if (ok) { const T = jr ? terr.all : terr.today; text(ctx, flatUsed ? 'Карта © OpenStreetMap, OpenFreeMap' : T ? 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag : '', px(60), H - px(36), { size: 26, weight: 400, color: C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
     }
     function roadFact(ctx, s, p, t, lt, dur, a) {
       const c = L.road;
@@ -490,8 +492,6 @@
         const sets = E.allSets(), b = [86, 1280, 908, 230], F = fitPts(sets.map(q => q.pts), b);
         for (const q of sets) { const st = stroke(ctx, q.pts, q.brk, F, null, px(5), ink, E.journey.schematic ? [px(16), px(12)] : null, a * .7); if (st) st.end(); }
       }
-      text(ctx, f.next, portrait ? x : px(1300), portrait ? H - px(220) : px(870), { size: 46, max: portrait ? width : W / u - 1386, color: ink, weight: 600, a });
-      if (E.stk(2)) fitImg(ctx, E.stk(2), [W / u - 220, H / u - 430, 130, 130], a, 0, 0, false);
     }
 
     /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
