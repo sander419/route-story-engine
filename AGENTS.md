@@ -6,6 +6,7 @@
 - Одной командой: `bash tools/check.sh` — поднимает сервер на 4180, гоняет director-test, smoke, own-journey-test.
 - Вручную: `python -m http.server 4180` в папке проекта.
 - Путь жюри (чужие файлы разных форматов, экспорт через интерфейс, проверка готового MP4 через ffprobe): `node tools/judge.mjs` при поднятом сервере; `URL=https://sander419.github.io/route-story-engine/` — против живого сайта. Известные дефекты помечены ⚠ и прогон не валят; `BLOCK=nominatim,open-meteo,googleapis` / `NOCODEC=1` имитируют недоступные сервисы и браузер без WebCodecs.
+- Чужие файлы из папки: `JURY_DIR=папка node tools/judge.mjs`. Дёрганье и склейки: `node tools/timing-audit.mjs` (входит в check.sh). Кадры: `tools/episode-frames.mjs`, `tools/file-shot.mjs`.
 - smoke и own-journey нужен Playwright из `C:/Users/glina/route-story-spike` (Edge). Без него smoke не запустится.
 
 ## Кто что правит (два агента в одном репозитории)
@@ -15,6 +16,8 @@
 
 ## Стили
 - «Дневник» (по умолчанию) — `src/journal.js` + `art/`; не рисует карту. Раскладки — `design/journal-tokens-v2.json` (координаты в u). Материалы пересобирать `python tools/build-art.py`. Остальные стили — `src/scene.js` (`STYLES`) и `src/episode.js`.
+- Стили: «Дневник», «Журнал V3» (`editorial`), «Атлас» (`paper`), «Полночь» (`night`), «Навигатор». «Спутник» удалён 15.10.
+- Набор графики `art/pack/` (103 картинки из Obsidian, `python tools/build-pack.py`): подбирать по данным (погода — по коду WMO, `wxPackId` в episode.js), не по вкусу.
 - Рельеф «Дневника» — `src/terrain.js` (высоты AWS Terrain Tiles, WebGL; без сети/WebGL — эскиз). Мобильные пределы внутри (`mobile()`); переключатель в «Вид».
 - Шрифты — `fonts/` (`python tools/build-fonts.py`); цифры данных рисуются шрифтом `S.fNum` / ячейками фиксированной ширины.
 
