@@ -326,7 +326,7 @@
         }
       }
       const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
-      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = '#d9c9a0'; ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // подложка окна: по углам рельефа не видно светлого пятна
+      ctx.save(); ctx.globalAlpha *= a; { const bg = ctx.createLinearGradient(ix, iy, ix, iy + ih); bg.addColorStop(0, '#b9bf98'); bg.addColorStop(1, '#a3ab82'); ctx.fillStyle = bg; ctx.fillRect(ix, iy, iw, ih); } ctx.drawImage(cv, ix, iy);   // подложка окна: по углам рельефа не видно светлого пятна
       ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
       const P = window.Terrain.projector(T, cam, iw, ih); const poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';

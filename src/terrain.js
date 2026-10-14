@@ -88,7 +88,8 @@ precision highp float; in vec3 vn; in vec2 vt; in float vw; uniform sampler2D te
 void main(){
   vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb*(0.68+0.55*d);
   if(abs(vn.y)<0.001){ c=texture(tex,vt).rgb*0.42; c=mix(c,vec3(0.30,0.24,0.18),0.45); }
-  o=vec4(c,1.0);
+  float edgeP=min(min(vt.x,1.0-vt.x),min(vt.y,1.0-vt.y)); float a=abs(vn.y)<0.001?1.0:smoothstep(0.0,0.05,edgeP);   // край рельефа растворяется в фон окна, без резкой диагонали
+  o=vec4(c*a,a);
 }`));
       g.linkProgram(pr); if (!g.getProgramParameter(pr, g.LINK_STATUS)) throw Error('link');
       GL = { cv, g, pr, loc: { m: g.getUniformLocation(pr, 'm'), res: g.getUniformLocation(pr, 'res'), dist: g.getUniformLocation(pr, 'dist'), tex: g.getUniformLocation(pr, 'tex') } };

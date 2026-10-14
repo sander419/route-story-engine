@@ -144,3 +144,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .colors button.on{border-color:var(--ink)}
 .colors button.auto{width:auto;border-radius:999px;padding:0 var(--space-4);font-size:var(--text-sm)}
 @media (max-width:640px){.seg4{grid-template-columns:1fr 1fr}}
+
+/* широкий экран: ролик крупно слева (закреплён), шаги справа — виден и результат, и управление */
+@media (min-width:1000px){
+  .top{max-width:1320px}
+  .app{max-width:1320px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:var(--space-8);align-items:start}
+  .stage{position:sticky;top:var(--space-4);padding:0}
+  #cv{max-height:calc(100vh - 150px);max-width:100%}
+  .ctrl{max-width:100%}
+}
