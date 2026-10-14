@@ -288,21 +288,24 @@
 
     const tilesAt = (t) => (S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : []);
     const allMediaIds = [...new Set(shots.flatMap((s) => s.params.mediaIds || []))];
-    const wxId = wxPackId(WX), wxImg = wxId ? img('art/pack/wx/' + wxId + '.webp') : null, signImg = img('art/pack/sign/' + ['09', '10', '11', '12'][[...String(journey.id || journey.title || '')].reduce((h, ch) => h + ch.charCodeAt(0), 0) % 4] + '.webp');
+    const legacyIcons = window.StyleIcons.legacyEnabled;
+    const wxId = wxPackId(WX), wxImg = wxId ? window.StyleIcons.image(styleId, wxId, S.accent) : null;
+    const autoIcons = ['compass','pin','flag'].map((role,i) => window.StyleIcons.image(styleId, role, S.journal && i > 0 ? i === 1 ? palette.photoText : palette.finalText : S.accent));
+    const signImg = autoIcons[1];
     // оформление стиля (scene.js → deco): мазок кисти под надзаголовком, HUD-рамка, свечение головы — из набора art/pack
-    const D = S.deco || {}, decoImg = {};
-    ['brush', 'hud', 'glow', 'fog'].forEach((k) => { if (D[k]) decoImg[k] = img('art/pack/' + D[k] + '.webp'); });
+    const D = legacyIcons ? S.deco || {} : { ...S.deco, rose:false }, decoImg = {};
+    ['brush', 'hud', 'glow', 'fog'].forEach((k) => { if (legacyIcons && D[k]) decoImg[k] = img('art/pack/' + D[k] + '.webp'); });
     const ctryOfDay = (day) => (journey.dayNotes && journey.dayNotes[day != null ? day : today.day]) || today.country || null;
     const uniImg = img('art/unicycle-real.webp');   // реалистичный уницикл (рендер Codex по фото героя) — на кадрах «сколько проехал»
     const flagsLoad = window.Flags && showFlags ? window.Flags.preload([...new Set(plan.beats.map((b) => ctryOfDay(b.params && b.params.day)).filter(Boolean))]) : Promise.resolve();
     // заметки на маршруте, отметки фото и стикеры настроения — от пользователя (шаги «Текст», «Фото», «Оформление»)
-    const NOTES = [...trackNotes].sort((a, b) => a.f - b.f), PINS = photoPins.map((q) => ({ ...q, e: img(q.url) })), STKS = [0, 1, 2].map((i) => (stickers[i] ? img('art/pack/' + stickers[i] + '.webp') : null));
-    const stk = (i) => (STKS[i] && STKS[i].ok ? STKS[i].img : null);
+    const NOTES = [...trackNotes].sort((a, b) => a.f - b.f), PINS = photoPins.map((q) => ({ ...q, e: img(q.url) })), STKS = [0, 1, 2].map((i) => (legacyIcons && stickers[i] ? img('art/pack/' + stickers[i] + '.webp') : null));
+    const stk = (i) => { const icon = legacyIcons ? STKS[i] : autoIcons[i]; return icon && icon.ok ? icon.img : null; };
     function ptAtF(f) {   // точка сегодняшнего пути на доле f длины
       const Lt = todayCum[todayCum.length - 1] * Math.min(1, Math.max(0, f)); let i = 1; while (i < todayCum.length - 1 && todayCum[i] < Lt) i++;
       const k = Math.min(1, Math.max(0, (Lt - todayCum[i - 1]) / Math.max(1e-12, todayCum[i] - todayCum[i - 1]))); return [lerp(todayPts[i - 1][0], todayPts[i][0], k), lerp(todayPts[i - 1][1], todayPts[i][1], k)];
     }
-    let assetsReady = Promise.all([uniImg.p, ...PINS.map((q) => q.e.p), ...STKS.filter(Boolean).map((e) => e.p), flagsLoad, ...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
+    let assetsReady = Promise.all([uniImg.p, ...autoIcons.map(q=>q.p), ...PINS.map((q) => q.e.p), ...STKS.filter(Boolean).map((e) => e.p), flagsLoad, ...allMediaIds.map((id) => (mediaById[id] ? img(mediaById[id].url).p : Promise.resolve())), wxImg ? wxImg.p : null, signImg.p, ...Object.values(decoImg).map((e) => e.p)]);
 
     /* ---- типографика ---- */
     function T(ctx, str, x, y, a) {
@@ -386,6 +389,9 @@
     }
     // стикер настроения: с тенью и лёгким наклоном, «выпрыгивает» при появлении
     function stickerAt(ctx, im, cx, cy, sz, rot, a, lt) {
+      if (im && im._routeIcon) {
+        const size = Math.min(sz, 144 * u); ctx.save(); ctx.globalAlpha *= a; ctx.drawImage(im,cx-size/2,cy-size/2,size,size); ctx.restore(); return;
+      }
       if (!im || a <= 0.01) return; const pop = 0.82 + 0.18 * sine(Math.min(1, (lt || 1) / 0.5)), k = im.width / im.height, w = (k >= 1 ? sz : sz * k) * pop, h = (k >= 1 ? sz / k : sz) * pop;
       ctx.save(); ctx.globalAlpha = a; ctx.translate(cx, cy); ctx.rotate((rot * Math.PI) / 180);
       if (!S.paper) { ctx.shadowColor = 'rgba(255,255,255,.95)'; ctx.shadowBlur = 5 * u; for (const [ox, oy] of [[-3, 0], [3, 0], [0, -3], [0, 3]]) { ctx.shadowOffsetX = ox * u; ctx.shadowOffsetY = oy * u; ctx.drawImage(im, -w / 2, -h / 2, w, h); } }   // на тёмной карте — светлая обводка наклейки, иначе чёрное тонет
@@ -675,7 +681,7 @@
         }
         case 'weather-card':
           lowerThird(ctx, a, dy, 'погода в тот день', p.head, p.sub);
-          if (wxImg && wxImg.ok) { const sz = (portrait ? 340 : 300) * u, k = wxImg.img.width / wxImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 24 * u; ctx.drawImage(wxImg.img, W - mx - w2, H - (portrait ? 760 : 520) * u + dy, w2, h2); ctx.restore(); }
+          if (wxImg && wxImg.ok) { const sz = (portrait ? 170 : 140) * u, k = wxImg.img.width / wxImg.img.height, w2 = k >= 1 ? sz : sz * k, h2 = k >= 1 ? sz / k : sz; ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 24 * u; ctx.drawImage(wxImg.img, W - mx - w2, H - (portrait ? 760 : 520) * u + dy, w2, h2); ctx.restore(); }
           if (p.src) T(ctx, 'Погода: ' + p.src, W - mx, H - (portrait ? 250 : 60) * u, { size: 18, weight: 500, color: S.dim, align: 'right', shadow: false, alpha: a * 0.8 });
           break;
         case 'time-on-road':
@@ -812,7 +818,7 @@
       const NEXT = () => (PF.next ? 'Дальше — ' + PF.next : 'Продолжение следует →');
       const bridge = {
         W, H, u, portrait, S, HAND, MARK, MCOL, NAME, drawMark, journey, today, days, maxKm, mediaById, img, DL, fmtN, daysWord, toLabel, vis, appearance: palette,
-        get WX() { return WX; }, at: shotAt,
+        get WX() { return WX; }, weatherIcon: () => wxImg && wxImg.ok ? wxImg.img : null, at: shotAt,
         run: (s) => { const i = shots.indexOf(s), f = famOf(s); let a = i, b = i; while (a > 0 && famOf(shots[a - 1]) === f) a--; while (b < shots.length - 1 && famOf(shots[b + 1]) === f) b++; return { t0: shots[a].t0, t1: shots[b].t1, shots: shots.slice(a, b + 1) }; },
         todaySet: () => ({ pts: todayPts, brk: todayBrk, cum: todayCum, today: true }),
         allSets: () => dayPts.map((d) => ({ pts: d.pts, brk: d.brk, cum: d.day === today.day ? todayCum : null, today: d.day === today.day })),

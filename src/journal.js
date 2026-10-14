@@ -50,8 +50,8 @@
     return e;
   }
   let info = null;
-  const infoP = fetch(ART + 'stickers.json').then((r) => r.json()).then((j) => { info = j; }).catch(() => {});
-  const READY = (extraFn) => Promise.all([infoP, window.Flags.ready()]).then(() => Promise.all([load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p, ...extraFn().map((f) => load(ART + 'pack/' + f + '.webp').p)])).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
+  const infoP = window.StyleIcons.legacyEnabled ? fetch(ART + 'stickers.json').then((r) => r.json()).then((j) => { info = j; }).catch(() => {}) : Promise.resolve();
+  const READY = (extraFn) => !window.StyleIcons.legacyEnabled ? Promise.all([window.Flags.ready(), load(ART + 'barbos.webp').p]) : Promise.all([infoP, window.Flags.ready()]).then(() => Promise.all([load(ART + 'paper.jpg').p, load(ART + 'wash.webp').p, load(ART + 'barbos.webp').p, ...extraFn().map((f) => load(ART + 'pack/' + f + '.webp').p)])).then(() => (info ? Promise.all(Object.values(info.files).filter((f) => f.endsWith('.svg')).map((f) => load(ART + f).p)) : null));
 
   const rngOf = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
@@ -241,7 +241,7 @@
       if (/шылпык|chilpyk/i.test(label || '')) return 'uz-chilpyk';   // подтверждённое событие героя (пост 407)
       const iso = countryIso(country); return (iso && info.cultureByCountry[iso]) || 'stamp-compass';   // страна без своего стикера (флаг есть у 249 стран, стикеры — у 9)
     }
-    const weatherSticker = () => { const W0 = E.WX; if (!W0) return null; const id = wxId(W0); if (id && pk('wx', id)) return { pack: pk('wx', id) }; if (W0.precip >= 2) return info && info.events.rain; if (W0.wind >= 3) return info && info.events.wind; return null; };
+    const weatherSticker = () => { const icon = E.weatherIcon(); return icon ? { pack:icon } : null; };
 
     function wrapLines(ctx, str, weight, size, fam, maxW, maxLines) {
       ctx.save(); ctx.font = `${weight} ${size}px ${fam}`; const words = String(str).replace(/(\d)[ ]+(км|м|ч|мин|с|%|°)(?![а-яёa-z])/gi, '$1 $2').replace(/(^|\s)(на|в|к|с|и|по|у|до|от|за|о) /gi, '$1$2 ').split(/ +/), lines = []; let cur = '';   // единицы и короткие предлоги не остаются на отдельной строке
@@ -367,7 +367,7 @@
       }
       const spec = E.metric(s, p, t, lt, dur), sticker = s.recipe === 'weather-card' ? weatherSticker() : null;
       const mh2 = metricCard(ctx, c.metric, spec, a, 0, -1, 11);
-      const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 230, c.metric[1] - 210, 260, 260], a, 6, 0);
+      const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 150, c.metric[1] - 130, 120, 120], a, 6, 0);
       // На странице дороги знак путешественника остаётся только на маршруте.   // уницикл под карточкой километров, справа — не на тексте
     }
     function arrival(ctx, s, p, a, dy, lt) {

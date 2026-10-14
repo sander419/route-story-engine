@@ -27,7 +27,7 @@
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
     b.innerHTML = `<div class="sw" style="background:${swatch[id]}"></div><span>${s.name}</span>`;
-    b.onclick = () => { state.styleId = id; [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
+    b.onclick = () => { state.styleId = id; $('iconLibrary').textContent = window.StyleIcons.familyName(id); [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
     $('styles').appendChild(b);
   });
 
@@ -71,6 +71,8 @@
   }
   $('appearanceReset').onclick = () => { state.appearance = AP.normalize(AP.defaults); saveAppearance(); };
   syncAppearance();
+
+  $('iconLibrary').textContent = window.StyleIcons.familyName(state.styleId);
 
   /* ---- поля ---- */
   ['title', 'subtitle', 'startName', 'endName'].forEach((k) => {
@@ -191,6 +193,7 @@
   $('pmap').addEventListener('pointerup', pmapUp); $('pmap').addEventListener('pointercancel', pmapUp);
 
   /* ---- настроение: три места для стикеров (обложка, прибытие, финал) ---- */
+  $('legacyStickerControls').hidden = !window.StyleIcons.legacyEnabled;
   const STK = [...['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((n) => 'sticker/' + n), ...['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((n) => 'icon/' + n), ...['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((n) => 'sign/' + n)];
   const MOODS = [
     { name: 'Как в стиле', set: [null, null, null] },
@@ -204,6 +207,7 @@
   state.o.stickers = [null, null, null]; let slotOn = 0;
   const stkUrl = (id) => 'art/pack/' + id + '.webp';
   function renderMood() {
+    if (!window.StyleIcons.legacyEnabled) return; // интерфейс и загрузка прежних стикеров выключены
     $('moods').innerHTML = ''; MOODS.forEach((m) => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = m.name; b.classList.toggle('on', m.set.every((x, i) => x === state.o.stickers[i])); b.onclick = () => { state.o.stickers = [...m.set]; renderMood(); rebuild(true); }; $('moods').appendChild(b); });
     $('slots').innerHTML = ''; SLOT_NAMES.forEach((nm, i) => {
       const b = document.createElement('button'); b.className = 'slot' + (i === slotOn ? ' on' : ''); const id = state.o.stickers[i];
@@ -222,7 +226,7 @@
   SHOWS.forEach(([k, nm]) => {
     const l = document.createElement('label'); l.className = 'c'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true; cb.dataset.k = k;
     cb.onchange = () => { state.show[k] = cb.checked; state.relief = state.show.relief; t = 0; rebuild(); };
-    l.append(cb, document.createTextNode(nm)); $('shows').appendChild(l);
+    l.append(cb, document.createTextNode(nm)); if (k === 'stickers' && !window.StyleIcons.legacyEnabled) l.hidden = true; $('shows').appendChild(l);
   });
 
   /* ---- шаги под роликом ---- */
@@ -530,7 +534,7 @@
     const extra = {
       trackNotes: state.show.notes ? (state.o.tnotes || []).filter((n) => n.text.trim()).map((n) => ({ f: n.f, text: n.text.trim() })) : [],
       photoPins: tot && state.show.photos ? (state.o.photos || []).filter((p) => p.s != null).map((p) => ({ f: Math.min(1, Math.max(0, p.s / tot)), url: p.url })) : [],
-      stickers: state.show.stickers ? (state.o.stickers || []).map((x) => x || null) : [], showFlags: state.show.flags, showRelief: state.show.relief, appearance: state.appearance,
+      stickers: window.StyleIcons.legacyEnabled && state.show.stickers ? (state.o.stickers || []).map((x) => x || null) : [], showFlags: state.show.flags, showRelief: state.show.relief, appearance: state.appearance,
     };
     return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, ...extra }, w, h);
   }

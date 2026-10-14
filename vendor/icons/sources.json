@@ -1,0 +1,18 @@
+{
+  "phosphor": {
+    "repo": "phosphor-icons/core",
+    "sha": "2b75f3ad12b420c9504ef05df8d2564a28f8500e"
+  },
+  "lucide": {
+    "repo": "lucide-icons/lucide",
+    "sha": "d672fc43dbf60962d9d829e35bc3b3e5ed89a178"
+  },
+  "tabler": {
+    "repo": "tabler/tabler-icons",
+    "sha": "a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d"
+  },
+  "bootstrap": {
+    "repo": "twbs/icons",
+    "sha": "e568465481c0c541f63a78f6452d09387711d489"
+  }
+}

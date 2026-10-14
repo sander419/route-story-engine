@@ -25,11 +25,11 @@ await p.evaluate(() => {
     const rg = row.querySelector('input[type=range]'); rg.value = f * 100; rg.dispatchEvent(new Event('input')); rg.dispatchEvent(new Event('change'));
   }
 });
-// настроение «Поход»
-await p.evaluate(() => [...document.querySelectorAll('#moods button')].find((x) => x.textContent === 'Поход').click());
+// Ручные стикеры отключены по запросу: вместо них библиотека выбранного стиля.
 await p.waitForTimeout(1500);
 const st = await p.evaluate(() => ({ notes: window.__app.state.o.tnotes.length, stickers: window.__app.state.o.stickers.filter(Boolean).length, photos: (window.__app.state.o.photos || []).filter((q) => q.s != null).length }));
-ok(st.notes === 2 && st.stickers === 3, `в состоянии 2 заметки и 3 стикера: ${JSON.stringify(st)}`);
+ok(st.notes === 2 && st.stickers === 0, `в состоянии 2 заметки, ручных стикеров нет: ${JSON.stringify(st)}`);
+ok(await p.evaluate(() => document.getElementById('legacyStickerControls').hidden && !document.querySelector('#moods button') && !window.StyleIcons.legacyEnabled), 'выбор настроений и стикеров скрыт и отключён');
 // перетаскивание фото по карте: отметка №1 переезжает ближе к концу маршрута
 await p.evaluate(() => document.querySelector('#tabs button[data-t="photo"]').click()); await p.waitForTimeout(600);
 const before = await p.evaluate(() => window.__app.state.o.photos.map((q) => q.s));
