@@ -21,11 +21,11 @@
   /* ---- какой кусок рельефа нужен: квадрат вокруг маршрута, не больше 4×4 плиток ---- */
   const mobile = () => { try { return matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 700; } catch (e) { return false; } };
   function region(b) {
-    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, half = Math.max(b.x1 - b.x0, b.y1 - b.y0, 0.06) * 1.3;
+    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, half = Math.max(b.x1 - b.x0, b.y1 - b.y0, 0.06) * 3.6;   // запас вокруг маршрута: в полнокадровом виде край модели не должен попадать в кадр
     const x0 = cx - half, x1 = cx + half, y0 = cy - half, y1 = cy + half;
     for (let z = 12; z >= 2; z--) {
       const n = 2 ** z, ax = Math.floor((x0 / 256) * n), bx = Math.floor((x1 / 256) * n), ay = Math.floor((y0 / 256) * n), by = Math.floor((y1 / 256) * n);
-      const lim = mobile() ? 3 : 4;   // на телефоне область не больше 3×3 плиток: меньше трафика, памяти и работы процессора
+      const lim = mobile() ? 4 : 6;   // на телефоне область не больше 3×3 плиток: меньше трафика, памяти и работы процессора
       if (bx - ax < lim && by - ay < lim && ax >= 0 && ay >= 0 && bx < n && by < n) return { z, ax, ay, nx: bx - ax + 1, ny: by - ay + 1, cx, cy };
     }
     return null;
@@ -119,15 +119,15 @@
       g.attachShader(pr, sh(g.VERTEX_SHADER, `#version 300 es
 in vec3 p; in vec3 n; in vec2 t; uniform mat4 m; out vec3 vn; out vec2 vt; out float vw; void main(){ vn=n; vt=t; gl_Position=m*vec4(p,1.0); vw=gl_Position.w; }`));
       g.attachShader(pr, sh(g.FRAGMENT_SHADER, `#version 300 es
-precision highp float; in vec3 vn; in vec2 vt; in float vw; uniform sampler2D tex; uniform vec2 res; uniform float dist; out vec4 o;
+precision highp float; in vec3 vn; in vec2 vt; in float vw; uniform sampler2D tex; uniform vec2 res; uniform float dist; uniform float fade; out vec4 o;
 void main(){
   vec3 L=normalize(vec3(-0.62,0.42,-0.38)); float d=max(dot(normalize(vn),L),0.0); vec3 c=texture(tex,vt).rgb; float lu=dot(c,vec3(0.299,0.587,0.114)); c=mix(vec3(lu),c,1.35); c*=(0.50+0.80*d); c=pow(c,vec3(0.92));   // контрастнее: свет сбоку, глубокие тени, живее цвет
   if(abs(vn.y)<0.001){ c=texture(tex,vt).rgb*0.42; c=mix(c,vec3(0.30,0.24,0.18),0.45); }
-  float edgeP=min(min(vt.x,1.0-vt.x),min(vt.y,1.0-vt.y)); float a=abs(vn.y)<0.001?1.0:smoothstep(0.0,0.05,edgeP);   // край рельефа растворяется в фон окна, без резкой диагонали
+  float edgeP=min(min(vt.x,1.0-vt.x),min(vt.y,1.0-vt.y)); float a=abs(vn.y)<0.001?1.0:smoothstep(0.0,fade,edgeP);   // край рельефа растворяется в фон окна, без резкой диагонали
   o=vec4(c*a,a);
 }`));
       g.linkProgram(pr); if (!g.getProgramParameter(pr, g.LINK_STATUS)) throw Error('link');
-      GL = { cv, g, pr, loc: { m: g.getUniformLocation(pr, 'm'), res: g.getUniformLocation(pr, 'res'), dist: g.getUniformLocation(pr, 'dist'), tex: g.getUniformLocation(pr, 'tex') } };
+      GL = { cv, g, pr, loc: { m: g.getUniformLocation(pr, 'm'), res: g.getUniformLocation(pr, 'res'), dist: g.getUniformLocation(pr, 'dist'), fade: g.getUniformLocation(pr, 'fade'), tex: g.getUniformLocation(pr, 'tex') } };
       return GL;
     } catch (e) { GL = false; return null; }
   }
@@ -183,7 +183,7 @@ void main(){
     const G = gl(); if (!G || !T) return null; const g = G.g;
     w = Math.max(2, Math.round(w)); h = Math.max(2, Math.round(h)); if (G.cv.width !== w || G.cv.height !== h) { G.cv.width = w; G.cv.height = h; }
     const U = upload(G, T); g.viewport(0, 0, w, h); g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT); g.enable(g.DEPTH_TEST); g.disable(g.CULL_FACE); g.useProgram(G.pr); g.bindVertexArray(U.vao);
-    g.activeTexture(g.TEXTURE0); g.bindTexture(g.TEXTURE_2D, U.tex); g.uniform1i(G.loc.tex, 0); g.uniformMatrix4fv(G.loc.m, false, new Float32Array(viewProj(T, cam, w, h))); g.uniform2f(G.loc.res, w, h); g.uniform1f(G.loc.dist, cam.dist);
+    g.activeTexture(g.TEXTURE0); g.bindTexture(g.TEXTURE_2D, U.tex); g.uniform1i(G.loc.tex, 0); g.uniformMatrix4fv(G.loc.m, false, new Float32Array(viewProj(T, cam, w, h))); g.uniform2f(G.loc.res, w, h); g.uniform1f(G.loc.dist, cam.dist); g.uniform1f(G.loc.fade, cam.fade || 0.05);
     g.drawElements(g.TRIANGLES, U.count, g.UNSIGNED_INT, 0); return G.cv;
   }
   /* точка карты (Меркатор X, Y) → пиксель кадра; null, если за камерой */

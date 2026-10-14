@@ -81,7 +81,9 @@
       const g = cv.getContext('2d'); g.fillStyle = C.paper; g.fillRect(0, 0, wPx, hPx);
       const out = { cv, pad: 0 }; cache.set(key, out); return out;
     }
+    let flat = false;   // экран дороги — карта во весь кадр, текст поверх затемнения, без карточек и рамок
     function drawCard(ctx, c, x, y, w, h, a = 1, rot = 0, dy = 0) {
+      if (flat) return;
       ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate(0); ctx.drawImage(c.cv, -w / 2 - c.pad, -h / 2 - c.pad); ctx.restore();
     }
     function tape(ctx, b, rot, a = 1, dy = 0) {
@@ -292,7 +294,8 @@
     }
     function reliefView(ctx, jr, sets, tr, t, a, opts, c) {
       const T = jr ? terr.all : terr.today; if (!T || !window.Terrain) return false;
-      const [mx, my, mw, mh] = box(c.map), nb = box(c.names), ix = mx + px(18), iy = Math.max(my + px(18), nb[1] + nb[3] + px(14)), iw = mw - px(36), ih = my + mh - px(46) - iy;   // окно рельефа начинается под подписью маршрута
+      const [mx, my, mw, mh] = box(c.map), nb = box(c.names), Z = opts.bleed;   // bleed: зона [x0,y0,x1,y1] в пикселях, где должен уместиться маршрут; карта рисуется на весь кадр
+      const iw = Z ? W + 2 * Math.abs((Z[0] + Z[2]) / 2 - W / 2) : mw - px(36), ih = Z ? H + 2 * Math.abs((Z[1] + Z[3]) / 2 - H / 2) : my + mh - px(46) - Math.max(my + px(18), nb[1] + nb[3] + px(14)), ix = Z ? (Z[0] + Z[2]) / 2 - iw / 2 : mx + px(18), iy = Z ? (Z[1] + Z[3]) / 2 - ih / 2 : Math.max(my + px(18), nb[1] + nb[3] + px(14));   // окно рельефа начинается под подписью маршрута
       const today = sets.find((s) => s.today) || sets[sets.length - 1], use = jr ? sets : [today];
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       for (const s of use) for (const p of s.pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
@@ -301,21 +304,21 @@
       const heading = len > e * 0.25 ? (Math.atan2(a1[0] - a0[0], -(a1[1] - a0[1])) * 180) / Math.PI : 0;   // линия уходит от зрителя
       const hd = tr > 0 ? headAt(today.pts, today.cum, tr) : null, follow = !jr && hd ? clamp(tr, 0, 1) : 0;
       const amp = opts.amp || 0, intro = 1 - smooth(clamp((opts.lt != null ? opts.lt : t) / 5, 0, 1)), fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
-      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: 62 + 6 * easeOut(t / 14) - 22 * amp * intro, bearing: heading + 9 * Math.sin(t * 0.17) - 22 * amp * intro, fov: 38 };   // въезд: из высоты и сбоку — вниз и к маршруту, дальше медленный облёт
+      const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: (opts.bleed ? 50 : 62) + 6 * easeOut(t / 14) - 22 * amp * intro, bearing: heading + 9 * Math.sin(t * 0.17) - 22 * amp * intro, fov: 38, fade: opts.bleed ? 0.2 : 0.05 };   // въезд: из высоты и сбоку — вниз и к маршруту, дальше медленный облёт
       {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
         const smp = [], upto = !jr && hd ? hd.i : Infinity;
         for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
         if (hd) smp.push([hd.x, hd.y]);
         for (let k = 0; k < 4; k++) {
           const Pj = window.Terrain.projector(T, cam, iw, ih); let r = 1;
-          for (const q of smp) { const z = Pj(q[0], q[1]); if (!z) { r = 3; break; } r = Math.max(r, Math.abs(z[0] - iw / 2) / (iw * (!jr && E.pins.length ? 0.30 : opts.deco === false ? 0.40 : 0.48)), Math.abs(z[1] - ih / 2) / (ih * 0.46)); }
-          if (r <= 1.02) break; cam.dist *= Math.min(1.8, r);
+          for (const q of smp) { const z = Pj(q[0], q[1]); if (!z) { r = 3; break; } r = Math.max(r, Math.abs(z[0] - iw / 2) / (Z ? (Z[2] - Z[0]) * 0.46 : iw * (!jr && E.pins.length ? 0.30 : opts.deco === false ? 0.40 : 0.48)), Math.abs(z[1] - ih / 2) / (Z ? (Z[3] - Z[1]) * 0.46 : ih * 0.46)); }
+          if (r <= 1) break; cam.dist *= Math.min(1.8, r);
         }
       }
       cam.dist *= 1 + 0.35 * amp * intro;
       const cv = window.Terrain.render(T, cam, iw, ih); if (!cv) return false;
-      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = (T.tex && T.tex.avg) || '#b4ba94'; ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // фон окна — средний цвет самой текстуры: край модели не виден   // подложка окна: по углам рельефа не видно светлого пятна
-      ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
+      ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = Z ? AP.shade : (T.tex && T.tex.avg) || '#b4ba94'; if (Z) ctx.fillRect(0, 0, W, H); else ctx.fillRect(ix, iy, iw, ih); ctx.drawImage(cv, ix, iy);   // фон окна — средний цвет самой текстуры: край модели не виден   // подложка окна: по углам рельефа не видно светлого пятна
+      ctx.beginPath(); if (Z) ctx.rect(0, 0, W, H); else ctx.rect(ix, iy, iw, ih); ctx.clip(); ctx.translate(ix, iy);
       const P = window.Terrain.projector(T, cam, iw, ih); const poly = (pts, brk, upto, extra) => { ctx.beginPath(); let pen = false; const n = upto == null ? pts.length - 1 : upto; for (let i = 0; i <= n && i < pts.length; i++) { const q = P(pts[i][0], pts[i][1]); if (!q) { pen = false; continue; } (pen && !(brk && brk.has(i))) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } if (extra) { const q = P(extra[0], extra[1]); if (q) ctx.lineTo(q[0], q[1]); } };
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       for (const s of sets) if (s !== today) { poly(s.pts, s.brk, null); if (E.journey.schematic) ctx.setLineDash([14 * u, 10 * u]); ctx.strokeStyle = 'rgba(244,232,203,.85)'; ctx.lineWidth = 7 * u; ctx.stroke(); ctx.strokeStyle = 'rgba(89,80,61,.85)'; ctx.lineWidth = 3.5 * u; ctx.stroke(); ctx.setLineDash([]); }
@@ -329,28 +332,37 @@
       if (hd) { const q = P(hd.x, hd.y); if (q) heroAt(ctx, q[0], q[1], 1, t, 0.9); }
       if (!jr && opts.deco !== false) trackDeco(ctx, (pp) => P(pp[0], pp[1]), tr, 1, [0, 0, iw, ih]);
       ctx.restore();
+      if (Z) return true;
       ctx.save(); ctx.globalAlpha *= a; ctx.lineWidth = px(1); ctx.strokeStyle = 'rgba(37,51,47,.12)'; ctx.strokeRect(ix, iy, iw, ih); ctx.restore();
       text(ctx, 'AWS Terrain Tiles · высоты ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
       return true;
     }
     function roadScene(ctx, s, p, t, lt, dur, jr, rs) {
-      const c = L.road, env = rs.env, a = env, dy = (1 - easeOut(rs.lt / 0.7)) * px(36);
-      const [mx, my, mw, mh] = box(c.map);
-      drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, dy);
+      const c = L.road, env = rs.env, a = env;
+      const zone = portrait ? [px(60), px(300), W - px(60), H - px(620)] : [px(60), px(230), px(1330), H - px(150)];   // сюда должен поместиться маршрут: не под заголовком и не под панелью
       const sets = jr ? E.allSets() : [E.todaySet()];
-      const tr = jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);   // в «Дневнике» камера не летит — путь рисуется с первой секунды кадра
-      const ropts = { lt: 99, mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
-      if (!reliefView(ctx, jr, sets, tr, t, a, ropts, c)) {
-        ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip();
-        sketch(ctx, c.core, sets, tr, t, a, { ...ropts, deco: !jr });
+      const tr = jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);
+      const ropts = { lt: 99, bleed: zone, mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
+      const ok = reliefView(ctx, jr, sets, tr, t, a, ropts, c);
+      if (!ok) {
+        const [mx, my, mw, mh] = box(c.map); drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, 0);
+        ctx.save(); ctx.beginPath(); ctx.rect(mx, my, mw, mh); ctx.clip(); sketch(ctx, c.core, sets, tr, t, a, { ...ropts, deco: !jr }); ctx.restore();
+      }
+      if (ok) {   // мягкое затемнение под текстом: карта остаётся фоном, текст читается
+        ctx.save(); ctx.globalAlpha *= a;
+        const sh = (x0, y0, x1, y1, k) => { const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, window.Appearance.rgba(AP.shade, k)); g.addColorStop(1, window.Appearance.rgba(AP.shade, 0)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); };
+        sh(0, 0, 0, px(portrait ? 460 : 300), 0.9);
+        if (portrait) sh(0, H, 0, H - px(820), 0.96); else { sh(W, 0, W - px(780), 0, 0.96); sh(0, H, 0, H - px(220), 0.7); }
         ctx.restore();
       }
-      text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(c.names[1]) + px(54), { size: 56, weight: 500, color: C.ink, max: c.names[2], a, fam: BODY });
-      tape(ctx, c.tape, 3, a, dy);
-      // Карта не меняется вместе с показателями: на той же странице плавно сменяется только карточка.
+      flat = !!ok;
+      text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(portrait ? 205 : 175), { size: portrait ? 68 : 64, weight: 600, color: C.ink, max: c.names[2], a, fam: BODY });
+      if (!ok) tape(ctx, c.tape, 3, a, 0);
       const prev = s.t0 > E.run(s).t0 ? E.at(s.t0 - 0.0001) : null, ma = prev ? smooth(lt / 0.6) : 1;
       if (prev && ma < 1) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * (1 - ma));
       roadFact(ctx, s, p, t, lt, dur, ma * env);
+      flat = false;
+      if (ok) { const T = jr ? terr.all : terr.today; if (T) text(ctx, 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag, px(60), H - px(36), { size: 26, weight: 400, color: C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
     }
     function roadFact(ctx, s, p, t, lt, dur, a) {
       const c = L.road;
