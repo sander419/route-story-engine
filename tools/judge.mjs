@@ -116,7 +116,6 @@ for (const c of cases) {
         const wantV = c.fmt === 'h' ? [c.res === 'sd' ? 1280 : 1920, c.res === 'sd' ? 720 : 1080] : [c.res === 'sd' ? 720 : 1080, c.res === 'sd' ? 1280 : 1920];
         if (r.file.vcodec !== 'h264') r.problems.push('кодек ' + r.file.vcodec);
         if (r.file.w !== wantV[0] || r.file.h !== wantV[1]) r.problems.push(`размер ${r.file.w}×${r.file.h}, ожидали ${wantV.join('×')}`);
-        if (r.file.audio === 'нет') r.problems.push('нет звука');
         if (r.file.dur == null) r.problems.push('в файле нет длительности (WebM без заголовка) — не перематывается');
         else if (r.file.dur < 8) r.problems.push('слишком короткий: ' + r.file.dur + ' с');
         r.contrast = [0.15, 0.5, 0.85].map((q) => stdAt(out, +((r.file.dur || 24) * q).toFixed(1)));

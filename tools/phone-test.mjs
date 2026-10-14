@@ -47,7 +47,7 @@ if (!err) {
   const j = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration,size:stream=codec_type,codec_name,width,height', '-of', 'json', f], { encoding: 'utf8' }));
   const v = j.streams.find((s) => s.codec_type === 'video') || {}, a = j.streams.find((s) => s.codec_type === 'audio');
   ok(v.codec_name === 'h264' && v.width === 720 && v.height === 1280, `файл: ${v.codec_name} ${v.width}×${v.height}, ${(+j.format.duration).toFixed(0)} с, ${(j.format.size / 1048576).toFixed(1)} МБ`);
-  ok(!!a, 'в файле есть звук');
+  ok(!a, 'звука нет (встроенной музыки больше нет)');
 }
 ok(errs.length === 0, `ошибок страницы: ${errs.length}${errs.length ? ' — ' + errs[0] : ''}`);
 await b.close();

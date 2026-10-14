@@ -649,15 +649,12 @@
   window.VMap.setOnTile(() => { dirty = true; });
 
   /* ---- звук ---- */
-  state.music = 'builtin'; let musicFileBuf = null, audioKey = '', audioBuf = null, audioJob = null;
+  state.music = 'none'; let musicFileBuf = null, audioKey = '', audioBuf = null, audioJob = null;
   async function audioFor(sc) {
-    if (!sc || state.music === 'none' || !window.RSAudio) return null;
-    const cues = (sc.plan ? sc.plan.beats : []).map((b) => ({ t: b.startSec, recipe: b.recipe, dur: b.durationSec }));
-    const key = state.music + '|' + state.styleId + '|' + sc.duration + '|' + cues.map((c) => c.recipe + c.t).join(',') + '|' + (musicFileBuf ? musicFileBuf.byteLength : 0);
+    if (!sc || state.music !== 'own' || !musicFileBuf || !window.RSAudio) return null;
+    const key = 'own|' + sc.duration + '|' + musicFileBuf.byteLength;
     if (key === audioKey && audioBuf) return audioBuf;
-    if (state.music === 'own') { if (!musicFileBuf) return null; audioBuf = await window.RSAudio.fromFile(musicFileBuf, sc.duration); }
-    else audioBuf = await window.RSAudio.compose(sc.duration, cues, 7, state.styleId);
-    audioKey = key; return audioBuf;
+    audioBuf = await window.RSAudio.fromFile(musicFileBuf, sc.duration); audioKey = key; return audioBuf;
   }
   async function syncAudio() {
     if (!playing || !scene) { window.RSAudio && window.RSAudio.stop(); return; }

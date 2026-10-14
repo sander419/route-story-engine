@@ -26,9 +26,9 @@
       "attribution": "не нужна", "checksum": null, "status": "implemented"
     },
     {
-      "id": "built-in-score", "kind": "procedural-audio", "style": ["paper", "night", "sat", "navigator"], "path": "src/audio.js",
+      "id": "built-in-score", "kind": "procedural-audio-REMOVED-2026-10-14", "style": ["paper", "night", "sat", "navigator"], "path": "src/audio.js",
       "source": "Route Story", "license": "MIT проекта", "commercialUse": "yes", "videoExport": "yes",
-      "attribution": "не нужна", "checksum": null, "status": "implemented"
+      "attribution": "не нужна", "checksum": null, "status": "removed"
     },
     {
       "id": "vector-map", "kind": "map-data", "style": ["paper", "night"], "path": "src/vector.js",
