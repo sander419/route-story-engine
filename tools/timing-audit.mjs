@@ -3,7 +3,7 @@
 import { createRequire } from 'node:module';
 const require = createRequire('C:/Users/glina/route-story-spike/package.json');
 const { chromium } = require('playwright');
-const [,, which = 'all', fmt = 'v', style = 'journal'] = process.argv;
+const [,, which = 'all', fmtArg = 'v,h', style = 'journal'] = process.argv;
 const types = which === 'all' ? ['new-viewer', 'returning-viewer', 'story-so-far'] : [which];
 const b = await chromium.launch({ channel: 'msedge', headless: true });
 const p = await b.newPage({ viewport: { width: 1400, height: 900 } });
@@ -11,7 +11,7 @@ p.on('pageerror', (e) => console.log('pageerror:', e.message));
 await p.goto('http://localhost:4180/');
 await p.waitForFunction(() => window.Director && window.Episode);
 let bad = 0;
-for (const type of types) {
+for (const fmt of fmtArg.split(',')) for (const type of types) {
   const r = await p.evaluate(async ([type, fmt, style]) => {
     await document.fonts.ready;
     const base = await (await fetch('data/demo-journey.json')).json();
