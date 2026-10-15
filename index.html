@@ -9,7 +9,7 @@
 <link rel="preload" href="fonts/dinish.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css?v=10151502">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=10151635">
+<link rel="stylesheet" href="style.css?v=10151640">
 </head>
 <body>
 <header class="top">
@@ -126,6 +126,17 @@
           <small class="hint" id="paletteContrast" role="status"></small>
           <small class="hint">Полная настройка — в «Дневнике». В других стилях применяются общие шрифты и цвета; отдельный декор сохраняется. Фотографии сохраняют свои цвета.</small>
           <button class="ghost" id="appearanceReset" type="button">Сбросить шрифты и цвета</button>
+      <div class="f">Свой логотип <small class="hint">PNG с прозрачным фоном или SVG; поместится в шапку или в угол обложки и финала</small></div>
+      <div class="logo-box">
+        <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+        <img id="logoPrev" alt="Логотип" hidden>
+        <div class="seg seg3" id="logoWhere"><button data-v="header" class="on">В шапке</button><button data-v="ends">Обложка и финал</button><button data-v="both">Везде</button></div>
+        <button class="ghost" id="logoClear" type="button" hidden>Убрать логотип</button>
+      </div>
+      <details class="labels" id="labelsBox"><summary>Надписи в ролике <small class="hint">впишите свой текст вместо стандартного; пусто — как было</small></summary>
+        <div id="labelsGrid"></div>
+        <button class="ghost" id="labelsReset" type="button">Вернуть стандартные надписи</button>
+      </details>
         </div>
       </details>
       <div class="f">Формат</div>
@@ -204,12 +215,12 @@
 <script src="src/appearance.js?v=10151626"></script>
 <script src="src/style-icon-data.js?v=10151503"></script>
 <script src="src/style-icons.js?v=10151503"></script>
-<script src="src/journal.js?v=10151638"></script>
-<script src="src/episode.js?v=10151621"></script>
+<script src="src/journal.js?v=10151640"></script>
+<script src="src/episode.js?v=10151640"></script>
 <script src="src/exif.js?v=10141012"></script>
 <script src="src/audio.js?v=10141012"></script>
 <script src="src/export.js?v=10141012"></script>
 <script src="src/layers-export.js?v=10141012"></script>
-<script src="src/ui.js?v=10151637"></script>
+<script src="src/ui.js?v=10151640"></script>
 </body>
 </html>

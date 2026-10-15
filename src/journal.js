@@ -115,8 +115,22 @@
 
     /* ---------- текст ---------- */
     function fitFont(ctx, str, weight, size, fam, maxW) { ctx.font = `${weight} ${size}px ${fam}`; const w = ctx.measureText(str).width; if (w > maxW && maxW > 0) { size *= maxW / w; ctx.font = `${weight} ${size}px ${fam}`; } return size; }
+    /* свои надписи путешественника: замена стандартного текста по началу строки («набор высоты» → «подъём»); крупные тексты (названия, подписи к фото) не трогаем */
+    const LBL = Object.entries(E.labels || {}).filter(([k, v]) => k && typeof v === 'string' && v.trim()).map(([k, v]) => [k.toLowerCase(), v.trim()]).sort((a, b) => b[0].length - a[0].length);
+    const relabel = (str) => {
+      if (!LBL.length || typeof str !== 'string') return str; const low = str.toLowerCase();
+      for (const [k, v] of LBL) if (low.startsWith(k) && (low.length === k.length || !/[a-zа-яё0-9]/i.test(low[k.length]))) { const head = str.slice(0, k.length), up = head === head.toUpperCase() && /[A-ZА-ЯЁ]/.test(head); return (up ? v.toUpperCase() : v) + str.slice(k.length); }
+      return str;
+    };
+    /* свой логотип: в шапке вместо имени и/или в углу обложки и финала */
+    const LOGO = E.logo && E.logo.url ? E.img(E.logo.url) : null;
+    function drawLogo(ctx, x, y, maxW, maxH, align, a) {
+      if (!LOGO || !LOGO.ok) return false; const im = LOGO.img, sc = Math.min(maxW / im.width, maxH / im.height), w = im.width * sc, h = im.height * sc;
+      ctx.save(); ctx.globalAlpha *= a == null ? 1 : a; ctx.drawImage(im, align === 'right' ? x - w : x, y, w, h); ctx.restore(); return true;
+    }
+    const logoEnds = (ctx, a) => { if (LOGO && LOGO.ok && E.logo.where !== 'header') drawLogo(ctx, W - px(86), H - px(portrait ? 330 : 250), px(portrait ? 380 : 420), px(portrait ? 160 : 150), 'right', a); };
     function text(ctx, str, x, y, o) {   // o: size(u), fam, weight, color, align, max(u), ls(em), a
-      if (str == null || str === '') return 0;
+      if (str == null || str === '') return 0; if (o.size <= 58) str = relabel(str);
       ctx.save(); ctx.globalAlpha *= o.a == null ? 1 : o.a; ctx.fillStyle = o.color || C.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = 'alphabetic';
       const size = fitFont(ctx, str, o.weight || 400, px(o.size), o.fam || BODY, o.max ? px(o.max) : 0);
       ctx.letterSpacing = (o.ls || 0) * size + 'px'; ctx.fillText(str, x, y); ctx.restore(); return size;
@@ -281,13 +295,14 @@
       const fy = titleY + px(size * 1.04) * (ls.length - 1) + px(portrait ? 130 : 110);
       ctx.save(); ctx.globalAlpha *= f(0.6); ctx.fillStyle = AP.accent; ctx.fillRect(x, fy - px(60), px(100), px(10)); ctx.restore();
       const km = p && p.km ? Math.round(p.km) : null, items = [km ? [km + ' км', 'дистанция'] : null, p && p.time ? [p.time, 'в пути'] : null, p && p.gain ? ['+' + p.gain + ' м', 'набор высоты'] : null, p && p.maxEle ? [p.maxEle + ' м', 'высшая точка'] : null].filter(Boolean).slice(0, 4);
-      if (!items.length) { text(ctx, E.dateLine(s, p), x, fy + px(40), { size: 54, weight: 600, color: AP.text, max: tw, a: f(0.7) }); return; }
+      if (!items.length) { text(ctx, E.dateLine(s, p), x, fy + px(40), { size: 54, weight: 600, color: AP.text, max: tw, a: f(0.7) }); logoEnds(ctx, f(0.7)); return; }
       items.forEach(([v, l], i) => {
         const d = 0.7 + i * 0.18, cw = portrait ? 0 : (px(1700) / items.length), X = portrait ? x : x + i * cw, Y = portrait ? fy + px(i * 215) : fy + px(60);
         text(ctx, v, X, Y + px(110), { size: portrait ? 118 : 104, weight: 700, fam: NUM, max: portrait ? tw : cw / u - 30, color: AP.text, a: f(d) });
         text(ctx, l.toUpperCase(), X, Y + px(portrait ? 164 : 160), { size: 36, weight: 600, ls: .12, color: AP.accent, max: portrait ? tw : cw / u - 30, a: f(d + 0.1) });
       });
       text(ctx, E.dateLine(s, p), x, H - px(portrait ? 150 : 90), { size: 40, color: AP.muted, max: tw, a: f(1.1) });
+      logoEnds(ctx, f(1.1));
     }
 
     /* ---------- рельеф: настоящие высоты, 3D-вид с маршрутом поверх (Terrain), запасной вариант — эскиз ---------- */
@@ -489,6 +504,7 @@
       if (match) text(ctx, match[2], x, px(portrait ? 880 : 750), { size: 92, weight: 600, color: ink, a });
       text(ctx, f.kicker, x, px(portrait ? 1040 : 870), { size: 42, max: portrait ? width : 1100, color: ink, a });
       text(ctx, f.sub, x, px(portrait ? 1130 : 945), { size: 38, max: portrait ? width : 1100, color: ink, a });
+      logoEnds(ctx, a);
       if (portrait) {
         const sets = E.allSets(), b = [86, 1280, 908, 230], F = fitPts(sets.map(q => q.pts), b);
         for (const q of sets) { const st = stroke(ctx, q.pts, q.brk, F, null, px(5), ink, E.journey.schematic ? [px(16), px(12)] : null, a * .7); if (st) st.end(); }
@@ -498,7 +514,7 @@
     /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
     function pageHeader(ctx, s, p, dark, t) {
       const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? AP.finalText : FAM[s.recipe] === 'cover' || FAM[s.recipe] === 'photo' ? AP.photoText : C.ink;
-      text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 36, weight: 500, max: portrait ? 470 : 900, color: ink });
+      if (LOGO && LOGO.ok && E.logo.where !== 'ends') drawLogo(ctx, x, y - px(46), px(portrait ? 320 : 360), px(60), 'left', 1); else text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 36, weight: 500, max: portrait ? 470 : 900, color: ink });
       text(ctx, E.journey.schematic ? 'ИСТОРИЯ ПУТИ' : 'ДЕНЬ ' + E.today.day, right, y, { size: 34, weight: 500, align: 'right', max: 390, color: ink });
       ctx.save(); ctx.strokeStyle = window.Appearance.rgba(ink, .24); ctx.lineWidth = px(1); ctx.beginPath(); ctx.moveTo(x, y + px(34)); ctx.lineTo(right, y + px(34)); ctx.stroke(); ctx.restore();
     }
@@ -554,7 +570,7 @@
       ctx.save(); ctx.globalAlpha *= 1 - smooth(dt / TURN); ctx.drawImage(turnCanvas, 0, 0); ctx.restore();
     }
     const packNeeded = () => (['land/02', 'sign/09', 'sign/10', 'sign/11', 'sign/12', 'frame/compass-map', 'frame/polaroid', 'frame/photo-frame', 'frame/begins-here']).concat(wxId(E.WX) ? ['wx/' + wxId(E.WX)] : []);
-    return { draw, flatTiles, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...relLoads, ...(E.relief ? [] : [Promise.all(flatTiles().map((q) => window.VMap.getTile(q.z, q.x, q.y).p))])]), isDark: s => FAM[s.recipe] !== 'fin', footerColor: s => FAM[s.recipe] === 'fin' ? AP.finalText : ['cover','photo'].includes(FAM[s.recipe]) ? AP.photoText : AP.text };
+    return { draw, flatTiles, ready: Promise.all([READY(packNeeded), window.Flags.preload(E.countriesInPlan()), ...(LOGO ? [LOGO.p] : []), ...relLoads, ...(E.relief ? [] : [Promise.all(flatTiles().map((q) => window.VMap.getTile(q.z, q.x, q.y).p))])]), isDark: s => FAM[s.recipe] !== 'fin', footerColor: s => FAM[s.recipe] === 'fin' ? AP.finalText : ['cover','photo'].includes(FAM[s.recipe]) ? AP.photoText : AP.text };
   }
 
   window.Journal = { create, FAM };

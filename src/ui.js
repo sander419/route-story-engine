@@ -231,6 +231,40 @@
     l.append(cb, document.createTextNode(nm)); if (k === 'stickers' && !window.StyleIcons.legacyEnabled) l.hidden = true; $('shows').appendChild(l);
   });
 
+  /* ---- свои надписи и логотип: хранятся в браузере, попадают в предпросмотр и в MP4 ---- */
+  const LABEL_DEFS = [['дистанция', 'Обложка: километры'], ['в пути', 'Время в пути'], ['набор высоты', 'Набор высоты'], ['высшая точка', 'Высшая точка'], ['пройдено', 'Во время движения'], ['день', 'Слово «день»'], ['погода в тот день', 'Погода'], ['за день', 'За день'], ['путь до сегодня', 'Путь до сегодня'], ['прибытие', 'Прибытие'], ['веха', 'Веха'], ['новая глава', 'Новая глава'], ['круг замкнулся', 'Круг замкнулся'], ['всего за путешествие', 'Итог: всего'], ['пройдено за день', 'Итог дня'], ['история пути', 'Шапка серии'], ['route story', 'Имя в шапке, если не задано']];
+  try { state.labels = JSON.parse(localStorage.getItem('rs-labels-v1') || '{}') || {}; } catch (e) { state.labels = {}; }
+  try { state.logo = JSON.parse(localStorage.getItem('rs-logo-v1') || 'null'); } catch (e) { state.logo = null; }
+  let customTimer = null;
+  function saveCustom() {
+    try { localStorage.setItem('rs-labels-v1', JSON.stringify(state.labels)); localStorage.setItem('rs-logo-v1', JSON.stringify(state.logo)); } catch (e) { /* приватный режим: работает до закрытия */ }
+    clearTimeout(customTimer); customTimer = setTimeout(() => rebuild(true), 200);
+  }
+  LABEL_DEFS.forEach(([k, nm]) => {
+    const row = document.createElement('label'); row.className = 'lrow'; const sp = document.createElement('span'); sp.textContent = nm;
+    const inp = document.createElement('input'); inp.placeholder = k; inp.maxLength = 28; inp.dataset.k = k; inp.value = state.labels[k] || '';
+    inp.oninput = () => { if (inp.value.trim()) state.labels[k] = inp.value.trim(); else delete state.labels[k]; saveCustom(); };
+    row.append(sp, inp); $('labelsGrid').appendChild(row);
+  });
+  $('labelsReset').onclick = () => { state.labels = {}; [...$('labelsGrid').querySelectorAll('input')].forEach((i) => { i.value = ''; }); saveCustom(); };
+  function syncLogo() { const L = state.logo; $('logoPrev').hidden = !L; if (L) $('logoPrev').src = L.url; $('logoClear').hidden = !L; [...$('logoWhere').children].forEach((b) => b.classList.toggle('on', !!L && b.dataset.v === L.where)); }
+  $('logoFile').onchange = (e) => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 640 / Math.max(im.width, im.height, 1)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        state.logo = { url: c.toDataURL(f.type === 'image/jpeg' ? 'image/jpeg' : 'image/png', 0.92), where: (state.logo && state.logo.where) || 'header' }; syncLogo(); saveCustom();
+      };
+      im.onerror = () => showErr('Не удалось прочитать картинку логотипа.'); im.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  };
+  [...$('logoWhere').children].forEach((b) => { b.onclick = () => { if (!state.logo) return; state.logo.where = b.dataset.v; syncLogo(); saveCustom(); }; });
+  $('logoClear').onclick = () => { state.logo = null; syncLogo(); saveCustom(); };
+  syncLogo();
+
   /* ---- экраны ролика: скрыть необязательные, сделать любой дольше или короче ---- */
   const RN = { 'day-card': 'Обложка', 'trip-title': 'Обложка', 'season-card': 'Обложка', 'progress-overview': 'Путь до сегодня', 'overview-to-detail': 'Переход к дню', 'route-reveal': 'Дорога', 'camera-follow': 'Дорога', 'elevation-profile': 'Профиль высот', 'weather-card': 'Погода', 'time-on-road': 'Время в пути', 'high-point': 'Высшая точка', 'distance-counter': 'Километры', 'checkpoint-arrival': 'Прибытие', 'photo-reveal': 'Фото', 'note-card': 'Заметка', 'highlights-reel': 'Фото пути', 'pullback': 'Финал', 'progress-poster': 'Финал', 'journey-recap': 'Вехи пути', 'day-summary': 'Итог дня' };
   const LOCKED = new Set(['day-card', 'trip-title', 'season-card', 'progress-overview', 'overview-to-detail', 'route-reveal', 'camera-follow', 'pullback', 'progress-poster', 'journey-recap', 'day-summary']);
@@ -593,7 +627,7 @@
       photoPins: tot && state.show.photos ? (state.o.photos || []).filter((p) => p.s != null).map((p) => ({ f: Math.min(1, Math.max(0, p.s / tot)), url: p.url })) : [],
       stickers: window.StyleIcons.legacyEnabled && state.show.stickers ? (state.o.stickers || []).map((x) => x || null) : [], showFlags: state.show.flags, showRelief: state.show.relief, appearance: state.appearance,
     };
-    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, ...extra }, w, h);
+    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, labels: state.labels, logo: state.logo, ...extra }, w, h);
   }
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {

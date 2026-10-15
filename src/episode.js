@@ -75,7 +75,7 @@
     return e;
   }
 
-  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, trackNotes = [], photoPins = [], stickers = [], showFlags = true, showRelief = true, appearance = null }, W, H) {
+  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, labels = null, logo = null, trackNotes = [], photoPins = [], stickers = [], showFlags = true, showRelief = true, appearance = null }, W, H) {
     /* Лицо героя (не меняется от стиля к стилю): знак, цвет, имя. Стиль карты — одежда. */
     const S0 = window.RS.STYLES[styleId] || window.RS.STYLES.night, PF = journey.profile || {};
     const palette = window.Appearance.normalize(appearance);
@@ -817,7 +817,7 @@
       const famOf = (s) => window.Journal.FAM[s.recipe] || 'road';
       const NEXT = () => (PF.next ? 'Дальше — ' + PF.next : 'Продолжение следует →');
       const bridge = {
-        W, H, u, portrait, S, HAND, MARK, MCOL, NAME, drawMark, journey, today, days, maxKm, mediaById, img, DL, fmtN, daysWord, toLabel, vis, appearance: palette,
+        W, H, u, portrait, S, HAND, MARK, MCOL, NAME, labels, logo, drawMark, journey, today, days, maxKm, mediaById, img, DL, fmtN, daysWord, toLabel, vis, appearance: palette,
         get WX() { return WX; }, weatherIcon: () => wxImg && wxImg.ok ? wxImg.img : null, at: shotAt,
         run: (s) => { const i = shots.indexOf(s), f = famOf(s); let a = i, b = i; while (a > 0 && famOf(shots[a - 1]) === f) a--; while (b < shots.length - 1 && famOf(shots[b + 1]) === f) b++; return { t0: shots[a].t0, t1: shots[b].t1, shots: shots.slice(a, b + 1) }; },
         todaySet: () => ({ pts: todayPts, brk: todayBrk, cum: todayCum, today: true }),

@@ -61,7 +61,7 @@ try {
     await p.evaluate(() => { window.__lastExport = null; });
   }
   await p.click('#tabs button[data-t="look"]');
-  await p.locator('#appearanceBox details summary').click();
+  await p.locator('#appearanceBox details:not(.labels) summary').click();
   await p.locator('#appearanceBox').screenshot({path:'out/appearance-controls.png'});
   await p.click('#appearanceReset');
   ok(await p.evaluate(() => __app.state.appearance.heading === 'cormorant' && __app.state.appearance.preset === 'coast'), 'сброс возвращает исходную пару и палитру');
