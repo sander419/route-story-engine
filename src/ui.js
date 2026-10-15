@@ -107,10 +107,16 @@
     e.target.value = '';
     placePhotos();
   };
+  const photoRouteKeys = new WeakMap();
+  function photoRouteKey(r) {
+    if (!photoRouteKeys.has(r)) photoRouteKeys.set(r, JSON.stringify([Array.from(r.lat), Array.from(r.lon)]));
+    return photoRouteKeys.get(r);
+  }
   function placePhotos() {
     const r = state.route;
     if (!r) { state.o.photos = []; renderPhotos(); return; }
-    const placed = photoFiles.map((p, i) => { const pl = window.Exif.placeOnRoute(r, p.meta, i, photoFiles.length); p.how = pl.how; p.s = pl.s; return p; });
+    const key = photoRouteKey(r);
+    const placed = photoFiles.map((p, i) => { if (p.how === 'hand' && p.handKey === key && Number.isFinite(p.s) && p.s >= 0 && p.s <= r.total) return p; const pl = window.Exif.placeOnRoute(r, p.meta, i, photoFiles.length); p.how = pl.how; p.s = pl.s; return p; });
     const ev = placed.filter((p) => p.how === 'even');
     ev.forEach((p, k) => { p.s = (r.total * (k + 1)) / (ev.length + 1); });
     state.o.photos = placed.map((p) => ({ url: p.url, s: p.s, caption: p.caption, credit: p.credit || '' }));
@@ -192,7 +198,7 @@
   $('pmap').addEventListener('pointermove', (e) => {
     if (dragPin < 0 || !pmapGeo) return; const [x, y] = pmapPt(e); let best = pmapGeo.pts[0], bd = Infinity;
     for (const q of pmapGeo.pts) { const d = (q[1] - x) ** 2 + (q[2] - y) ** 2; if (d < bd) { bd = d; best = q; } }
-    const p = photoFiles[dragPin]; p.s = state.route.D[best[0]]; p.how = 'hand'; drawPmap();
+    const p = photoFiles[dragPin]; p.s = state.route.D[best[0]]; p.how = 'hand'; p.handKey = photoRouteKey(state.route); drawPmap();
   });
   const pmapUp = () => { if (dragPin < 0) return; dragPin = -1; state.o.photos = photoFiles.map((p) => ({ url: p.url, s: p.s, caption: p.caption, credit: p.credit || '' })); renderPhotos(); rebuild(true); };
   window.__pmapPins = () => photoFiles.map((q) => q._xy || null);   // для проверки перетаскивания

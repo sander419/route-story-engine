@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { mkdirSync } from 'node:fs';
+const require = createRequire('C:/Users/glina/route-story-spike/package.json');
+const { chromium } = require('playwright');
+const b = await chromium.launch({ channel: 'msedge', headless: true });
+try {
+  const p = await b.newPage();
+  await p.route('https://nominatim.openstreetmap.org/**', r => r.fulfill({ contentType: 'application/json', body: '{}' }));
+  await p.goto('http://localhost:4180/'); await p.waitForFunction(() => window.__app?.state.demoDay);
+  await p.setInputFiles('#file', 'samples/day47.gpx'); await p.waitForFunction(() => __app.state.seriesBase?.id === 'my');
+  await p.click('#tabs button[data-t="photo"]'); await p.setInputFiles('#photos', 'art/unicycle-real.webp');
+  await p.waitForFunction(() => __app.state.o.photos.length === 1 && __pmapPins()[0]);
+  const initial = await p.evaluate(() => __app.state.o.photos[0].s);
+  await p.locator('#pmap').scrollIntoViewIfNeeded();
+  const box = await p.locator('#pmap').boundingBox();
+  const pin = await p.evaluate(() => ({ xy: __pmapPins()[0], w: pmap.width, h: pmap.height }));
+  await p.mouse.move(box.x + pin.xy[0] / pin.w * box.width, box.y + (pin.xy[1] - 38) / pin.h * box.height);
+  await p.mouse.down(); await p.mouse.move(box.x + box.width * .8, box.y + box.height * .3, { steps: 12 }); await p.mouse.up();
+  const manual = await p.evaluate(() => __app.state.o.photos[0].s);
+  assert.ok(Math.abs(initial - manual) > 100, 'перетаскивание не изменило место');
+  assert.match(await p.locator('#photoList small').first().textContent(), /вручную/);
+  await p.setInputFiles('#photos', 'art/unicycle-real.webp'); await p.waitForFunction(() => __app.state.o.photos.length === 2);
+  assert.equal(await p.evaluate(() => __app.state.o.photos[0].s), manual, 'добавление фото сбросило ручную позицию');
+  await p.locator('#photoList button').nth(1).click();
+  assert.equal(await p.evaluate(() => __app.state.o.photos[0].s), manual, 'удаление другого фото сбросило ручную позицию');
+  await p.setInputFiles('#file', 'samples/day47.gpx'); await p.waitForTimeout(700);
+  assert.equal(await p.evaluate(() => __app.state.o.photos[0].s), manual, 'тот же трек сбросил ручную позицию');
+  assert.match(await p.locator('#photoList small').first().textContent(), /вручную/);
+  mkdirSync('out/photo-position', { recursive: true }); await p.screenshot({ path: 'out/photo-position/fixed.png' });
+  console.log('Ручная позиция: добавление, удаление и повтор трека — OK');
+} finally { await b.close(); }
