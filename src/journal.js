@@ -494,6 +494,23 @@
       const stImg = sticker && (sticker.pack || stickerImg(sticker)); if (stImg) fitImg(ctx, stImg, [c.metric[0] + c.metric[2] - 150, c.metric[1] - 130, 120, 120], a, 6, 0);
       // На странице дороги знак путешественника остаётся только на маршруте.   // уницикл под карточкой километров, справа — не на тексте
     }
+    function styleDetail(ctx, x, y, wU, ink, a) {   // одна подпись характера: чернила, свет, журнальная полоса или туристический штамп
+      const w = px(wU); ctx.save(); ctx.globalAlpha *= a; ctx.translate(x, y); ctx.strokeStyle = ctx.fillStyle = ink;
+      if (CH.pins === 'polaroid') {
+        ctx.lineWidth = px(4); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0);
+        for (let i = 1; i <= 24; i++) ctx.lineTo(w * i / 24, px(Math.sin(i * 2.3) * 1.8));
+        ctx.stroke(); ctx.globalAlpha *= .45; ctx.beginPath(); ctx.moveTo(px(8), px(8)); ctx.lineTo(w * .7, px(9)); ctx.stroke();
+      } else if (CH.pins === 'circle') {
+        ctx.shadowColor = ink; ctx.shadowBlur = px(14); ctx.lineWidth = px(3); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(w-px(22),0); ctx.stroke(); ctx.beginPath(); ctx.arc(w-px(7),0,px(7),0,6.2832); ctx.fill();
+      } else if (CH.pins === 'square') {
+        ctx.fillRect(0,-px(7),w*.8,px(14)); ctx.fillRect(w-px(14),-px(7),px(14),px(14));
+      } else {
+        ctx.lineWidth = px(2); ctx.beginPath(); ctx.moveTo(0,px(12)); ctx.lineTo(0,0); ctx.arc(px(12),0,px(12),Math.PI,0); ctx.lineTo(px(24),px(12)); ctx.closePath();
+        ctx.moveTo(px(42),0); ctx.lineTo(w,0); ctx.moveTo(w,-px(7)); ctx.lineTo(w,px(7)); ctx.stroke();
+      }
+      ctx.restore();
+    }
     function arrival(ctx, s, p, a, dy, lt) {
       const label = E.arrivalLabel(s, p) || E.toLabel || E.routeNames();
       const x = px(86), y = portrait ? px(480) : px(380), width = W / u - 172;
@@ -501,6 +518,7 @@
       let size = 140, lines;
       while (!(lines = wrapLines(ctx, label, HW, px(size), HEAD, px(width), 3)) && size > 60) size -= 8;
       (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.15), { size, fam: HEAD, weight: HW, max: width, a }));
+      styleDetail(ctx, x, y + px(75 + (lines || [label]).length * size), 280, AP.text, a);
       text(ctx, E.dateLine(s, p), x, y + px(140 + (lines || [label]).length * size), { size: 36, color: C.secondary, max: width, a });
       if (E.stk(1)) fitImg(ctx, E.stk(1), [W / u - 200, H / u - 300, 110, 110], a, 0, 0, false);
     }
@@ -523,6 +541,7 @@
       while (!(lines = wrapLines(ctx, cap, 600, size, BODY, max, 3)) && size > px(30)) size *= .9;
       const captionY = H - px(portrait ? 330 : 300) - ((lines || [cap]).length - 1) * size * 1.15;
       (lines || [cap]).forEach((ln, i) => text(ctx, ln, x, captionY + i * size * 1.15, { size: size / u, weight: 600, color: AP.photoText, max: max / u }));
+      styleDetail(ctx, x, H - px(portrait ? 255 : 245), 280, AP.photoText, 1);
       text(ctx, E.photoDate(m, s), x, H - px(190), { size: 38, color: AP.photoText, max: max / u });
       if (m.credit) text(ctx, m.credit, x, H - px(112), { size: 30, color: AP.photoText, max: (max - px(170)) / u });
       ctx.restore();
@@ -573,6 +592,7 @@
       if (match) text(ctx, match[2], x, px(portrait ? 880 : 750), { size: 92, weight: 600, color: ink, a });
       text(ctx, f.kicker, x, px(portrait ? 1040 : 870), { size: 42, max: portrait ? width : 1100, color: ink, a });
       text(ctx, f.sub, x, px(portrait ? 1130 : 945), { size: 38, max: portrait ? width : 1100, color: ink, a });
+      styleDetail(ctx, x, px(portrait ? 1210 : 1000), 280, ink, a);
       logoEnds(ctx, a);
       if (portrait) {
         const sets = E.allSets(), b = [86, 1280, 908, 230], F = fitPts(sets.map(q => q.pts), b);
