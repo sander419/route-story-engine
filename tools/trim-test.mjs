@@ -20,6 +20,10 @@ await p.evaluate(() => { const set = (id, v) => { const e = document.getElementB
 await p.waitForTimeout(4500); const k3 = await km(), brk = await p.evaluate(() => !!(window.__app.state.route.brk && [...window.__app.state.route.brk].some(Boolean)));
 console.log('вырезано 30–50%:', k3, 'разрыв на карте:', brk, await p.evaluate(() => document.getElementById('trimDo').textContent));
 const okCut = brk && k3 / k0 > 0.7 && k3 / k0 < 0.9;
+// сглаживание: линия короче, но не «срезана»
+await p.setInputFiles('#file', 'samples/own-day1.gpx'); await p.waitForTimeout(4500);
+await p.evaluate(() => { const e = document.getElementById('trimS'); e.value = 3; e.dispatchEvent(new Event('input', { bubbles: true })); }); await p.waitForTimeout(4500);
+const kS = await km(); console.log('сглажено:', kS, 'из', k0); const okSmooth = kS < k0 && kS > k0 * 0.8;
 // несколько файлов = один день
 await p.evaluate(() => { document.getElementById('mergeDay').checked = false; });
 await p.setInputFiles('#file', ['samples/own-day1.gpx', 'samples/own-day2.gpx']); await p.waitForTimeout(6000);
@@ -27,5 +31,5 @@ const dSep = await days(), kSep = await km();
 await p.evaluate(() => { const c = document.getElementById('mergeDay'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await p.waitForTimeout(6000);
 const dMer = await days(), kMer = await km(); console.log('два файла: раздельно дней', dSep, ' склеено дней', dMer, 'км', kMer);
 const okMerge = kMer > 295 && kMer < 308;   // 158,6 + 142,8 км в одном дне
-const ok = okMerge && okCut && n0 === n1 && shown && ratio > 0.62 && ratio < 0.78 && Math.abs(k2 - k0) < 0.05 && a2 === '0';
+const ok = okSmooth && okMerge && okCut && n0 === n1 && shown && ratio > 0.62 && ratio < 0.78 && Math.abs(k2 - k0) < 0.05 && a2 === '0';
 await b.close(); console.log(ok ? 'OK' : 'ПАДЕНИЕ'); if (!ok) process.exit(1);
