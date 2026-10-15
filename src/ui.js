@@ -24,13 +24,16 @@
   /* ---- стили ---- */
   const SKIN = { journal: ['paper', 'yeseva', 'geologica'], night: ['night', 'din', 'din'], paper: ['trail', 'prata', 'onest'], editorial: ['magazine', 'geologica', 'geologica'] };   // характер стиля: палитра + шрифты (дальше можно менять вручную)   // стиль = палитра по умолчанию + набор значков; раскладка и камера у всех одни
   const swatch = { journal: 'linear-gradient(135deg,#efe3c6 0%,#efe3c6 45%,#d9c89c 45%,#d9c89c 78%,#b13a21 78%)', night: 'linear-gradient(135deg,#0a1428,#13264a 55%,#ffb454 56%,#ff6b35)', paper: 'linear-gradient(135deg,#1f3329,#2c4638 55%,#e8c57e 56%,#e8c57e)', editorial: 'linear-gradient(135deg,#f1eee6,#e4e0d4 55%,#c23e28 56%,#c23e28)' };
+  const styleHint = { journal: 'Бумага и полароиды', night: 'Светящаяся линия', editorial: 'Крупные цифры', paper: 'Туристический штамп' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
-    b.innerHTML = `<div class="sw" style="background:${swatch[id]}"></div><span>${s.name}</span>`;
+    b.innerHTML = `<div class="sw" style="background:${swatch[id]}"></div><span>${s.name}<small>${styleHint[id]}</small></span>`;
     b.onclick = () => { state.styleId = id; const sk = SKIN[id]; if (sk) { state.appearance = { ...state.appearance, ...AP.palettes[sk[0]], preset: sk[0], heading: sk[1], body: sk[2] }; saveAppearance(); } $('iconLibrary').textContent = window.StyleIcons.familyName(id); [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
     $('styles').appendChild(b);
   });
+  // На узком экране сначала видны стили; на большом выбор цветов можно держать раскрытым.
+  $('appearanceBox').open = matchMedia('(min-width:1000px)').matches;
 
   /* ---- шрифты и палитра: одинаковые для предпросмотра и экспорта ---- */
   const AP = window.Appearance, APKEY = 'rs-appearance-v1';
@@ -228,7 +231,7 @@
   SHOWS.forEach(([k, nm]) => {
     const l = document.createElement('label'); l.className = 'c'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = k !== 'relief'; cb.dataset.k = k;
     cb.onchange = () => { state.show[k] = cb.checked; state.relief = state.show.relief; t = 0; rebuild(); };
-    l.append(cb, document.createTextNode(nm)); if (k === 'stickers' && !window.StyleIcons.legacyEnabled) l.hidden = true; $('shows').appendChild(l);
+    l.append(cb, document.createTextNode(nm)); if (k === 'stickers' && !window.StyleIcons.legacyEnabled) l.hidden = true; (k === 'relief' ? $('mapSettings') : $('shows')).appendChild(l);
   });
 
   /* ---- свои надписи и логотип: хранятся в браузере, попадают в предпросмотр и в MP4 ---- */
@@ -289,7 +292,7 @@
   }
 
   /* ---- шаги под роликом ---- */
-  function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'text', 'photo', 'look'].forEach((k) => { $('t-' + k).hidden = k !== id; }); if (id === 'photo') drawPmap(); }
+  function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'text', 'photo', 'look'].forEach((k) => { $('t-' + k).hidden = k !== id; }); if (id === 'photo') drawPmap(); if (id === 'look' && matchMedia('(max-width:999px)').matches) $('tabs').scrollIntoView({ block: 'start' }); }
   [...$('tabs').children].forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
 
   /* ---- загрузка ---- */

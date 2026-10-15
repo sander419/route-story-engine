@@ -254,3 +254,17 @@ button:active:not(:disabled){transform:scale(.96)}
 .rng{display:grid;grid-template-columns:96px 1fr minmax(64px,auto);align-items:center;gap:var(--space-2);font-size:var(--text-sm);min-height:44px}
 .rng input{width:100%;accent-color:var(--acc);height:28px}
 .rng output{text-align:right;opacity:.7}
+/* Оформление: частый выбор сверху, подробности — в пяти раскрывающихся группах. */
+#t-look .styles .sw{height:36px}
+#t-look .styles span{padding:8px 12px}
+#t-look .styles small{display:block;font-size:12px;font-weight:400;color:var(--dim);margin-top:2px}
+#t-look .look-section{border-top:1px solid var(--line);padding-top:8px}
+#t-look .look-section>summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font-weight:600;list-style:none}
+#t-look .look-section>summary::-webkit-details-marker{display:none}
+#t-look .look-section>summary::before{content:'›';font-size:22px;line-height:1;margin-right:8px}
+#t-look .look-section[open]>summary::before{transform:rotate(90deg)}
+#t-look .settings-body{display:grid;gap:12px;padding-top:12px}
+#t-look button{min-height:44px;min-width:44px}
+#mapSettings{grid-template-columns:1fr}
+#mapSettings .c{min-height:44px}
+@media(max-width:999px){#t-look{gap:12px}.stage:has(~.panel #t-look:not([hidden])){position:static}}

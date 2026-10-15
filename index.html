@@ -9,7 +9,7 @@
 <link rel="preload" href="fonts/dinish.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css?v=10151502">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=10151640">
+<link rel="stylesheet" href="style.css?v=10151641">
 </head>
 <body>
 <header class="top">
@@ -113,8 +113,13 @@
     <div class="tab" id="t-look" hidden>
       <div class="f">Стиль</div>
       <div class="styles" id="styles"></div>
-      <details class="appearance" id="appearanceBox" open>
-        <summary>Шрифты и цвета ролика</summary>
+      <div class="f">Формат</div>
+      <div class="seg" id="fmt">
+        <button data-v="v" class="on">9:16 · Reels, Shorts</button>
+        <button data-v="h">16:9 · YouTube</button>
+      </div>
+      <details class="appearance look-section" id="appearanceBox" open>
+        <summary>Цвета и шрифты</summary>
         <div class="appearance-body">
           <div class="two">
             <label class="f">Заголовки<select id="headingFont"></select></label>
@@ -126,24 +131,37 @@
           <small class="hint" id="paletteContrast" role="status"></small>
           <small class="hint">Полная настройка — в «Дневнике». В других стилях применяются общие шрифты и цвета; отдельный декор сохраняется. Фотографии сохраняют свои цвета.</small>
           <button class="ghost" id="appearanceReset" type="button">Сбросить шрифты и цвета</button>
-      <div class="f">Свой логотип <small class="hint">PNG с прозрачным фоном или SVG; поместится в шапку или в угол обложки и финала</small></div>
+        </div>
+      </details>
+      <details class="labels look-section" id="labelsBox"><summary>Надписи</summary>
+        <div class="settings-body">
+          <small class="hint">Впишите свой текст вместо стандартного; пусто — как было.</small>
+          <div id="labelsGrid"></div>
+          <button class="ghost" id="labelsReset" type="button">Вернуть стандартные надписи</button>
+        </div>
+      </details>
+      <details class="look-section" id="logoBox"><summary>Логотип</summary>
+      <div class="settings-body">
+      <small class="hint">PNG с прозрачным фоном или SVG; поместится в шапку или в угол обложки и финала</small>
       <div class="logo-box">
         <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml">
         <img id="logoPrev" alt="Логотип" hidden>
         <div class="seg seg3" id="logoWhere"><button data-v="header" class="on">В шапке</button><button data-v="ends">Обложка и финал</button><button data-v="both">Везде</button></div>
         <button class="ghost" id="logoClear" type="button" hidden>Убрать логотип</button>
       </div>
-      <details class="labels" id="labelsBox"><summary>Надписи в ролике <small class="hint">впишите свой текст вместо стандартного; пусто — как было</small></summary>
-        <div id="labelsGrid"></div>
-        <button class="ghost" id="labelsReset" type="button">Вернуть стандартные надписи</button>
-      </details>
-        </div>
-      </details>
-      <div class="f">Формат</div>
-      <div class="seg" id="fmt">
-        <button data-v="v" class="on">9:16 · Reels, Shorts</button>
-        <button data-v="h">16:9 · YouTube</button>
       </div>
+      </details>
+      <details class="look-section" id="screensBox"><summary>Экраны ролика</summary>
+      <div class="settings-body">
+        <div class="f">Что показывать в ролике <small class="hint">выключенное не попадёт в кадр</small></div>
+        <div class="shows" id="shows"></div>
+        <div class="f">Длительность экранов <small class="hint">скрыть лишнее или сделать дольше</small></div>
+        <div class="screens" id="screens"></div>
+      </div>
+      </details>
+      <details class="look-section" id="mapBox"><summary>Карта</summary>
+      <div class="settings-body">
+      <div class="shows" id="mapSettings"></div>
       <small class="hint">Иконки подбираются автоматически · <span id="iconLibrary"></span></small>
       <div id="legacyStickerControls" hidden>
       <div class="f">Настроение <small class="hint">стикеры на обложке, прибытии и в финале</small></div>
@@ -151,10 +169,6 @@
       <div class="slots" id="slots"></div>
       <div class="stk" id="stk"></div>
       </div>
-      <div class="f">Что показывать в ролике <small class="hint">выключенное не попадёт в кадр</small></div>
-      <div class="shows" id="shows"></div>
-      <div class="f">Экраны ролика <small class="hint">скрыть лишнее или сделать дольше</small></div>
-      <div class="screens" id="screens"></div>
       <div class="f">Знак на карте</div>
       <div class="seg seg4" id="pMark">
         <button data-v="unicycle" class="on">Уницикл</button><button data-v="bike">Велосипед</button><button data-v="walk">Пешком</button><button data-v="dot">Точка</button>
@@ -166,6 +180,8 @@
       <div class="f">Цвет знака</div>
       <div class="colors" id="pColor"></div>
       <small class="hint" id="pHint" hidden>В примерах знак и цвет заданы заранее. Ваши настройки применятся к вашему треку.</small>
+      </div>
+      </details>
     </div>
   </section>
 
@@ -221,6 +237,6 @@
 <script src="src/audio.js?v=10141012"></script>
 <script src="src/export.js?v=10141012"></script>
 <script src="src/layers-export.js?v=10141012"></script>
-<script src="src/ui.js?v=10161001"></script>
+<script src="src/ui.js?v=10161002"></script>
 </body>
 </html>
