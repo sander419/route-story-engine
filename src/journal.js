@@ -198,6 +198,11 @@
     }
     function heroAt(ctx, x, y, a, t, scale = 1) {   // знак героя на голове маршрута
       ctx.save(); ctx.globalAlpha *= a;
+      if (CH.glass) {   // мягкий свет под значком, его форма остаётся прежней
+        const r = px(80) * scale, g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, window.Appearance.rgba(AP.route, .34)); g.addColorStop(.4, window.Appearance.rgba(AP.route, .18)); g.addColorStop(1, window.Appearance.rgba(AP.route, 0));
+        ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+      }
       if (E.MARK === 'unicycle' && art('barbos.webp')) { const im = art('barbos.webp'), h = 150 * u * scale, w = (im.width * h) / im.height; ctx.shadowColor = 'rgba(40,28,10,.35)'; ctx.shadowBlur = 10 * u; ctx.shadowOffsetY = 6 * u; ctx.drawImage(im, x - w / 2, y - h * 0.94, w, h); }
       else if (E.MARK) E.drawMark(ctx, E.MARK, x, y, 46 * u * scale, E.MCOL, t * 0.6);
       else { ctx.beginPath(); ctx.arc(x, y, 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
@@ -600,6 +605,17 @@
         case 'note': noteScene(ctx, s, p, a, dy, rlt); break;
         case 'fin': finale(ctx, s, p, t, rlt, rdur, a, dy); break;
         default: roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt });
+      }
+      if (CH.glass && ['cover', 'road', 'jroad'].includes(fam)) {   // «Ночь»: неподвижная мягкая виньетка, готовится один раз на размер ролика
+        let cv = cache.get('vignette');
+        if (!cv) {
+          cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+          const g = cv.getContext('2d'); g.scale(W, H);
+          const shade = g.createRadialGradient(.5, .5, .18, .5, .5, .72);
+          shade.addColorStop(0, window.Appearance.rgba(AP.shade, 0)); shade.addColorStop(.55, window.Appearance.rgba(AP.shade, .12)); shade.addColorStop(1, window.Appearance.rgba(AP.shade, .48));
+          g.fillStyle = shade; g.fillRect(0, 0, 1, 1); cache.set('vignette', cv);
+        }
+        ctx.save(); ctx.globalAlpha *= a; ctx.drawImage(cv, 0, 0); ctx.restore();
       }
       pageHeader(ctx, s, p, dark, t);
       if (CH.grain && FAM[s.recipe] !== 'fin') grain(ctx);   // на финале цвет — ровно тот, что выбрал путешественник
