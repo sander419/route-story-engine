@@ -60,6 +60,7 @@
   /* ---------- стили ---------- */
   const STYLES = {
     journal: {
+      char: 'paper',
       name: 'Дневник',
       bg: '#f4e8cb', journal: true, vec: null,
       ghost: 'rgba(135,126,100,.5)', ghostW: 5, ghostDash: [4, 14],
@@ -71,6 +72,7 @@
       scrim: [244, 232, 203], paper: true, credit: '',
     },
     paper: {
+      char: 'trail',
       journal: true,   // единый движок «Дневника»: стиль = палитра + значки
       name: 'Атлас',
       bg: '#efe6d2',
@@ -85,6 +87,7 @@
       deco: { brush: 'banner/x12', brushInk: '#fffaf0', border: true, rose: true },   // надзаголовок на оранжевом мазке кисти
     },
     night: {
+      char: 'night',
       journal: true,   // единый движок «Дневника»: стиль = палитра + значки
       name: 'Полночь',
       bg: '#0a1428',
@@ -100,6 +103,7 @@
       deco: { brush: 'banner/04', brushInk: '#ffffff', plate: 'glass', glow: 'vfx/01', fog: 'fog/01' },   // стеклянная плашка под титром, тёплое свечение головы
     },
     editorial: {
+      char: 'magazine',
       journal: true,   // единый движок «Дневника»: стиль = палитра + значки   // «Журнал V3»: токены выбранного направления (бумага #F1EEE6, чернила #222725, акцент #C23E28); векторная карта движка, без фото и ИИ-иллюстраций
       name: 'Журнал V3',
       bg: '#f1eee6',

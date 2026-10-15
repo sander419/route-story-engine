@@ -22,13 +22,13 @@
   )]).then(() => document.fonts.ready).catch(() => {});
 
   /* ---- стили ---- */
-  const SKIN = { journal: 'coast', night: 'forest', paper: 'clay', editorial: 'chalk' };   // стиль = палитра по умолчанию + набор значков; раскладка и камера у всех одни
-  const swatch = { journal: 'linear-gradient(135deg,#152a32 0%,#152a32 45%,#93a18d 45%,#93a18d 78%,#cbb48f 78%)', night: 'linear-gradient(135deg,#0a1428,#0d1b36 55%,#ffad42 56%,#ff6b35)', paper: 'linear-gradient(135deg,#efe6d2,#bcd3d6 55%,#e8590c 56%,#b02a0c)', editorial: 'linear-gradient(135deg,#f1eee6,#d6dbd4 55%,#c23e28 56%,#222725)' };
+  const SKIN = { journal: ['paper', 'yeseva', 'geologica'], night: ['night', 'din', 'din'], paper: ['trail', 'prata', 'onest'], editorial: ['magazine', 'geologica', 'geologica'] };   // характер стиля: палитра + шрифты (дальше можно менять вручную)   // стиль = палитра по умолчанию + набор значков; раскладка и камера у всех одни
+  const swatch = { journal: 'linear-gradient(135deg,#efe3c6 0%,#efe3c6 45%,#d9c89c 45%,#d9c89c 78%,#b13a21 78%)', night: 'linear-gradient(135deg,#0a1428,#13264a 55%,#ffb454 56%,#ff6b35)', paper: 'linear-gradient(135deg,#1f3329,#2c4638 55%,#e8c57e 56%,#e8c57e)', editorial: 'linear-gradient(135deg,#f1eee6,#e4e0d4 55%,#c23e28 56%,#c23e28)' };
   Object.entries(STYLES).forEach(([id, s]) => {
     const b = document.createElement('button');
     b.dataset.id = id; b.className = id === state.styleId ? 'on' : '';
     b.innerHTML = `<div class="sw" style="background:${swatch[id]}"></div><span>${s.name}</span>`;
-    b.onclick = () => { state.styleId = id; const pk = SKIN[id]; if (pk) { state.appearance = { ...state.appearance, ...AP.palettes[pk], preset: pk }; saveAppearance(); } $('iconLibrary').textContent = window.StyleIcons.familyName(id); [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
+    b.onclick = () => { state.styleId = id; const sk = SKIN[id]; if (sk) { state.appearance = { ...state.appearance, ...AP.palettes[sk[0]], preset: sk[0], heading: sk[1], body: sk[2] }; saveAppearance(); } $('iconLibrary').textContent = window.StyleIcons.familyName(id); [...$('styles').children].forEach((x) => x.classList.toggle('on', x === b)); rebuild(); };
     $('styles').appendChild(b);
   });
 

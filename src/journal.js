@@ -61,7 +61,15 @@
     const L = portrait ? LAY.v : LAY.h;
     const px = (v) => v * u;
     const box = (b) => b.map((v) => v * u);
-    const HEAD = S.fHead, NUM = S.fNum, BODY = S.fBody, HAND = S.fBody, HW = S.headW;
+    /* характер стиля: шрифт цифр, вид линии маршрута, форма фото-меток, детали обложки; раскладка и камера у всех общие */
+    const CHARS = {
+      paper: { num: '"Yeseva One", "RS Geologica Num", serif', numW: 400, route: 'ink', halo: 'rgba(255,246,220,.9)', pins: 'polaroid', grain: true },
+      night: { num: '"RS DINish", "RS Geologica Num", sans-serif', numW: 700, route: 'glow', halo: null, pins: 'circle', glass: true },
+      magazine: { num: '"RS Geologica Num", "RS Geologica", sans-serif', numW: 800, route: 'square', halo: 'rgba(241,238,230,.95)', pins: 'square', circle: true },
+      trail: { num: '"Prata", "RS Geologica Num", serif', numW: 400, route: 'dash', halo: 'rgba(20,34,25,.75)', pins: 'arch', stamp: true },
+    };
+    const CH = CHARS[S.char] || CHARS.paper;
+    const HEAD = S.fHead, NUM = CH.num, NUMW = CH.numW, BODY = S.fBody, HAND = S.fBody, HW = S.headW;
 
     /* ---------- заготовленные слои (рисуем один раз, потом drawImage) ---------- */
     const cache = new Map();
@@ -138,7 +146,7 @@
     const isDigit = (c) => c >= '0' && c <= '9';
     function numWidth(ctx, str, size) { let w = 0; for (const ch of str) w += isDigit(ch) ? CELL * size : ctx.measureText(ch).width; return w; }
     function drawNum(ctx, str, xRight, y, size, color, a = 1) {   // цифры — в ячейках одной ширины; число прижато вправо
-      ctx.save(); ctx.globalAlpha *= a; ctx.font = `${S.numW || 700} ${size}px ${NUM}`; ctx.fillStyle = color; ctx.textBaseline = 'alphabetic'; ctx.letterSpacing = '0px';
+      ctx.save(); ctx.globalAlpha *= a; ctx.font = `${NUMW} ${size}px ${NUM}`; ctx.fillStyle = color; ctx.textBaseline = 'alphabetic'; ctx.letterSpacing = '0px';
       let x = xRight - numWidth(ctx, str, size);
       for (const ch of str) { if (isDigit(ch)) { ctx.textAlign = 'center'; ctx.fillText(ch, x + (CELL * size) / 2, y); x += CELL * size; } else { ctx.textAlign = 'left'; ctx.fillText(ch, x, y); x += ctx.measureText(ch).width; } }
       ctx.restore();
@@ -149,11 +157,11 @@
       if (a <= 0.01 || !spec) return; rot = 0;
       const [x, y, w] = box(b), pad = px(32), kicker = spec.kicker ? String(spec.kicker).toUpperCase() : '', big = String(spec.big == null ? '' : spec.big), sub = spec.sub || '';
       const m = big.match(NUMUNIT), numStr = m ? m[1].replace(/\s+$/, '') : big, unit = m && m[2] ? m[2] : '';
-      const wordy = !/\d/.test(big); const ctx2 = ctx; let size = px(wordy ? 100 : spec.size || L.counter); ctx2.save(); ctx2.font = `${S.numW || 700} ${size}px ${NUM}`;
+      const wordy = !/\d/.test(big); const ctx2 = ctx; let size = px(wordy ? 100 : spec.size || L.counter); ctx2.save(); ctx2.font = `${NUMW} ${size}px ${NUM}`;
       const unitSize = px(44); ctx2.font = `500 ${unitSize}px ${BODY}`; const unitW = unit ? ctx2.measureText(unit).width : 0;
       const availW = w - 2 * pad - (unit ? unitW + px(16) : 0);
       if (wordy) { ctx2.font = `${S.headW} ${size}px ${HEAD}`; const ww = ctx2.measureText(numStr).width; if (ww > availW) size *= availW / ww; }
-      else { ctx2.font = `${S.numW || 700} ${size}px ${NUM}`; const nw = numWidth(ctx2, numStr, size); if (nw > availW) size *= availW / nw; }
+      else { ctx2.font = `${NUMW} ${size}px ${NUM}`; const nw = numWidth(ctx2, numStr, size); if (nw > availW) size *= availW / nw; }
       ctx2.restore();
       const kH = kicker ? px(38) + px(16) : 0, sH = sub ? px(44) + px(16) : 0, nH = size * 0.74;
       const h = pad * 0.9 + kH + nH + sH + pad * 0.9;
@@ -205,9 +213,22 @@
         const m = s0 / 2 + fr + px(30); x = Math.max(bx + m, Math.min(bx + bw - m, x)); y = Math.max(by + m, Math.min(by + bh - m, y));
         const rot = (rnd - 0.5) * 0.2 + Math.sin(tt * 0.8 + i * 2.3) * 0.018, sc0 = 0.75 + 0.25 * pa;
         ctx.save(); ctx.globalAlpha *= pa; ctx.strokeStyle = C.accent; ctx.lineWidth = px(3); ctx.setLineDash([px(8), px(7)]); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.restore();
-        ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sc0, sc0);
-        ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 5 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(-s0 / 2 - fr, -s0 / 2 - fr, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
-        const sc = Math.max(s0 / im.width, s0 / im.height); ctx.beginPath(); ctx.rect(-s0 / 2, -s0 / 2, s0, s0); ctx.clip(); ctx.drawImage(im, -(im.width * sc) / 2, -(im.height * sc) / 2, im.width * sc, im.height * sc);
+        ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, y); ctx.rotate(CH.pins === 'circle' ? 0 : rot); ctx.scale(sc0, sc0);
+        const sc = Math.max(s0 / im.width, s0 / im.height), fill = () => ctx.drawImage(im, -(im.width * sc) / 2, -(im.height * sc) / 2, im.width * sc, im.height * sc);
+        if (CH.pins === 'circle') {   // «Ночь»: круглая метка со свечением
+          ctx.shadowColor = AP.accent; ctx.shadowBlur = 24 * u; ctx.beginPath(); ctx.arc(0, 0, s0 / 2 + fr * 0.6, 0, 6.2832); ctx.fillStyle = AP.accent; ctx.fill(); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+          ctx.beginPath(); ctx.arc(0, 0, s0 / 2 - fr * 0.3, 0, 6.2832); ctx.clip(); fill();
+        } else if (CH.pins === 'square') {   // «Журнал»: квадрат с жёсткой тенью без размытия
+          ctx.fillStyle = AP.text; ctx.fillRect(-s0 / 2 - fr + px(9), -s0 / 2 - fr + px(9), s0 + 2 * fr, s0 + 2 * fr); ctx.fillStyle = AP.bg; ctx.fillRect(-s0 / 2 - fr, -s0 / 2 - fr, s0 + 2 * fr, s0 + 2 * fr);
+          ctx.beginPath(); ctx.rect(-s0 / 2, -s0 / 2, s0, s0); ctx.clip(); fill();
+        } else if (CH.pins === 'arch') {   // «Тропа»: арка
+          const r = s0 / 2, top = -s0 * 0.62, bot = s0 * 0.62, path = (d) => { ctx.beginPath(); ctx.moveTo(-r - d, bot + d); ctx.lineTo(-r - d, top + r); ctx.arc(0, top + r, r + d, Math.PI, 0); ctx.lineTo(r + d, bot + d); ctx.closePath(); };
+          ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 12 * u; path(fr); ctx.fillStyle = AP.text; ctx.fill(); ctx.shadowColor = 'transparent'; path(0); ctx.clip(); fill();
+        } else {   // «Бумага»: полароид с липкой лентой
+          ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 5 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(-s0 / 2 - fr, -s0 / 2 - fr, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
+          ctx.save(); ctx.beginPath(); ctx.rect(-s0 / 2, -s0 / 2, s0, s0); ctx.clip(); fill(); ctx.restore();
+          ctx.fillStyle = 'rgba(224,168,124,.85)'; ctx.save(); ctx.rotate(0.1); ctx.fillRect(-px(34), -s0 / 2 - fr - px(16), px(68), px(26)); ctx.restore();
+        }
         ctx.restore();
         ctx.save(); ctx.globalAlpha *= pa; ctx.beginPath(); ctx.arc(pt[0], pt[1], px(9), 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = px(5); ctx.strokeStyle = C.accent; ctx.stroke(); ctx.restore();
       });
@@ -286,6 +307,11 @@
       const ct = E.coverTexts(s, p), x = px(86), tw = portrait ? 908 : 1700, f = (d, len = 0.6) => a * smooth(clamp((lt - d) / len, 0, 1));
       ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = AP.bg; ctx.fillRect(0, 0, W, H);
       const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, window.Appearance.rgba(AP.accent, 0.0)); g.addColorStop(1, window.Appearance.rgba(AP.accent, 0.16)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+      if (CH.circle) { ctx.save(); ctx.globalAlpha *= f(0.1, 0.8); ctx.fillStyle = AP.accent; ctx.beginPath(); ctx.arc(W - px(10), px(portrait ? 250 : 200), px(portrait ? 360 : 320), 0, 6.2832); ctx.fill(); ctx.restore(); }
+      if (CH.stamp && E.today && E.today.day != null) {
+        ctx.save(); ctx.globalAlpha *= f(1.0, 0.5); ctx.translate(W - px(portrait ? 230 : 300), portrait ? H - px(470) : H / 2); ctx.rotate(-0.21); ctx.strokeStyle = AP.accent; ctx.lineWidth = px(7); ctx.beginPath(); ctx.arc(0, 0, px(118), 0, 6.2832); ctx.stroke(); ctx.lineWidth = px(3); ctx.beginPath(); ctx.arc(0, 0, px(98), 0, 6.2832); ctx.stroke();
+        text(ctx, 'ДЕНЬ', 0, -px(18), { size: 34, weight: 600, ls: .14, color: AP.accent, align: 'center' }); text(ctx, String(E.today.day), 0, px(52), { size: 78, fam: HEAD, weight: HW, color: AP.accent, align: 'center' }); ctx.restore();
+      }
       const top = px(portrait ? 300 : 230);
       text(ctx, ct.from, x, top, { size: 46, weight: 500, max: tw, color: AP.muted, a: f(0.1) });
       let size = ct.small ? 132 : portrait ? 170 : 150, lines;
@@ -357,8 +383,11 @@
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       for (const s of sets) if (s !== today) { poly(s.pts, s.brk, null); if (E.journey.schematic) ctx.setLineDash([14 * u, 10 * u]); ctx.strokeStyle = 'rgba(244,232,203,.85)'; ctx.lineWidth = 7 * u; ctx.stroke(); ctx.strokeStyle = 'rgba(89,80,61,.85)'; ctx.lineWidth = 3.5 * u; ctx.stroke(); ctx.setLineDash([]); }
       if (hd) {
-        poly(today.pts, today.brk, hd.i, [hd.x, hd.y]); if (E.journey.schematic) ctx.setLineDash([26 * u, 18 * u]);
-        ctx.strokeStyle = 'rgba(255,244,217,.92)'; ctx.lineWidth = 20 * u * AP.routeW; ctx.stroke(); ctx.strokeStyle = C.route; ctx.lineWidth = 12 * u * AP.routeW; ctx.stroke(); ctx.setLineDash([]);
+        poly(today.pts, today.brk, hd.i, [hd.x, hd.y]); const rw = AP.routeW; if (E.journey.schematic) ctx.setLineDash([26 * u, 18 * u]); else if (CH.route === 'dash') ctx.setLineDash([30 * u * rw, 22 * u * rw]);
+        ctx.lineCap = CH.route === 'square' ? 'butt' : 'round';
+        if (CH.halo) { ctx.strokeStyle = CH.halo; ctx.lineWidth = 20 * u * rw; ctx.stroke(); }
+        if (CH.route === 'glow') { ctx.shadowColor = AP.route; ctx.shadowBlur = 28 * u; }
+        ctx.strokeStyle = C.route; ctx.lineWidth = (CH.route === 'square' ? 15 : 12) * u * rw; ctx.stroke(); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.setLineDash([]); ctx.lineCap = 'round';
         const s0 = P(today.pts[0][0], today.pts[0][1]); if (s0) { ctx.beginPath(); ctx.arc(s0[0], s0[1], 16 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
       }
       const mark = (pt, tri) => { const q = pt && P(pt[0], pt[1]); if (!q) return; if (tri) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - 34 * u); ctx.lineTo(q[0] + 26 * u, q[1] + 14 * u); ctx.lineTo(q[0] - 26 * u, q[1] + 14 * u); ctx.closePath(); ctx.fillStyle = C.ink; ctx.fill(); ctx.lineWidth = 6 * u; ctx.strokeStyle = C.card; ctx.stroke(); } else { const pulse = (t / 2) % 1; ctx.beginPath(); ctx.arc(q[0], q[1], (20 + 40 * pulse) * u, 0, 6.2832); ctx.strokeStyle = C.accent; ctx.lineWidth = 4 * u; ctx.globalAlpha *= 1 - pulse; ctx.stroke(); ctx.globalAlpha /= Math.max(1e-3, 1 - pulse); ctx.beginPath(); ctx.arc(q[0], q[1], 15 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); } };
@@ -395,6 +424,10 @@
         sh(0, 0, 0, px(portrait ? 520 : 340), 0.94);
         if (portrait) sh(0, H, 0, H - px(900), 0.97); else { sh(W, 0, W - px(820), 0, 0.97); sh(0, H, 0, H - px(240), 0.8); }
         ctx.restore();
+      }
+      if (ok && CH.glass) {   // «Ночь»: стеклянная плашка под цифрами
+        const gx = portrait ? px(40) : W - px(560), gy = portrait ? H - px(560) : px(250), gw = portrait ? W - px(80) : px(520), gh = portrait ? px(470) : px(580);
+        ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(gx, gy, gw, gh, px(34)); else ctx.rect(gx, gy, gw, gh); ctx.fillStyle = window.Appearance.rgba(AP.bg, 0.6); ctx.fill(); ctx.lineWidth = px(2); ctx.strokeStyle = window.Appearance.rgba(AP.accent, 0.3); ctx.stroke(); ctx.restore();
       }
       flat = !!ok;
       text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(portrait ? 205 : 175), { size: portrait ? 68 : 64, weight: 600, color: C.ink, max: c.names[2], a, fam: BODY });
@@ -513,7 +546,7 @@
 
     /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
     function pageHeader(ctx, s, p, dark, t) {
-      const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? AP.finalText : FAM[s.recipe] === 'cover' || FAM[s.recipe] === 'photo' ? AP.photoText : C.ink;
+      const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? AP.finalText : FAM[s.recipe] === 'cover' ? AP.text : FAM[s.recipe] === 'photo' ? AP.photoText : C.ink;
       if (LOGO && LOGO.ok && E.logo.where !== 'ends') drawLogo(ctx, x, y - px(46), px(portrait ? 320 : 360), px(60), 'left', 1); else text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 36, weight: 500, max: portrait ? 470 : 900, color: ink });
       text(ctx, E.journey.schematic ? 'ИСТОРИЯ ПУТИ' : 'ДЕНЬ ' + E.today.day, right, y, { size: 34, weight: 500, align: 'right', max: 390, color: ink });
       ctx.save(); ctx.strokeStyle = window.Appearance.rgba(ink, .24); ctx.lineWidth = px(1); ctx.beginPath(); ctx.moveTo(x, y + px(34)); ctx.lineTo(right, y + px(34)); ctx.stroke(); ctx.restore();
@@ -556,6 +589,12 @@
         default: roadScene(ctx, s, p, t, lt, dur, false, { env, lt: rlt });
       }
       pageHeader(ctx, s, p, dark, t);
+      if (CH.grain && FAM[s.recipe] !== 'fin') grain(ctx);   // на финале цвет — ровно тот, что выбрал путешественник
+    }
+    let grainCv = null;   // «Бумага»: лёгкое зерно поверх кадра
+    function grain(ctx) {
+      if (!grainCv) { grainCv = document.createElement('canvas'); grainCv.width = grainCv.height = 256; const g = grainCv.getContext('2d'), id = g.createImageData(256, 256); let sd = 7; for (let i = 0; i < id.data.length; i += 4) { sd = (sd * 1664525 + 1013904223) >>> 0; id.data[i] = id.data[i + 1] = id.data[i + 2] = 128 + ((sd >>> 24) % 100) - 50; id.data[i + 3] = 255; } g.putImageData(id, 0, 0); }
+      ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.1; ctx.fillStyle = ctx.createPattern(grainCv, 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore();
     }
     const TURN = 1; let turnCanvas = null, turnAt = -1;
     function draw(ctx, t, s, su, lt, TR) {

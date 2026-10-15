@@ -26,7 +26,7 @@ try {
   const faces = await p.evaluate(async () => { await Appearance.ready(); return [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/"/g,'')); });
   ok(['Cormorant Garamond','Onest','Prata'].every(f => faces.includes(f)), 'все новые локальные шрифты загружены');
   const safe = await p.evaluate(() => Appearance.normalize({bg:'url(bad)', heading:'__proto__'}));
-  ok(safe.bg === '#152a32' && safe.heading === 'cormorant', 'некорректные сохранённые значения заменяются безопасными');
+  ok(safe.bg === '#efe3c6' && safe.heading === 'yeseva', 'некорректные сохранённые значения заменяются безопасными');
   for (const fmt of ['v','h']) {
     await p.evaluate(fmt => { document.querySelector(`#fmt button[data-v="${fmt}"]`).click(); const e = document.getElementById('res'); e.value = 'sd'; e.dispatchEvent(new Event('change')); }, fmt);
     await p.waitForTimeout(600);
@@ -64,7 +64,7 @@ try {
   await p.locator('#appearanceBox details:not(.labels) summary').click();
   await p.locator('#appearanceBox').screenshot({path:'out/appearance-controls.png'});
   await p.click('#appearanceReset');
-  ok(await p.evaluate(() => __app.state.appearance.heading === 'cormorant' && __app.state.appearance.preset === 'coast'), 'сброс возвращает исходную пару и палитру');
+  ok(await p.evaluate(() => __app.state.appearance.heading === 'yeseva' && __app.state.appearance.preset === 'paper'), 'сброс возвращает исходную пару и палитру');
   ok(errors.length === 0, 'без ошибок страницы: ' + errors.join('; '));
 } finally { await b.close(); }
 if (bad) process.exit(1);

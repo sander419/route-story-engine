@@ -4,16 +4,23 @@
     coast: { name: 'Ночной берег', bg: '#152a32', text: '#f2efe5', muted: '#bbc8c5', accent: '#dfad72', route: '#e9b56e', land: '#93a18d', water: '#638d9c', photoText: '#fff5e5', finalBg: '#cbb48f', finalText: '#17282a' },
     forest: { name: 'Хвоя и лён', bg: '#24382f', text: '#f3edda', muted: '#c1c9b6', accent: '#c5aa70', route: '#e8c57e', land: '#8b9d7c', water: '#748f93', photoText: '#fff4df', finalBg: '#d4c7a9', finalText: '#28382e' },
     clay: { name: 'Глина и песок', bg: '#3c302c', text: '#f6eddd', muted: '#d2c0ae', accent: '#d49b7d', route: '#f0bc88', land: '#ac9d83', water: '#6f9195', photoText: '#fff2df', finalBg: '#cfa187', finalText: '#352b27' },
+    paper: { name: 'Бумага', bg: '#efe3c6', text: '#3a2412', muted: '#7a5a35', accent: '#b13a21', route: '#b13a21', land: '#d9c89c', water: '#a9c3c4', photoText: '#fff6e0', finalBg: '#3a2412', finalText: '#f4e8cb' },
+    night: { name: 'Ночь', bg: '#0a1428', text: '#f2f6ff', muted: '#9db4dc', accent: '#ffb454', route: '#ffb454', land: '#13264a', water: '#060b16', photoText: '#ffffff', finalBg: '#ffb454', finalText: '#0a1428' },
+    magazine: { name: 'Журнал', bg: '#f1eee6', text: '#222725', muted: '#5d6059', accent: '#c23e28', route: '#c23e28', land: '#e4e0d4', water: '#cfd6cf', photoText: '#fffaf0', finalBg: '#c23e28', finalText: '#f1eee6' },
+    trail: { name: 'Тропа', bg: '#1f3329', text: '#f4ead2', muted: '#a9bfa6', accent: '#e8c57e', route: '#e8c57e', land: '#2c4638', water: '#3d6b78', photoText: '#f4ead2', finalBg: '#e8c57e', finalText: '#1f3329' },
     chalk: { name: 'Мел и графит', bg: '#eae7df', text: '#27363b', muted: '#596b70', accent: '#8c533c', route: '#b2603d', land: '#a8ad97', water: '#779aa6', photoText: '#fff6e5', finalBg: '#334b56', finalText: '#f3ecdc' },
   };
   const fonts = {
+    yeseva: { name: 'Yeseva One', family: '"Yeseva One", "RS Geologica", Georgia, serif', weight: 400 },
     cormorant: { name: 'Cormorant Garamond', family: '"Cormorant Garamond", "RS Geologica", Georgia, serif', weight: 600 },
     prata: { name: 'Prata', family: '"Prata", "RS Geologica", Georgia, serif', weight: 400 },
     din: { name: 'DINish', family: '"RS DINish", sans-serif', weight: 700 },
     geologica: { name: 'Geologica', family: '"RS Geologica", sans-serif', weight: 600 },
     onest: { name: 'Onest', family: '"Onest", sans-serif', weight: 600 },
   };
-  const defaults = { ...palettes.coast, shade: '#122127', preset: 'coast', heading: 'cormorant', body: 'geologica', routeW: 1 };
+  const SHADES = { paper: '#2b1a0d', night: '#08101f', magazine: '#222725', trail: '#142219', coast: '#122127', forest: '#14241c', clay: '#241a17', chalk: '#1c2a30' };   // тёмная подложка под текстом на фото
+  Object.keys(SHADES).forEach((k) => { palettes[k].shade = SHADES[k]; });
+  const defaults = { ...palettes.paper, preset: 'paper', heading: 'yeseva', body: 'geologica', routeW: 1 };
   const colorKeys = ['bg', 'text', 'muted', 'accent', 'route', 'land', 'water', 'shade', 'photoText', 'finalBg', 'finalText'];
   function normalize(value) {
     const v = value && typeof value === 'object' ? value : defaults, out = { ...defaults };
@@ -34,6 +41,6 @@
       line: { ...base.line, stops: [a.route, a.route] }, panel: a.bg, head: a.text,
       ...(base.vec ? { vec: { ...base.vec, water: a.water, park: a.land, label: a.text, halo: a.bg } } : {}) };
   }
-  const ready = () => Promise.all(['600 48px "Cormorant Garamond"', '400 48px "Prata"', '400 32px "Onest"', '600 32px "Onest"', '700 48px "RS DINish"'].map(f => document.fonts.load(f, 'Байкал 0123'))).then(() => document.fonts.ready);
+  const ready = () => Promise.all(['600 48px "Cormorant Garamond"', '400 48px "Prata"', '400 32px "Onest"', '600 32px "Onest"', '700 48px "RS DINish"', '400 48px "Yeseva One"'].map(f => document.fonts.load(f, 'Байкал 0123'))).then(() => document.fonts.ready);
   window.Appearance = { palettes, fonts, defaults, colorKeys, normalize, rgba, contrast, style, ready };
 })();
