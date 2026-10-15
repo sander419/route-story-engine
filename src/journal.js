@@ -141,12 +141,12 @@
       if (wordy) { ctx2.font = `${S.headW} ${size}px ${HEAD}`; const ww = ctx2.measureText(numStr).width; if (ww > availW) size *= availW / ww; }
       else { ctx2.font = `${S.numW || 700} ${size}px ${NUM}`; const nw = numWidth(ctx2, numStr, size); if (nw > availW) size *= availW / nw; }
       ctx2.restore();
-      const kH = kicker ? px(32) + px(16) : 0, sH = sub ? px(44) + px(16) : 0, nH = size * 0.74;
+      const kH = kicker ? px(38) + px(16) : 0, sH = sub ? px(44) + px(16) : 0, nH = size * 0.74;
       const h = pad * 0.9 + kH + nH + sH + pad * 0.9;
       const c = card(w, h, { seed }); drawCard(ctx, c, x, y, w, h, a, rot, dy);
       ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-w / 2, -h / 2);
       let cy = pad * 0.9;
-      if (kicker) { cy += px(32) * 0.85; text(ctx, kicker, pad, cy, { size: 32, weight: 600, color: C.secondary, ls: 0.05, max: (w - 2 * pad) / u }); cy += px(16) + px(32) * 0.15; }
+      if (kicker) { cy += px(38) * 0.85; text(ctx, kicker, pad, cy, { size: 38, weight: 600, color: C.secondary, ls: 0.05, max: (w - 2 * pad) / u }); cy += px(16) + px(32) * 0.15; }
       const base = cy + nH; const right = w - pad - (unit ? unitW + px(16) : 0);
       if (wordy) text(ctx, numStr, pad, base, { size: size / u, fam: HEAD, weight: S.headW, color: C.green, ls: -0.02 });
       else drawNum(ctx, numStr, right, base, size, C.ink);
@@ -285,7 +285,7 @@
       items.forEach(([v, l], i) => {
         const d = 0.7 + i * 0.18, cw = portrait ? 0 : (px(1700) / items.length), X = portrait ? x : x + i * cw, Y = portrait ? fy + px(i * 215) : fy + px(60);
         text(ctx, v, X, Y + px(110), { size: portrait ? 118 : 104, weight: 700, fam: NUM, max: portrait ? tw : cw / u - 30, color: AP.text, a: f(d) });
-        text(ctx, l.toUpperCase(), X, Y + px(portrait ? 164 : 160), { size: 32, weight: 600, ls: .12, color: AP.accent, max: portrait ? tw : cw / u - 30, a: f(d + 0.1) });
+        text(ctx, l.toUpperCase(), X, Y + px(portrait ? 164 : 160), { size: 36, weight: 600, ls: .12, color: AP.accent, max: portrait ? tw : cw / u - 30, a: f(d + 0.1) });
       });
       text(ctx, E.dateLine(s, p), x, H - px(portrait ? 150 : 90), { size: 40, color: AP.muted, max: tw, a: f(1.1) });
     }
@@ -387,7 +387,7 @@
       if (prev && ma < 1) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * (1 - ma));
       roadFact(ctx, s, p, t, lt, dur, ma * env);
       flat = false;
-      if (ok) { const T = jr ? terr.all : terr.today; text(ctx, flatUsed ? 'Карта © OpenStreetMap, OpenFreeMap' : T ? 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag : '', px(60), H - px(36), { size: 26, weight: 400, color: C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
+      if (ok) { const T = jr ? terr.all : terr.today; text(ctx, flatUsed ? 'Карта © OpenStreetMap, OpenFreeMap' : T ? 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag : '', px(60), H - px(36), { size: 28, weight: 400, color: C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
     }
     function roadFact(ctx, s, p, t, lt, dur, a) {
       const c = L.road;
@@ -412,7 +412,7 @@
     function arrival(ctx, s, p, a, dy, lt) {
       const label = E.arrivalLabel(s, p) || E.toLabel || E.routeNames();
       const x = px(86), y = portrait ? px(480) : px(380), width = W / u - 172;
-      text(ctx, E.kindWord(s, p).toUpperCase(), x, y - px(100), { size: 30, color: C.accent, ls: .1, a });
+      text(ctx, E.kindWord(s, p).toUpperCase(), x, y - px(100), { size: 38, color: C.accent, ls: .1, a });
       let size = 140, lines;
       while (!(lines = wrapLines(ctx, label, HW, px(size), HEAD, px(width), 3)) && size > 60) size -= 8;
       (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.15), { size, fam: HEAD, weight: HW, max: width, a }));
@@ -438,8 +438,8 @@
       while (!(lines = wrapLines(ctx, cap, 600, size, BODY, max, 3)) && size > px(30)) size *= .9;
       const captionY = H - px(portrait ? 330 : 300) - ((lines || [cap]).length - 1) * size * 1.15;
       (lines || [cap]).forEach((ln, i) => text(ctx, ln, x, captionY + i * size * 1.15, { size: size / u, weight: 600, color: AP.photoText, max: max / u }));
-      text(ctx, E.photoDate(m, s), x, H - px(190), { size: 30, color: AP.photoText, max: max / u });
-      if (m.credit) text(ctx, m.credit, x, H - px(112), { size: 24, color: AP.photoText, max: max / u });
+      text(ctx, E.photoDate(m, s), x, H - px(190), { size: 38, color: AP.photoText, max: max / u });
+      if (m.credit) text(ctx, m.credit, x, H - px(112), { size: 30, color: AP.photoText, max: (max - px(170)) / u });
       ctx.restore();
     }
     function elevation(ctx, s, p, t, lt, dur, a, dy, layout = L.elev) {
@@ -475,14 +475,14 @@
       const words = txt.split(/\s+/), lines = []; let cur = ''; for (const wd of words) { const tt = cur ? cur + ' ' + wd : wd; if (g.measureText(tt).width > w - px(96) && cur) { lines.push(cur); cur = wd; } else cur = tt; } lines.push(cur); g.restore();
       const lh = size * 1.15, h = px(128) + lines.length * lh + px(64), x = (W - w) / 2, y = (H - h) / 2 - px(40);
       drawCard(ctx, card(w, h, { seed: 21 }), x, y, w, h, a, -1.2, dy);
-      text(ctx, 'из дневника · день ' + E.today.day, x + px(48), y + px(76), { size: 32, weight: 600, color: C.secondary, ls: 0.05, a });
+      text(ctx, 'из дневника · день ' + E.today.day, x + px(48), y + px(76), { size: 38, weight: 600, color: C.secondary, ls: 0.05, a });
       lines.forEach((ln, i) => text(ctx, ln, x + px(48), y + px(128) + (i + 0.8) * lh, { size: size / u, fam: HAND, weight: 400, color: C.ink, a, max: (w - px(96)) / u }));
       tape(ctx, [x / u + 120, y / u - 30, 288, 80], -4, a, dy);
     }
     function finale(ctx, s, p, t, lt, dur, a, dy) {
       const f = E.finale(s, p, t, lt, dur), x = px(86), width = W / u - 172, ink = AP.finalText;
       ctx.save(); ctx.fillStyle = AP.finalBg; ctx.fillRect(0, 0, W, H); ctx.restore();
-      text(ctx, s.recipe === 'day-summary' ? 'ПРОЙДЕНО ЗА ДЕНЬ' : 'ВСЕГО ЗА ПУТЕШЕСТВИЕ', x, px(portrait ? 350 : 270), { size: 32, weight: 600, color: ink, ls: .07, a });
+      text(ctx, s.recipe === 'day-summary' ? 'ПРОЙДЕНО ЗА ДЕНЬ' : 'ВСЕГО ЗА ПУТЕШЕСТВИЕ', x, px(portrait ? 350 : 270), { size: 38, weight: 600, color: ink, ls: .07, a });
       const match = String(f.big).match(/^(.*?)\s*(км)$/), number = match ? match[1] : f.big;
       text(ctx, number, x, px(portrait ? 760 : 620), { size: portrait ? 330 : 390, fam: NUM, weight: 700, color: ink, max: width, ls: -.045, a });
       if (match) text(ctx, match[2], x, px(portrait ? 880 : 750), { size: 92, weight: 600, color: ink, a });
@@ -497,8 +497,8 @@
     /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
     function pageHeader(ctx, s, p, dark, t) {
       const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? AP.finalText : FAM[s.recipe] === 'cover' || FAM[s.recipe] === 'photo' ? AP.photoText : C.ink;
-      text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 30, weight: 500, max: portrait ? 470 : 900, color: ink });
-      text(ctx, E.journey.schematic ? 'ИСТОРИЯ ПУТИ' : 'ДЕНЬ ' + E.today.day, right, y, { size: 28, weight: 500, align: 'right', max: 390, color: ink });
+      text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 36, weight: 500, max: portrait ? 470 : 900, color: ink });
+      text(ctx, E.journey.schematic ? 'ИСТОРИЯ ПУТИ' : 'ДЕНЬ ' + E.today.day, right, y, { size: 34, weight: 500, align: 'right', max: 390, color: ink });
       ctx.save(); ctx.strokeStyle = window.Appearance.rgba(ink, .24); ctx.lineWidth = px(1); ctx.beginPath(); ctx.moveTo(x, y + px(34)); ctx.lineTo(right, y + px(34)); ctx.stroke(); ctx.restore();
     }
     /* ---------- кадр ---------- */
