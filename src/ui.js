@@ -696,12 +696,20 @@
     showErr('');
     if (state.mode === 'track') { readFile(files[0]); return; }
     if (!again) { state.trim = { a: 0, b: 0, c: 0, d: 0 }; state.rawText = null; state.pre = { base: state.seriesBase, route: state.route, routeIsDemo: state.routeIsDemo, demoDay: state.demoDay, demoNote: state.demoNote, photos: photoFiles.slice(), note: state.o.note, files, glue }; }   // снимок до загрузки: ползунок обрезки перезагружает тот же файл на его место
-    const single = files.length === 1;
-    const got = []; let multi = 0;
-    for (const f of files) {
+    let merged = null;   // «несколько файлов — один день»: точки всех файлов в один трек (по времени, если оно есть), каждый файл — свой отрезок
+    if (files.length > 1 && $('mergeDay').checked) {
       try {
-        const tx = await f.text(), nm = f.name.replace(/\.[^.]+$/, ''), parsed = parseAny(tx, f.name);
-        const parts = splitDays(parsed);
+        const ps = []; for (const f of files) ps.push(parseAny(await f.text(), f.name));
+        let pts = ps.flatMap((q, k) => q.pts.map((pt) => ({ ...pt, seg: (pt.seg || 0) + k * 100000 }))); if (pts.every((q) => isFinite(q.t))) pts.sort((a, b) => a.t - b.t);
+        merged = { ...ps[0], pts };
+      } catch (e) { showErr(e.message || String(e)); return; }
+    }
+    const single = files.length === 1 || !!merged, jobs = merged ? [files[0]] : files;
+    const got = []; let multi = 0;
+    for (const f of jobs) {
+      try {
+        const tx = merged ? '' : await f.text(), nm = f.name.replace(/\.[^.]+$/, ''), parsed = merged || parseAny(tx, f.name);
+        const parts = merged ? [] : splitDays(parsed);   // склеенное — один день, по датам не режем
         if (single && parts.length < 2) parsed.pts = trimPts(parsed.pts);
         if (parts.length >= 2) { parts.forEach((pts, i) => { try { got.push({ r: prepare({ name: parsed.name, pts }, nm), name: f.name + '#' + String(i).padStart(3, '0') }); } catch (e) { /* слишком короткий кусок дня */ } }); multi = Math.max(multi, parts.length); }
         else got.push({ r: prepare(parsed, nm), name: f.name });
@@ -756,6 +764,7 @@
     setKind('long');
     $('continue').hidden = true; refreshModes(); setMode('series'); play(true);
   };
+  $('mergeDay').onchange = () => { if (state.pre && state.pre.files.length > 1) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; state.demoNote = q.demoNote; photoFiles = q.photos.slice(); state.o.note = q.note; handleFiles(q.files, q.glue); } };
   $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; $('resetOwn').hidden = true; if (isOwn()) loadSeries().then(() => $('day47').click()); };
   { const J = loadOwnSaved(); if (J) { $('resetOwn').hidden = false; $('continue').hidden = false; $('continue').textContent = `Продолжить моё путешествие · ${J.days.length} ${J.days.length % 10 === 1 && J.days.length % 100 !== 11 ? 'день' : J.days.length % 10 >= 2 && J.days.length % 10 <= 4 && (J.days.length % 100 < 10 || J.days.length % 100 >= 20) ? 'дня' : 'дней'}`; } }
   $('day47').onclick = async () => {

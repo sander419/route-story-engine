@@ -242,6 +242,8 @@ button:active:not(:disabled){transform:scale(.96)}
 .srow.off{opacity:.55}
 .srow button{min-width:44px;min-height:40px;padding:0 var(--space-2)}
 .seg3{grid-template-columns:repeat(3,1fr)}
+.merge{display:flex;align-items:center;gap:var(--space-2);min-height:44px;font-size:var(--text-sm);cursor:pointer;flex-wrap:wrap}
+.merge input{width:20px;height:20px;accent-color:var(--acc)}
 .trim{display:grid;gap:var(--space-2);padding:var(--space-3) 0}
 .rng{display:grid;grid-template-columns:96px 1fr minmax(64px,auto);align-items:center;gap:var(--space-2);font-size:var(--text-sm);min-height:44px}
 .rng input{width:100%;accent-color:var(--acc);height:28px}
