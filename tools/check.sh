@@ -14,7 +14,7 @@ trap 'kill $SERVER 2>/dev/null' EXIT
 sleep 2
 
 fail=0
-for t in tools/route-test.mjs tools/art-test.mjs tools/director-test.mjs tools/smoke.mjs tools/own-journey-test.mjs tools/source-load-test.mjs tools/resume-fields-test.mjs tools/import-editor-test.mjs tools/photo-position-test.mjs tools/fonts-test.mjs tools/terrain-test.mjs tools/timing-audit.mjs tools/journal-layout-test.mjs tools/custom-test.mjs tools/style-icons-test.mjs tools/style-band-test.mjs tools/style-scenes-test.mjs tools/logo-layout-test.mjs tools/look-menu-test.mjs tools/profile-test.mjs tools/appearance-test.mjs tools/phone-test.mjs tools/screens-test.mjs tools/texts-test.mjs tools/trim-test.mjs tools/labels-test.mjs tools/export-results-test.mjs; do
+for t in tools/route-test.mjs tools/art-test.mjs tools/director-test.mjs tools/smoke.mjs tools/own-journey-test.mjs tools/source-load-test.mjs tools/resume-fields-test.mjs tools/import-editor-test.mjs tools/photo-position-test.mjs tools/draft-test.mjs tools/fonts-test.mjs tools/terrain-test.mjs tools/timing-audit.mjs tools/journal-layout-test.mjs tools/custom-test.mjs tools/style-icons-test.mjs tools/style-band-test.mjs tools/style-scenes-test.mjs tools/logo-layout-test.mjs tools/look-menu-test.mjs tools/profile-test.mjs tools/appearance-test.mjs tools/phone-test.mjs tools/screens-test.mjs tools/texts-test.mjs tools/trim-test.mjs tools/labels-test.mjs tools/export-results-test.mjs; do
   echo "=== $t"
   if node "$t" >/tmp/check-out 2>&1; then
     echo "OK"

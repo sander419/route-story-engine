@@ -94,15 +94,18 @@
 
   /* ---- главная мысль и фото дня ---- */
   let photoFiles = [];   // { name, url, meta, caption, how }
-  $('note').oninput = () => { state.o.note = $('note').value.trim(); state.demoNote = false; rebuild(true); };   // (в своём путешествии фраза сохраняется вместе с днём при следующей загрузке)
+  $('note').oninput = () => { state.o.note = $('note').value.trim(); state.demoNote = false; rebuild(true); };
   $('photos').onchange = async (e) => {
+    const id = sourceId;
     const files = [...e.target.files].slice(0, Math.max(0, 4 - photoFiles.length));
     for (const f of files) {
       const meta = window.Exif.readExif(await f.arrayBuffer());
+      if (id !== sourceId) break;
       const url = URL.createObjectURL(f);
       const ok = await new Promise((r) => { const im = new Image(); im.onload = () => r(true); im.onerror = () => r(false); im.src = url; });
+      if (id !== sourceId) { URL.revokeObjectURL(url); break; }
       if (!ok) { showErr(`«${f.name}»: браузер не может открыть этот формат (часто это HEIC с iPhone). Сохраните фото как JPEG.`); URL.revokeObjectURL(url); continue; }
-      photoFiles.push({ name: f.name, url, meta, caption: '' });
+      photoFiles.push({ name: f.name, url, meta, caption: '', file: f });
     }
     e.target.value = '';
     placePhotos();
@@ -728,9 +731,11 @@
       `<div class="cand">в памяти серий: ${(J.episodes || []).length}</div>`;
   }
   async function loadSeries(id = ++sourceId) {
+    queueDraft(true);
     try {
       const J = await (await fetch('data/demo-journey.json')).json();
       if (id !== sourceId) return false;
+      clearDayEditor(); state.route = null; state.pre = null; state.routeIsDemo = false;
       state.seriesBase = J;
       setKind('short');
       if (state.routeIsDemo) { state.route = null; state.routeIsDemo = false; }
@@ -744,10 +749,48 @@
   /* ---- моё путешествие: свои GPX становятся днями, путешествие хранится в браузере ---- */
   const OWN_KEY = 'route-story-my-journey';
   const isOwn = () => state.seriesBase && state.seriesBase.id === 'my';
+  const leanOwn = J => ({ ...J, media: [], days: J.days.map(d => ({ ...d, media: [] })) });
+  const dayKey = J => JSON.stringify(J.days.map(d => [d.day, d.date, d.km, d.line]));
+  let draftTimer = null, draftWrites = Promise.resolve(), draftRevision = 0;
+  function draftStatus(text) { $('draftStatus').textContent = text; $('draftStatus').hidden = !text; }
+  function queueDraft(now = false) {
+    if (!isOwn() || state.mode !== 'series' || !state.route || state.demoDay || !state.seriesBase.days.length) return;
+    clearTimeout(draftTimer);
+    draftStatus('Сохраняю фото и текст в этом браузере…');
+    const save = () => {
+      const rev = ++draftRevision, id = sourceId;
+      let data;
+      try {
+        const q = state.pre;
+        data = structuredClone({ version: 1, journey: leanOwn(ownToday().J), route: state.route,
+          pre: q ? { base: leanOwn(q.base), route: q.route, routeIsDemo: false, demoDay: false, files: q.files, glue: q.glue } : null,
+          trim: state.trim, merge: $('mergeDay').checked, kind: state.kind,
+          editor: { note: state.o.note, startName: state.o.startName, endName: state.o.endName, tnotes: state.o.tnotes },
+          photos: photoFiles.filter(p => !p.demo).map(p => ({ file: p.file, name: p.name, meta: p.meta, caption: p.caption, credit: p.credit, s: p.s, how: p.how, handKey: p.handKey })) });
+      } catch (e) { draftStatus('Не удалось сохранить черновик. Оставьте эту страницу открытой и скачайте ролик.'); return; }
+      draftWrites = draftWrites.catch(() => {}).then(async () => {
+        await window.RSDrafts.save(data);
+        localStorage.setItem(OWN_KEY, JSON.stringify(data.journey));
+        if (rev === draftRevision && id === sourceId && isOwn() && !state.demoDay) draftStatus('Фото и текст последнего дня сохранены в этом браузере. После открытия нажмите «Продолжить моё путешествие».');
+      }).catch(() => {
+        if (rev === draftRevision && id === sourceId) draftStatus('Не удалось сохранить черновик. Оставьте эту страницу открытой и скачайте ролик.');
+      });
+    };
+    if (now) save(); else draftTimer = setTimeout(save, 350);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') queueDraft(true); });
+  window.addEventListener('pagehide', () => queueDraft(true));
+  function clearDayEditor() {
+    clearTimeout(draftTimer); draftStatus('');
+    photoFiles = []; state.o.photos = []; renderPhotos();
+    state.o.note = ''; $('note').value = ''; state.o.tnotes = []; renderNotes();
+    for (const k of ['startName', 'endName']) { state.o[k] = ''; $(k).value = ''; touched[k] = false; }
+    state.demoDay = false; state.demoNote = false;
+  }
   function newOwn(title) { return { id: 'my', title: title || 'Моё путешествие', traveler: '', days: [], media: [], notes: [], checkpoints: [], episodes: [] }; }
   function saveOwn() {
     if (!isOwn()) return;
-    const J = state.seriesBase, keep = { ...J, media: [], days: J.days.map((d) => ({ ...d, media: [] })) };   // фото (адреса в памяти браузера) не сохраняются
+    const keep = leanOwn(state.seriesBase);   // Blob сохраняются отдельно в IndexedDB, временные URL в JSON не пишутся
     try { localStorage.setItem(OWN_KEY, JSON.stringify(keep)); } catch (e) { /* нет места или приватный режим — работаем без сохранения */ }
   }
   function loadOwnSaved() { try { const j = JSON.parse(localStorage.getItem(OWN_KEY) || 'null'); return j && j.id === 'my' && j.days && j.days.length ? j : null; } catch (e) { return null; } }
@@ -763,7 +806,7 @@
     res.change.gapKm = Math.round(gapKm);
     return { J: res.journey, change: res.change };
   }
-  function bakeToday() { if (isOwn() && state.seriesBase.days.length) { state.seriesBase = ownToday().J; photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = ''; $('note').value = ''; state.o.endName = ''; $('endName').value = ''; touched.endName = false; } }
+  function bakeToday() { if (isOwn() && state.seriesBase.days.length) { queueDraft(true); state.seriesBase = ownToday().J; clearDayEditor(); } }
   /* один файл на несколько дней → отдельные дни по местной дате (если в файле есть время) */
   function splitDays(parsed) {
     const pts = parsed.pts.filter((q) => isFinite(q.lat) && isFinite(q.lon));
@@ -848,7 +891,7 @@
             // Для обрезки повторно выбранного дня база должна заканчиваться вчера, а не содержать его самого.
             state.pre = { ...pre, base: { ...state.seriesBase, days: days0.slice(0, -1), media: (state.seriesBase.media || []).filter(m => m.day < dd.day), notes: (state.seriesBase.notes || []).filter(n => n.day < dd.day), checkpoints: (state.seriesBase.checkpoints || []).filter(c => c.day < dd.day) }, demoDay: false, demoNote: false };
           }
-          if (!ownBefore) { photoFiles = []; state.o.photos = []; renderPhotos(); ownFields(state.seriesBase); }
+          if (!ownBefore) { clearDayEditor(); ownFields(state.seriesBase); }
           placePhotos(); refreshModes(); setMode('series'); play(true); $('continue').hidden = true; if (isLast) geocode(dup.r); return;
         }
         got.length = 0; fresh.forEach((g) => got.push(g));
@@ -863,6 +906,7 @@
     } else if (ownBefore && !again) bakeToday();
     if (state.demoDay || state.demoNote) { photoFiles = photoFiles.filter((p) => !p.demo); if (state.demoNote) { state.o.note = ''; $('note').value = ''; } state.demoDay = false; state.demoNote = false; }
     if (!again) {   // названия прошлого дня не относятся к новому файлу; обрезка сохраняет текущие правки
+      state.o.tnotes = []; renderNotes();
       state.o.startName = ''; $('startName').value = ''; touched.startName = false;
       state.o.endName = ''; $('endName').value = ''; touched.endName = false;
     }
@@ -881,21 +925,35 @@
     state.o.note = note ? note.text : ''; $('note').value = state.o.note; state.demoDay = false; state.demoNote = false;
     state.o.startName = lastDay.from || ''; $('startName').value = state.o.startName; touched.startName = false;
     state.o.endName = lastDay.to || ''; $('endName').value = state.o.endName; touched.endName = false;
+    state.o.tnotes = []; renderNotes();
   }
-  $('continue').onclick = () => {
-    ++sourceId;
+  $('continue').onclick = async () => {
+    const id = ++sourceId;
     const J = loadOwnSaved(); if (!J) return;
+    let draft = null, failed = false;
+    try { await draftWrites; draft = await window.RSDrafts.load(); } catch (e) { failed = true; }
+    if (id !== sourceId) return;
+    clearDayEditor();
     state.seriesBase = J; state.route = null; state.routeIsDemo = false;
-    photoFiles = []; state.o.photos = []; renderPhotos(); ownFields(J);
-    setKind('long');
+    ownFields(J);
+    const usable = draft?.version === 1 && Array.isArray(draft.journey?.days) && draft.route?.n > 1 && draft.editor && Array.isArray(draft.photos) && draft.photos.length <= 4 && draft.photos.every(p => p.file instanceof Blob) && Array.isArray(draft.editor.tnotes);
+    if (usable && dayKey(draft.journey) === dayKey(J)) {
+      state.seriesBase = draft.journey; state.route = draft.route; state.pre = draft.pre; state.trim = draft.trim;
+      $('mergeDay').checked = !!draft.merge;
+      Object.assign(state.o, draft.editor);
+      for (const k of ['note', 'startName', 'endName']) { $(k).value = state.o[k]; touched[k] = true; }
+      photoFiles = draft.photos.map(p => ({ ...p, url: URL.createObjectURL(p.file) }));
+      renderNotes(); placePhotos(); syncTrim(); $('trimBox').hidden = !state.pre || state.pre.files.length !== 1;
+    } else draftStatus(failed ? 'Не удалось открыть черновик с фото. Сохранённый маршрут доступен.' : 'У этого сохранённого путешествия нет черновика с фото.');
+    setKind(usable && dayKey(draft.journey) === dayKey(J) && draft.kind === 'short' ? 'short' : 'long');
     $('continue').hidden = true; refreshModes(); setMode('series'); play(true);
   };
   $('mergeDay').onchange = () => { if (state.pre && state.pre.files.length > 1) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; handleFiles(q.files, q.glue, true); } };
-  $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; $('resetOwn').hidden = true; if (isOwn()) loadSeries().then(ok => { if (ok) $('day47').click(); }); };
+  $('resetOwn').onclick = () => { clearTimeout(draftTimer); ++draftRevision; const own = isOwn(); if (own) { clearDayEditor(); state.route = null; } try { localStorage.removeItem(OWN_KEY); } catch (e) {} draftWrites = draftWrites.then(async () => { await window.RSDrafts.remove(); localStorage.removeItem(OWN_KEY); }).catch(() => draftStatus('Не удалось удалить локальный черновик.')); $('continue').hidden = true; $('resetOwn').hidden = true; if (own) loadSeries().then(ok => { if (ok) $('day47').click(); }); };
   { const J = loadOwnSaved(); if (J) { $('resetOwn').hidden = false; $('continue').hidden = false; $('continue').textContent = `Продолжить моё путешествие · ${J.days.length} ${J.days.length % 10 === 1 && J.days.length % 100 !== 11 ? 'день' : J.days.length % 10 >= 2 && J.days.length % 10 <= 4 && (J.days.length % 100 < 10 || J.days.length % 100 >= 20) ? 'дня' : 'дней'}`; } }
   async function loadDemoDay(id = ++sourceId) {
     try {
-      if (!state.seriesBase || state.seriesBase.schematic || state.mode !== 'series') { if (!await loadSeries(id)) return; }   // демо-день 47 — только к демо-путешествию, не к кругосветке героя
+      if (!state.seriesBase || state.seriesBase.id !== 'demo-samara-baikal' || state.mode !== 'series') { if (!await loadSeries(id)) return; }   // демо-день 47 — только к демо-путешествию
       if (id !== sourceId) return;
       const tx = await (await fetch('samples/day47.gpx')).text(); if (id !== sourceId) return;
       loadText(tx, 'day47.gpx');
@@ -949,6 +1007,7 @@
   $('jdur').onchange = () => { state.jcount = +$('jdur').value; t = 0; rebuild(); };
 
   async function loadJourney(data, label) {
+    queueDraft(true);
     ++sourceId;
     state.journeyData = data;
     // демо-трек не относится к истории героя: не подмешиваем его в «Путь + трек дня»
@@ -976,10 +1035,12 @@
   }
   const lerpN = (a, b, t) => a + (b - a) * t;
   $('wj').onclick = async () => {
+    queueDraft(true);
     const id = ++sourceId;
     try {
       const d = await (await fetch('data/journey-wahrider.json')).json();
       if (id !== sourceId) return;
+      clearDayEditor(); state.pre = null;
       state.seriesBase = heroJourney(d); state.route = null; state.routeIsDemo = false;
       setKind('long');
       $('info').hidden = false; $('info').innerHTML = '<span><b>Кругосветка @wahrider</b> — трейлер по постам канала</span>';
@@ -991,6 +1052,7 @@
   /* ---- превью ---- */
   function rebuild(keepT) {
     if (!ready()) return;
+    queueDraft();
     const [w, h] = previewSize();
     cv.width = w; cv.height = h;
     fontsReady.then(() => {

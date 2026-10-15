@@ -36,6 +36,7 @@ try {
   await page.fill('#note', 'Демо-фраза');
   await page.click('#tabs button[data-t="route"]');
   await page.click('#continue');
+  await page.waitForFunction(() => __app.state.seriesBase?.id === 'my');
   const restored = await page.evaluate(() => ({
     from: document.getElementById('startName').value, to: document.getElementById('endName').value,
     note: document.getElementById('note').value, ctxFrom: __app.state.lastEp.res.ctx.from,
