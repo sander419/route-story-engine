@@ -356,6 +356,7 @@
       text(ctx, 'AWS Terrain Tiles · высоты ×' + T.exag, mx + px(40), my + mh - px(24), { size: 24, weight: 400, color: C.secondary, a: a * 0.85, max: (mw - px(80)) / u });
       return true;
     }
+    const xf = (l, len = 0.6) => [1 - smooth(l / (len * 0.45)), smooth((l - len * 0.45) / (len * 0.55))];   // смена карточки: старая уходит, затем приходит новая — тексты не лежат друг на друге
     const roadZone = () => (portrait ? [px(60), px(300), W - px(60), H - px(620)] : [px(60), px(230), px(1330), H - px(150)]);
     function flatTiles() {   // плитки плоской карты для предзагрузки перед экспортом: камеры дороги по сегодняшнему маршруту и по всему пути
       if (!window.VMap) return []; const Z = roadZone(), out = [];
@@ -383,9 +384,9 @@
       flat = !!ok;
       text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(portrait ? 205 : 175), { size: portrait ? 68 : 64, weight: 600, color: C.ink, max: c.names[2], a, fam: BODY });
       if (!ok) tape(ctx, c.tape, 3, a, 0);
-      const prev = s.t0 > E.run(s).t0 ? E.at(s.t0 - 0.0001) : null, ma = prev ? smooth(lt / 0.6) : 1;
-      if (prev && ma < 1) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * (1 - ma));
-      roadFact(ctx, s, p, t, lt, dur, ma * env);
+      const prev = s.t0 > E.run(s).t0 ? E.at(s.t0 - 0.0001) : null, [oa, ia] = prev ? xf(lt) : [0, 1];
+      if (prev && oa > 0.01) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * oa);
+      roadFact(ctx, s, p, t, lt, dur, ia * env);
       flat = false;
       if (ok) { const T = jr ? terr.all : terr.today; text(ctx, flatUsed ? 'Карта © OpenStreetMap, OpenFreeMap' : T ? 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag : '', px(60), H - px(36), { size: 28, weight: 400, color: C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
     }
@@ -395,8 +396,8 @@
         // Подпись следующей вехи меняется так же плавно, как положение маркера.
         const slot = dur / (s.stops.length + .6), k = Math.min(s.stops.length - 1, Math.floor(lt / slot)), dt = lt - k * slot;
         if (k > 0 && dt < .6) {
-          const fade = smooth(dt / .6), prev = E.metric(s, p, t - dt - .0001, k * slot - .0001, dur);
-          metricCard(ctx, c.metric, prev, a * (1 - fade), 0, 0, 11); a *= fade;
+          const [oa, ia] = xf(dt), prev = E.metric(s, p, t - dt - .0001, k * slot - .0001, dur);
+          if (oa > 0.01) metricCard(ctx, c.metric, prev, a * oa, 0, 0, 11); a *= ia;
         }
       }
       if (s.recipe === 'elevation-profile') {
