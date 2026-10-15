@@ -213,7 +213,7 @@
         let x = pt[0] + Math.cos(ang) * dist + Math.sin(tt * 0.9 + i * 1.7) * px(4), y = pt[1] + Math.sin(ang) * dist * 0.8 + Math.sin(tt * 1.3 + i) * px(5);
         const m = s0 / 2 + fr + px(30); x = Math.max(bx + m, Math.min(bx + bw - m, x)); y = Math.max(by + m, Math.min(by + bh - m, y));
         const rot = (rnd - 0.5) * 0.2 + Math.sin(tt * 0.8 + i * 2.3) * 0.018, sc0 = 0.75 + 0.25 * pa;
-        ctx.save(); ctx.globalAlpha *= pa; ctx.strokeStyle = C.accent; ctx.lineWidth = px(3); ctx.setLineDash([px(8), px(7)]); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.globalAlpha *= pa; ctx.strokeStyle = C.accent; ctx.lineWidth = px(CH.pins === 'arch' ? 2 : 3); ctx.setLineDash(CH.pins === 'arch' ? [px(6), px(8)] : [px(8), px(7)]); ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.restore();
         ctx.save(); ctx.globalAlpha *= pa; ctx.translate(x, y); ctx.rotate(CH.pins === 'circle' ? 0 : rot); ctx.scale(sc0, sc0);
         const sc = Math.max(s0 / im.width, s0 / im.height), fill = () => ctx.drawImage(im, -(im.width * sc) / 2, -(im.height * sc) / 2, im.width * sc, im.height * sc);
         if (CH.pins === 'circle') {   // «Ночь»: круглая метка со свечением
@@ -435,6 +435,10 @@
         if (portrait) ctx.fillRect(0, px(c.metric[1] - 32), W, H - px(c.metric[1] - 32));
         else ctx.fillRect(px(c.metric[0] - 24), px(250), W - px(c.metric[0] - 24), H - px(250));
         ctx.restore();
+      }
+      if (CH.stamp) {   // «Тропа»: тонкая линия отделяет карту от цифр
+        ctx.save(); ctx.globalAlpha *= a; ctx.strokeStyle = window.Appearance.rgba(AP.text, .35); ctx.lineWidth = px(2);
+        ctx.beginPath(); ctx.moveTo(px(c.metric[0] + 32), px(c.metric[1] - 20)); ctx.lineTo(px(c.metric[0] + c.metric[2] - 32), px(c.metric[1] - 20)); ctx.stroke(); ctx.restore();
       }
       flat = !!ok || S.char === 'magazine';
       text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(portrait ? 205 : 175), { size: portrait ? 68 : 64, weight: 600, color: C.ink, max: c.names[2], a, fam: BODY });

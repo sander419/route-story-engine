@@ -1,4 +1,4 @@
-// Полоса Журнала: контраст цифр, подписей и профиля в двух форматах.
+// Детали дороги: полоса Журнала, разделитель и бечёвка Атласа в двух форматах.
 import { createRequire } from 'node:module';
 import { writeFileSync } from 'node:fs';
 const require = createRequire('C:/Users/glina/route-story-spike/package.json');
@@ -19,17 +19,23 @@ try {
         { recipe: 'distance-counter', startSec: 0, durationSec: 5, params: { newKm: 69, totalKm: 4129 } },
         { recipe: 'elevation-profile', startSec: 5, durationSec: 5, params: { gain: 237, profile: [100,110,130,120,180,210,200,170,140], maxEle: 210, day: res.plan.episodeNumber } },
       ];
-      const scene = Episode.createEpisodeScene({ journey: J, plan: { ...res.plan, beats, durationSec: 10 }, styleId, appearance, relief: false }, W, H);
+      const scene = Episode.createEpisodeScene({ journey: J, plan: { ...res.plan, beats, durationSec: 10 }, styleId, appearance, relief: false, photoPins: [{ f: .1, url: 'media/demo/baikal-1.jpg' }, { f: .3, url: 'media/demo/baikal-2.jpg' }] }, W, H);
       await scene.assetsReady;
       const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-      const ctx = cv.getContext('2d'), orig = ctx.fillText.bind(ctx), texts = [];
+      const ctx = cv.getContext('2d'), orig = ctx.fillText.bind(ctx), texts = [], strokes = [], stroke = ctx.stroke.bind(ctx);
+      ctx.strokeStyle = Appearance.rgba(appearance.text,.35); const dividerColor = ctx.strokeStyle;
+      ctx.stroke = function() { strokes.push({ width: this.lineWidth, dash: this.getLineDash(), color: this.strokeStyle }); return stroke(); };
       ctx.fillText = function(str, x, y) {
         const q = this.getTransform().transformPoint({x,y});
         if (this.globalAlpha > .5) texts.push({ str: String(str), color: this.fillStyle, x: q.x, y: q.y });
         return orig(str,x,y);
       };
       for (const [kind, t] of [['road', 3], ['profile', 8]]) {
-        texts.length = 0; scene.draw(ctx, t);
+        texts.length = 0; strokes.length = 0; scene.draw(ctx, t);
+        if (styleId === 'paper') {
+          if (!strokes.some(q => q.width === 2*u && q.dash.join(',') === [6*u,8*u].join(','))) throw new Error(`${fmt}/${kind}: нет тонкой бечёвки Атласа`);
+          if (!strokes.some(q => q.width === 2*u && !q.dash.length && q.color === dividerColor)) throw new Error(`${fmt}/${kind}: нет разделителя Атласа`);
+        }
         if (styleId === 'editorial') {
           const x = fmt === 'v' ? 20 : W - 10, y = H - 45;
           const rgb = [...ctx.getImageData(x,y,1,1).data].slice(0,3);
