@@ -38,7 +38,7 @@
   catch (e) { state.appearance = AP.normalize(AP.defaults); }
   const apLabels = { bg: 'Фон окружения', text: 'Основной текст', muted: 'Подписи', accent: 'Акценты', route: 'Маршрут', land: 'Суша', water: 'Вода', shade: 'Подложка карты и фото', photoText: 'Текст на карте и фото', finalBg: 'Фон финала', finalText: 'Текст финала' };
   function syncAppearance() {
-    const a = state.appearance; $('headingFont').value = a.heading; $('bodyFont').value = a.body;
+    const a = state.appearance; [...$('routeW').children].forEach((b) => b.classList.toggle('on', +b.dataset.v === a.routeW)); $('headingFont').value = a.heading; $('bodyFont').value = a.body;
     for (const k of AP.colorKeys) { $('ap-' + k).value = a[k]; $('hex-' + k).value = a[k]; }
     for (const b of $('palettePresets').children) { const on = b.dataset.palette === a.preset; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.querySelector('.palette-sample').style.fontFamily = AP.fonts[a.heading].family; }
     const pairs = [[a.bg,a.text,'текст'],[a.bg,a.muted,'подписи'],[a.finalBg,a.finalText,'финал'],[a.shade,a.photoText,'текст поверх фото']];
@@ -70,6 +70,7 @@
     hex.onchange = () => { if (/^#[0-9a-f]{6}$/i.test(hex.value)) { state.appearance[k] = hex.value; state.appearance.preset = 'custom'; saveAppearance(); } else { hex.value = state.appearance[k]; } };
     $('paletteFields').appendChild(row);
   }
+  [...$('routeW').children].forEach((b) => { b.onclick = () => { state.appearance.routeW = +b.dataset.v; saveAppearance(); }; });
   $('appearanceReset').onclick = () => { state.appearance = AP.normalize(AP.defaults); saveAppearance(); };
   syncAppearance();
 
@@ -408,7 +409,7 @@
     if (!isOwn() || state.route !== route || !route.meta) return;
     const days = [...state.seriesBase.days].sort((x, y) => x.day - y.day), last = days[days.length - 1];
     if (!last) return;
-    const upd = { ...last, from: route.meta.from || last.from || null, waypoints: route.meta.waypoints || last.waypoints || [], weather: route.meta.weather || last.weather || null, country: route.meta.country || last.country || null };
+    const upd = { ...last, from: (state.o.startName || '').trim() || route.meta.from || last.from || null, waypoints: route.meta.waypoints || last.waypoints || [], weather: route.meta.weather || last.weather || null, country: route.meta.country || last.country || null };
     state.seriesBase = { ...state.seriesBase, days: state.seriesBase.days.map((d) => (d.day === last.day ? upd : d)) };
     saveOwn();
   }
@@ -464,7 +465,7 @@
     }
     if (r.t && r.stats.avg) { seg.movingH = Math.round((r.stats.moving / 3.6e6) * 100) / 100; seg.avgKmh = Math.round(r.stats.avg * 10) / 10; }
     if (r.t) { const K = 24; seg.tAt = Array.from({ length: K + 1 }, (_, k) => Math.round(window.RouteLib.at(r, (r.total * k) / K).t)); seg.lon0 = +r.lon[0].toFixed(3); }
-    if (r.meta) { seg.from = r.meta.from || null; if (r.meta.country) seg.country = r.meta.country; seg.waypoints = r.meta.waypoints || []; if (r.meta.weather) seg.weather = r.meta.weather; }
+    if (r.meta) { seg.from = (state.o.startName || '').trim() || r.meta.from || null; if (r.meta.country) seg.country = r.meta.country; seg.waypoints = r.meta.waypoints || []; if (r.meta.weather) seg.weather = r.meta.weather; }
     // кольцо: финиш рядом со стартом
     seg.loop = window.RouteLib.hav({ lat: r.lat[0], lon: r.lon[0] }, { lat: r.lat[r.n - 1], lon: r.lon[r.n - 1] }) < Math.max(400, r.total * 0.06);
     return seg;
@@ -630,7 +631,7 @@
     const media = [...(state.o.photos || [])].sort((a, b) => (a.s || 0) - (b.s || 0)).map((p) => ({ kind: 'photo', url: p.url, caption: p.caption || '', credit: p.credit || '' }));
     const notes = state.o.note ? [{ text: state.o.note }] : [];
     const pl = days[days.length - 2], gapKm = pl ? window.RouteLib.hav({ lon: pl.line[pl.line.length - 1][0], lat: pl.line[pl.line.length - 1][1] }, { lon: last.line[0][0], lat: last.line[0][1] }) / 1000 : 0;
-    const res = window.Director.addDay(prev, { ...last, to: state.o.endName || last.to || null }, media, notes);
+    const res = window.Director.addDay(prev, { ...last, from: (state.o.startName || '').trim() || last.from || null, to: state.o.endName || last.to || null }, media, notes);
     res.change.gapKm = Math.round(gapKm);
     return { J: res.journey, change: res.change };
   }

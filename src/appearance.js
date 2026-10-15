@@ -13,12 +13,13 @@
     geologica: { name: 'Geologica', family: '"RS Geologica", sans-serif', weight: 600 },
     onest: { name: 'Onest', family: '"Onest", sans-serif', weight: 600 },
   };
-  const defaults = { ...palettes.coast, shade: '#122127', preset: 'coast', heading: 'cormorant', body: 'geologica' };
+  const defaults = { ...palettes.coast, shade: '#122127', preset: 'coast', heading: 'cormorant', body: 'geologica', routeW: 1 };
   const colorKeys = ['bg', 'text', 'muted', 'accent', 'route', 'land', 'water', 'shade', 'photoText', 'finalBg', 'finalText'];
   function normalize(value) {
     const v = value && typeof value === 'object' ? value : defaults, out = { ...defaults };
     for (const k of colorKeys) if (/^#[0-9a-f]{6}$/i.test(v[k] || '')) out[k] = v[k].toLowerCase();
     for (const k of ['heading', 'body']) if (Object.hasOwn(fonts, v[k]) && (k !== 'body' || ['onest','geologica','din'].includes(v[k]))) out[k] = v[k];
+    out.routeW = [0.7, 1, 1.4].includes(+v.routeW) ? +v.routeW : 1;   // толщина линии маршрута
     out.preset = Object.hasOwn(palettes, v.preset) ? v.preset : 'custom'; return out;
   }
   const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
