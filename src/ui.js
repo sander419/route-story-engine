@@ -283,19 +283,18 @@
     return out.length >= 2 ? out : pts;
   }
   function syncTrim() {
-    const D = state.fullKm || 0; $('trimA').value = state.trim.a; $('trimB').value = state.trim.b;
+    const D = (state.rawTotal || 0) / 1000; $('trimA').value = state.trim.a; $('trimB').value = state.trim.b;
     $('trimAo').textContent = (D * state.trim.a / 100).toFixed(1).replace('.', ',') + ' км'; $('trimBo').textContent = (D * state.trim.b / 100).toFixed(1).replace('.', ',') + ' км';
   }
   let trimTimer = null;
-  ['trimA', 'trimB'].forEach((id) => { $(id).oninput = () => { state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.rawText) loadText(state.rawText, state.rawName, true); }, 250); }; });
+  ['trimA', 'trimB'].forEach((id) => { $(id).oninput = () => { state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.mode === 'track' && state.rawText) loadText(state.rawText, state.rawName, true); else if (state.pre) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; state.demoNote = q.demoNote; photoFiles = q.photos.slice(); state.o.note = q.note; handleFiles(q.files, q.glue, true); } }, 250); }; });
   function loadText(text, filename, keepTrim) {
-    showErr(''); if (!keepTrim) { state.trim = { a: 0, b: 0 }; state.rawText = text; state.rawName = filename; }
+    showErr(''); if (!keepTrim) { state.trim = { a: 0, b: 0 }; state.rawText = filename === 'day47.gpx' ? null : text; state.rawName = filename; state.pre = null; }
     try {
       if (text.trimStart().startsWith('{')) { const j = JSON.parse(text); if (Array.isArray(j.stops) && j.stops.length > 1 && j.stops[0].lat != null) { loadJourney(j); return; } }
       const parsed = parseAny(text, filename);
       parsed.pts = trimPts(parsed.pts);
       const route = prepare(parsed, filename.replace(/\.[^.]+$/, ''));
-      if (!keepTrim) state.fullKm = route.total / 1000;
       $('trimBox').hidden = filename === 'day47.gpx' && state.demoDay; syncTrim();
       if (filename !== 'day47.gpx' && state.demoDay) {   // свой трек вместо демо-дня: убираем демо-фото, демо-заметку и демо-место
         photoFiles = photoFiles.filter((p) => !p.demo);
@@ -688,15 +687,17 @@
     } catch (e) { /* без сети вехи просто не появятся */ }
   }
   let ownNote = '', farUndo = null;
-  async function handleFiles(files, glue) {
+  async function handleFiles(files, glue, again) {
     showErr('');
     if (state.mode === 'track') { readFile(files[0]); return; }
-    $('trimBox').hidden = true;   // обрезка — для одиночного трека; дни путешествия обрезаются до загрузки
+    if (!again) { state.trim = { a: 0, b: 0 }; state.rawText = null; state.pre = { base: state.seriesBase, route: state.route, routeIsDemo: state.routeIsDemo, demoDay: state.demoDay, demoNote: state.demoNote, photos: photoFiles.slice(), note: state.o.note, files, glue }; }   // снимок до загрузки: ползунок обрезки перезагружает тот же файл на его место
+    const single = files.length === 1;
     const got = []; let multi = 0;
     for (const f of files) {
       try {
         const tx = await f.text(), nm = f.name.replace(/\.[^.]+$/, ''), parsed = parseAny(tx, f.name);
         const parts = splitDays(parsed);
+        if (single && parts.length < 2) parsed.pts = trimPts(parsed.pts);
         if (parts.length >= 2) { parts.forEach((pts, i) => { try { got.push({ r: prepare({ name: parsed.name, pts }, nm), name: f.name + '#' + String(i).padStart(3, '0') }); } catch (e) { /* слишком короткий кусок дня */ } }); multi = Math.max(multi, parts.length); }
         else got.push({ r: prepare(parsed, nm), name: f.name });
       }
@@ -739,7 +740,7 @@
     setKind(multi >= 3 ? 'long' : 'short');
     if (!touched.endName) { state.o.endName = ''; $('endName').value = ''; }
     saveOwn(); nameDays(); placePhotos(); refreshModes(); setMode('series'); play(true);
-    $('continue').hidden = true;
+    $('continue').hidden = true; $('trimBox').hidden = !(single && multi < 2); syncTrim();
     geocode(last.r);
   }
   $('continue').onclick = () => {
