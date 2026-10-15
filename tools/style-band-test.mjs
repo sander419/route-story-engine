@@ -25,7 +25,11 @@ try {
       await scene.assetsReady;
       const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
       const ctx = cv.getContext('2d'), orig = ctx.fillText.bind(ctx), texts = [], strokes = [], stroke = ctx.stroke.bind(ctx), image = ctx.drawImage.bind(ctx), radial = ctx.createRadialGradient.bind(ctx);
-      let vignette = false, heroGlow = false;
+      let vignette = false, heroGlow = false, torn = false, pathLines = 0;
+      const begin = ctx.beginPath.bind(ctx), line = ctx.lineTo.bind(ctx), fill = ctx.fill.bind(ctx);
+      ctx.beginPath = function() { pathLines = 0; return begin(); };
+      ctx.lineTo = function(...args) { pathLines++; return line(...args); };
+      ctx.fill = function(...args) { if (this.fillStyle === '#fffaf0' && pathLines > 30) torn = true; return fill(...args); };
       ctx.drawImage = function(im, ...args) {
         if (im instanceof HTMLCanvasElement && im.width === W && im.height === H) {
           const g = im.getContext('2d');
@@ -38,11 +42,13 @@ try {
       ctx.stroke = function() { strokes.push({ width: this.lineWidth, dash: this.getLineDash(), color: this.strokeStyle }); return stroke(); };
       ctx.fillText = function(str, x, y) {
         const q = this.getTransform().transformPoint({x,y});
-        if (this.globalAlpha > .5) texts.push({ str: String(str), color: this.fillStyle, x: q.x, y: q.y });
+        if (this.globalAlpha > .5) texts.push({ str: String(str), color: this.fillStyle, x: q.x, y: q.y, tilt: this.getTransform().b });
         return orig(str,x,y);
       };
       for (const [kind, t] of [['road', 3], ['profile', 8], ['cover', 13]]) {
-        texts.length = 0; strokes.length = 0; vignette = false; heroGlow = false; scene.draw(ctx, t);
+        texts.length = 0; strokes.length = 0; vignette = false; heroGlow = false; torn = false; scene.draw(ctx, t);
+        if (styleId === 'journal' && kind !== 'cover' && !torn) throw new Error(`${fmt}/${kind}: нет рваного края полароида`);
+        if (styleId === 'journal' && kind === 'cover' && !texts.some(q => /2026/.test(q.str) && Math.abs(q.tilt) > .01)) throw new Error(`${fmt}: нет штампа с датой`);
         if (styleId === 'night' && (!vignette || (kind !== 'cover' && !heroGlow))) throw new Error(`${fmt}/${kind}: нет виньетки или свечения героя`);
         if (styleId === 'paper' && kind !== 'cover') {
           if (!strokes.some(q => q.width === 2*u && q.dash.join(',') === [6*u,8*u].join(','))) throw new Error(`${fmt}/${kind}: нет тонкой бечёвки Атласа`);
@@ -60,6 +66,19 @@ try {
         if (save) frames.push({ name: `${styleId}-${preset}-${fmt}-${kind}`, data: cv.toDataURL('image/png').split(',')[1] });
         results.push(`${fmt}/${styleId}/${preset}/${kind}`);
       }
+    }
+    // Нет даты, неверная дата или схема по постам — штампа быть не должно.
+    for (const blocked of ['missing', 'invalid', 'schematic']) {
+      const journey = { ...J, schematic: blocked === 'schematic', days: J.days.map(d => ({ ...d, date: blocked === 'missing' ? null : blocked === 'invalid' ? 'not-a-date' : d.date })) };
+      const beat = { ...res.plan.beats[0], startSec: 0, durationSec: 5 };
+      const scene = Episode.createEpisodeScene({ journey, plan: { ...res.plan, beats: [beat], durationSec: 5 }, styleId: 'journal', relief: false }, 540, 960);
+      await scene.assetsReady;
+      const cv = document.createElement('canvas'); cv.width = 540; cv.height = 960;
+      const ctx = cv.getContext('2d'), draw = ctx.fillText.bind(ctx), tilted = [];
+      ctx.fillText = function(str,x,y) { if (Math.abs(this.getTransform().b) > .01) tilted.push(str); return draw(str,x,y); };
+      scene.draw(ctx,3);
+      if (tilted.length) throw new Error(`Выдуманный штамп (${blocked}): ${tilted.join(',')}`);
+      results.push(`no-stamp/${blocked}`);
     }
     return { results, frames };
   }, !!process.env.SAVE_FRAMES);

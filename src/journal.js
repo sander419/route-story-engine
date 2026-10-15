@@ -231,7 +231,15 @@
           const r = s0 / 2, top = -s0 * 0.62, bot = s0 * 0.62, path = (d) => { ctx.beginPath(); ctx.moveTo(-r - d, bot + d); ctx.lineTo(-r - d, top + r); ctx.arc(0, top + r, r + d, Math.PI, 0); ctx.lineTo(r + d, bot + d); ctx.closePath(); };
           ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 12 * u; path(fr); ctx.fillStyle = AP.text; ctx.fill(); ctx.shadowColor = 'transparent'; path(0); ctx.clip(); fill();
         } else {   // «Бумага»: полароид с липкой лентой
-          ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 5 * u; ctx.fillStyle = '#fffaf0'; ctx.fillRect(-s0 / 2 - fr, -s0 / 2 - fr, s0 + 2 * fr, s0 + fr * 3); ctx.shadowColor = 'transparent';
+          ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14 * u; ctx.shadowOffsetY = 5 * u; ctx.fillStyle = '#fffaf0';
+          // Маленькие неровности только по белому краю; рисунок постоянный, при движении не дрожит.
+          const edge = [[-s0 / 2 - fr, -s0 / 2 - fr], [s0 / 2 + fr, -s0 / 2 - fr], [s0 / 2 + fr, s0 / 2 + 2 * fr], [-s0 / 2 - fr, s0 / 2 + 2 * fr]], rand = rngOf(730 + i);
+          ctx.beginPath(); ctx.moveTo(...edge[0]);
+          for (let j = 0; j < 4; j++) {
+            const v = edge[j], z = edge[(j + 1) % 4], dx = z[0] - v[0], dy = z[1] - v[1], len = Math.hypot(dx, dy), n = Math.ceil(len / px(10));
+            for (let k = 1; k <= n; k++) { const d = k === n ? 0 : (rand() - .5) * px(4); ctx.lineTo(v[0] + dx * k / n - dy / len * d, v[1] + dy * k / n + dx / len * d); }
+          }
+          ctx.closePath(); ctx.fill(); ctx.shadowColor = 'transparent';
           ctx.save(); ctx.beginPath(); ctx.rect(-s0 / 2, -s0 / 2, s0, s0); ctx.clip(); fill(); ctx.restore();
           ctx.fillStyle = 'rgba(224,168,124,.85)'; ctx.save(); ctx.rotate(0.1); ctx.fillRect(-px(34), -s0 / 2 - fr - px(16), px(68), px(26)); ctx.restore();
         }
@@ -309,6 +317,16 @@
       g.addColorStop(.55, window.Appearance.rgba(AP.shade,.06)); g.addColorStop(1, window.Appearance.rgba(AP.shade,.94));
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
     }
+    function dateStamp(ctx, s, p, x, y, maxW, a) {   // только настоящая дата маршрута, без выдуманных дат у схемы героя
+      if (!CH.grain || E.journey.schematic || !E.today.date || !Number.isFinite(Date.parse(E.today.date))) return false;
+      const label = E.dateLine(s, p); if (!label) return false;
+      ctx.save(); ctx.globalAlpha *= a; ctx.font = `500 ${px(36)}px ${BODY}`;
+      const w = Math.min(px(maxW), ctx.measureText(label).width + px(56)), h = px(90);
+      ctx.translate(x + w / 2, y - px(12)); ctx.rotate(-.035); ctx.strokeStyle = AP.muted; ctx.lineWidth = px(2);
+      ctx.strokeRect(-w / 2, -h / 2, w, h); ctx.strokeRect(-w / 2 + px(6), -h / 2 + px(6), w - px(12), h - px(12));
+      text(ctx, label, 0, px(12), { size: 36, weight: 500, color: AP.muted, align: 'center', max: w / u - 36 });
+      ctx.restore(); return true;
+    }
     function cover(ctx, s, p, a, dy, lt) {   // обложка: название и главные цифры трека; самого трека здесь нет — он на следующем экране
       const ct = E.coverTexts(s, p), x = px(86), tw = portrait ? 908 : 1700, f = (d, len = 0.6) => a * smooth(clamp((lt - d) / len, 0, 1));
       ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = AP.bg; ctx.fillRect(0, 0, W, H);
@@ -327,13 +345,13 @@
       const fy = titleY + px(size * 1.04) * (ls.length - 1) + px(portrait ? 130 : 110);
       ctx.save(); ctx.globalAlpha *= f(0.6); ctx.fillStyle = AP.accent; ctx.fillRect(x, fy - px(60), px(100), px(10)); ctx.restore();
       const km = p && p.km ? Math.round(p.km) : null, items = [km ? [km + ' км', 'дистанция'] : null, p && p.time ? [p.time, 'в пути'] : null, p && p.gain ? ['+' + p.gain + ' м', 'набор высоты'] : null, p && p.maxEle ? [p.maxEle + ' м', 'высшая точка'] : null].filter(Boolean).slice(0, 4);
-      if (!items.length) { text(ctx, E.dateLine(s, p), x, fy + px(40), { size: 54, weight: 600, color: AP.text, max: tw, a: f(0.7) }); logoEnds(ctx, f(0.7)); return; }
+      if (!items.length) { if (!dateStamp(ctx, s, p, x, fy + px(40), tw, f(.7))) text(ctx, E.dateLine(s, p), x, fy + px(40), { size: 54, weight: 600, color: AP.text, max: tw, a: f(0.7) }); logoEnds(ctx, f(0.7)); return; }
       items.forEach(([v, l], i) => {
         const d = 0.7 + i * 0.18, cw = portrait ? 0 : (px(1700) / items.length), X = portrait ? x : x + i * cw, Y = portrait ? fy + px(i * 215) : fy + px(60);
         text(ctx, v, X, Y + px(110), { size: portrait ? 118 : 104, weight: 700, fam: NUM, max: portrait ? tw : cw / u - 30, color: AP.text, a: f(d) });
         text(ctx, l.toUpperCase(), X, Y + px(portrait ? 164 : 160), { size: 36, weight: 600, ls: .12, color: AP.accent, max: portrait ? tw : cw / u - 30, a: f(d + 0.1) });
       });
-      text(ctx, E.dateLine(s, p), x, H - px(portrait ? 150 : 90), { size: 40, color: AP.muted, max: tw, a: f(1.1) });
+      if (!dateStamp(ctx, s, p, x, H - px(portrait ? 150 : 90), tw, f(1.1))) text(ctx, E.dateLine(s, p), x, H - px(portrait ? 150 : 90), { size: 40, color: AP.muted, max: tw, a: f(1.1) });
       logoEnds(ctx, f(1.1));
     }
 
