@@ -10,6 +10,7 @@
   };
   const touched = {};
   let scene = null, playing = false, t = 0, last = 0, dirty = true, objUrl = null, abort = null;
+  let sourceId = 0;   // запоздавший ответ относится только к выбору маршрута, который его запустил
   const cv = $('cv'), ctx = cv.getContext('2d');
 
   const SIZES = { v: { hd: [1080, 1920], sd: [720, 1280] }, h: { hd: [1920, 1080], sd: [1280, 720] } };
@@ -350,12 +351,14 @@
   ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', (e) => e.dataTransfer.files.length && handleFiles([...e.dataTransfer.files]));
   $('demo').onclick = async () => {
+    const id = ++sourceId;
     try {
       const r = await fetch('samples/samarkand-bukhara.gpx');
-      loadText(await r.text(), 'samarkand-bukhara.gpx'); state.routeIsDemo = true;
-    } catch (e) { showErr('Не удалось загрузить демо: ' + e.message); }
+      const tx = await r.text(); if (id !== sourceId) return;
+      loadText(tx, 'samarkand-bukhara.gpx'); state.routeIsDemo = true;
+    } catch (e) { if (id === sourceId) showErr('Не удалось загрузить демо: ' + e.message); }
   };
-  function readFile(f) { f.text().then((tx) => loadText(tx, f.name)).catch((e) => showErr(e.message)); }
+  function readFile(f) { const id = sourceId; f.text().then((tx) => { if (id === sourceId) loadText(tx, f.name); }).catch((e) => { if (id === sourceId) showErr(e.message); }); }
 
   function showErr(m) { $('err').textContent = m; $('err').hidden = !m; }
 
@@ -718,17 +721,19 @@
       (res.plan.fitting ? `<div class="cand">длительность: ${res.plan.fitting}</div>` : '') +
       `<div class="cand">в памяти серий: ${(J.episodes || []).length}</div>`;
   }
-  async function loadSeries() {
+  async function loadSeries(id = ++sourceId) {
     try {
-      state.seriesBase = await (await fetch('data/demo-journey.json')).json();
+      const J = await (await fetch('data/demo-journey.json')).json();
+      if (id !== sourceId) return false;
+      state.seriesBase = J;
       setKind('short');
       if (state.routeIsDemo) { state.route = null; state.routeIsDemo = false; }
       $('info').hidden = false;
       $('info').innerHTML = `<span><b>${state.seriesBase.title}</b> — демо-путешествие</span><span>46 дней · вымышленный путешественник на реальных дорогах</span>`;
-      refreshModes(); setMode('series'); play(true);
-    } catch (e) { showErr('Не удалось загрузить демо-путешествие: ' + e.message); }
+      refreshModes(); setMode('series'); play(true); return true;
+    } catch (e) { if (id === sourceId) showErr('Не удалось загрузить демо-путешествие: ' + e.message); return false; }
   }
-  $('series').onclick = loadSeries;
+  $('series').onclick = () => loadSeries();
 
   /* ---- моё путешествие: свои GPX становятся днями, путешествие хранится в браузере ---- */
   const OWN_KEY = 'route-story-my-journey';
@@ -789,28 +794,30 @@
   }
   let ownNote = '', farUndo = null;
   async function handleFiles(files, glue, again) {
+    const id = ++sourceId;
     showErr('');
-    if (state.mode === 'track') { readFile(files[0]); return; }
+    if (state.mode === 'track' && state.route) { readFile(files[0]); return; }
     if (!again) { state.trim = { a: 0, b: 0, c: 0, d: 0, s: 0 }; state.rawText = null; state.pre = { base: state.seriesBase, route: state.route, routeIsDemo: state.routeIsDemo, demoDay: state.demoDay, demoNote: state.demoNote, photos: photoFiles.slice(), note: state.o.note, files, glue }; }   // снимок до загрузки: ползунок обрезки перезагружает тот же файл на его место
     let merged = null;   // «несколько файлов — один день»: точки всех файлов в один трек (по времени, если оно есть), каждый файл — свой отрезок
     if (files.length > 1 && $('mergeDay').checked) {
       try {
-        const ps = []; for (const f of files) ps.push(parseAny(await f.text(), f.name));
+        const ps = []; for (const f of files) { const tx = await f.text(); if (id !== sourceId) return; ps.push(parseAny(tx, f.name)); }
         let pts = ps.flatMap((q, k) => q.pts.map((pt) => ({ ...pt, seg: (pt.seg || 0) + k * 100000 }))); if (pts.every((q) => isFinite(q.t))) pts.sort((a, b) => a.t - b.t);
         merged = { ...ps[0], pts };
-      } catch (e) { showErr(e.message || String(e)); return; }
+      } catch (e) { if (id === sourceId) showErr(e.message || String(e)); return; }
     }
     const single = files.length === 1 || !!merged, jobs = merged ? [files[0]] : files;
     const got = []; let multi = 0;
     for (const f of jobs) {
       try {
-        const tx = merged ? '' : await f.text(), nm = f.name.replace(/\.[^.]+$/, ''), parsed = merged || parseAny(tx, f.name);
+        const tx = merged ? '' : await f.text(); if (id !== sourceId) return;
+        const nm = f.name.replace(/\.[^.]+$/, ''), parsed = merged || parseAny(tx, f.name);
         const parts = merged ? [] : splitDays(parsed);   // склеенное — один день, по датам не режем
         if (single && parts.length < 2) parsed.pts = trimPts(parsed.pts);
         if (parts.length >= 2) { parts.forEach((pts, i) => { try { got.push({ r: prepare({ name: parsed.name, pts }, nm), name: f.name + '#' + String(i).padStart(3, '0') }); } catch (e) { /* слишком короткий кусок дня */ } }); multi = Math.max(multi, parts.length); }
         else got.push({ r: prepare(parsed, nm), name: f.name });
       }
-      catch (e) { showErr(`${f.name}: ${e.message || e}`); }
+      catch (e) { if (id === sourceId) showErr(`${f.name}: ${e.message || e}`); }
     }
     if (!got.length) return;
     got.sort((a, b) => (a.r.t && b.r.t ? a.r.t[0] - b.r.t[0] : a.name.localeCompare(b.name, 'ru', { numeric: true })));
@@ -853,6 +860,7 @@
     geocode(last.r);
   }
   $('continue').onclick = () => {
+    ++sourceId;
     const J = loadOwnSaved(); if (!J) return;
     state.seriesBase = J; state.route = null; state.routeIsDemo = false; state.demoDay = false;
     photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = ''; $('note').value = ''; state.demoNote = false;
@@ -861,20 +869,23 @@
     $('continue').hidden = true; refreshModes(); setMode('series'); play(true);
   };
   $('mergeDay').onchange = () => { if (state.pre && state.pre.files.length > 1) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; state.demoNote = q.demoNote; photoFiles = q.photos.slice(); state.o.note = q.note; handleFiles(q.files, q.glue); } };
-  $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; $('resetOwn').hidden = true; if (isOwn()) loadSeries().then(() => $('day47').click()); };
+  $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; $('resetOwn').hidden = true; if (isOwn()) loadSeries().then(ok => { if (ok) $('day47').click(); }); };
   { const J = loadOwnSaved(); if (J) { $('resetOwn').hidden = false; $('continue').hidden = false; $('continue').textContent = `Продолжить моё путешествие · ${J.days.length} ${J.days.length % 10 === 1 && J.days.length % 100 !== 11 ? 'день' : J.days.length % 10 >= 2 && J.days.length % 10 <= 4 && (J.days.length % 100 < 10 || J.days.length % 100 >= 20) ? 'дня' : 'дней'}`; } }
-  $('day47').onclick = async () => {
+  async function loadDemoDay(id = ++sourceId) {
     try {
-      if (!state.seriesBase || state.seriesBase.schematic || state.mode !== 'series') await loadSeries();   // демо-день 47 — только к демо-путешествию, не к кругосветке героя
-      const tx = await (await fetch('samples/day47.gpx')).text(); loadText(tx, 'day47.gpx');
+      if (!state.seriesBase || state.seriesBase.schematic || state.mode !== 'series') { if (!await loadSeries(id)) return; }   // демо-день 47 — только к демо-путешествию, не к кругосветке героя
+      if (id !== sourceId) return;
+      const tx = await (await fetch('samples/day47.gpx')).text(); if (id !== sourceId) return;
+      loadText(tx, 'day47.gpx');
       // демо-фото (Wikimedia Commons, CC BY-SA 4.0), заметка и место — помечены как демо: свой GPX их уберёт
       state.demoDay = true;
       if (!touched.endName) { state.o.endName = 'Байкал'; $('endName').value = 'Байкал'; }
       if (!photoFiles.length) { const cr = 'Фото: Thomas D. Fischer · CC BY-SA 4.0 · Wikimedia Commons'; photoFiles = [{ name: 'baikal-1.jpg', url: 'media/demo/baikal-1.jpg', meta: {}, caption: 'Первый вид на Байкал', credit: cr, demo: true }, { name: 'baikal-2.jpg', url: 'media/demo/baikal-2.jpg', meta: {}, caption: 'Берег у Листвянки', credit: cr, demo: true }]; }
       if (!state.o.note) { state.o.note = 'Изнурительно, но весело'; $('note').value = state.o.note; state.demoNote = true; }
       placePhotos(); }
-    catch (e) { showErr('Не удалось загрузить день 47: ' + e.message); }
-  };
+    catch (e) { if (id === sourceId) showErr('Не удалось загрузить день 47: ' + e.message); }
+  }
+  $('day47').onclick = () => loadDemoDay();
   // на телефоне по умолчанию HD 720: быстрее и меньше памяти (Full HD остаётся в «Ещё → Качество»)
   try { if (matchMedia('(pointer: coarse)').matches) $('res').value = 'sd'; } catch (e) { /* без media queries */ }
   $('etype').onchange = () => { state.etype = $('etype').value; t = 0; rebuild(); };
@@ -916,6 +927,7 @@
   $('jdur').onchange = () => { state.jcount = +$('jdur').value; t = 0; rebuild(); };
 
   async function loadJourney(data, label) {
+    ++sourceId;
     state.journeyData = data;
     // демо-трек не относится к истории героя: не подмешиваем его в «Путь + трек дня»
     if (state.routeIsDemo) { state.route = null; state.routeIsDemo = false; }
@@ -942,14 +954,16 @@
   }
   const lerpN = (a, b, t) => a + (b - a) * t;
   $('wj').onclick = async () => {
+    const id = ++sourceId;
     try {
       const d = await (await fetch('data/journey-wahrider.json')).json();
+      if (id !== sourceId) return;
       state.seriesBase = heroJourney(d); state.route = null; state.routeIsDemo = false;
       setKind('long');
       $('info').hidden = false; $('info').innerHTML = '<span><b>Кругосветка @wahrider</b> — трейлер по постам канала</span>';
       refreshModes(); setMode('series'); play(true);
     }
-    catch (e) { showErr('Не удалось загрузить путь: ' + e.message); }
+    catch (e) { if (id === sourceId) showErr('Не удалось загрузить путь: ' + e.message); }
   };
 
   /* ---- превью ---- */
@@ -1082,7 +1096,7 @@
   };
 
   // открыли страницу — сразу играет демо-серия «День 47» (своим GPX её можно заменить)
-  (async () => { await loadSeries(); $('day47').click(); })();
+  (async () => { const id = ++sourceId; if (await loadSeries(id)) loadDemoDay(id); })();
 
   window.__app = { loadSeries, state, loadText, loadJourney, setMode, rebuild, buildScene, SIZES, get scene() { return scene; } };
 })();
