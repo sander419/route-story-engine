@@ -274,12 +274,29 @@
 
   function showErr(m) { $('err').textContent = m; $('err').hidden = !m; }
 
-  function loadText(text, filename) {
-    showErr('');
+  /* обрезка трека: доли длины с начала и с конца; новый файл сбрасывает, ползунок пересобирает тот же файл */
+  state.trim = { a: 0, b: 0 };
+  function trimPts(pts) {
+    const hav = window.RouteLib.hav, cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hav(pts[i - 1], pts[i]));
+    const D = cum[cum.length - 1] || 1, lo = (state.trim.a / 100) * D, hi = D - (state.trim.b / 100) * D;
+    state.rawTotal = D; const out = pts.filter((_, i) => cum[i] >= lo && cum[i] <= hi);
+    return out.length >= 2 ? out : pts;
+  }
+  function syncTrim() {
+    const D = state.fullKm || 0; $('trimA').value = state.trim.a; $('trimB').value = state.trim.b;
+    $('trimAo').textContent = (D * state.trim.a / 100).toFixed(1).replace('.', ',') + ' км'; $('trimBo').textContent = (D * state.trim.b / 100).toFixed(1).replace('.', ',') + ' км';
+  }
+  let trimTimer = null;
+  ['trimA', 'trimB'].forEach((id) => { $(id).oninput = () => { state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.rawText) loadText(state.rawText, state.rawName, true); }, 250); }; });
+  function loadText(text, filename, keepTrim) {
+    showErr(''); if (!keepTrim) { state.trim = { a: 0, b: 0 }; state.rawText = text; state.rawName = filename; }
     try {
       if (text.trimStart().startsWith('{')) { const j = JSON.parse(text); if (Array.isArray(j.stops) && j.stops.length > 1 && j.stops[0].lat != null) { loadJourney(j); return; } }
       const parsed = parseAny(text, filename);
+      parsed.pts = trimPts(parsed.pts);
       const route = prepare(parsed, filename.replace(/\.[^.]+$/, ''));
+      if (!keepTrim) state.fullKm = route.total / 1000;
+      $('trimBox').hidden = filename === 'day47.gpx' && state.demoDay; syncTrim();
       if (filename !== 'day47.gpx' && state.demoDay) {   // свой трек вместо демо-дня: убираем демо-фото, демо-заметку и демо-место
         photoFiles = photoFiles.filter((p) => !p.demo);
         if (state.demoNote) { state.o.note = ''; $('note').value = ''; state.demoNote = false; }
@@ -674,6 +691,7 @@
   async function handleFiles(files, glue) {
     showErr('');
     if (state.mode === 'track') { readFile(files[0]); return; }
+    $('trimBox').hidden = true;   // обрезка — для одиночного трека; дни путешествия обрезаются до загрузки
     const got = []; let multi = 0;
     for (const f of files) {
       try {
