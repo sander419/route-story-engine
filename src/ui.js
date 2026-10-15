@@ -391,7 +391,7 @@
     $('trimCo').textContent = T.d > T.c ? km1(D * T.c / 100) : '—'; $('trimDo').textContent = T.d > T.c ? km1(D * T.d / 100) + ' · вырезано ' + km1(D * (T.d - T.c) / 100) : '—';
   }
   let trimTimer = null;
-  ['trimA', 'trimB', 'trimC', 'trimD', 'trimS'].forEach((id) => { $(id).oninput = () => { state.trim.s = +$('trimS').value; state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; state.trim.c = +$('trimC').value; state.trim.d = +$('trimD').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.mode === 'track' && state.rawText) loadText(state.rawText, state.rawName, true); else if (state.pre) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; state.demoNote = q.demoNote; photoFiles = q.photos.slice(); state.o.note = q.note; handleFiles(q.files, q.glue, true); } }, 250); }; });
+  ['trimA', 'trimB', 'trimC', 'trimD', 'trimS'].forEach((id) => { $(id).oninput = () => { state.trim.s = +$('trimS').value; state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; state.trim.c = +$('trimC').value; state.trim.d = +$('trimD').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.mode === 'track' && state.rawText) loadText(state.rawText, state.rawName, true); else if (state.pre) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; handleFiles(q.files, q.glue, true); } }, 250); }; });
   function loadText(text, filename, keepTrim) {
     showErr(''); if (!keepTrim) { state.trim = { a: 0, b: 0, c: 0, d: 0, s: 0 }; state.rawText = filename === 'day47.gpx' ? null : text; state.rawName = filename; state.pre = null; }
     try {
@@ -797,7 +797,8 @@
     const id = ++sourceId;
     showErr('');
     if (state.mode === 'track' && state.route) { readFile(files[0]); return; }
-    if (!again) { state.trim = { a: 0, b: 0, c: 0, d: 0, s: 0 }; state.rawText = null; state.pre = { base: state.seriesBase, route: state.route, routeIsDemo: state.routeIsDemo, demoDay: state.demoDay, demoNote: state.demoNote, photos: photoFiles.slice(), note: state.o.note, files, glue }; }   // снимок до загрузки: ползунок обрезки перезагружает тот же файл на его место
+    const pre = again ? state.pre : { base: state.seriesBase, route: state.route, routeIsDemo: state.routeIsDemo, demoDay: state.demoDay, demoNote: state.demoNote, photos: photoFiles.slice(), note: state.o.note, files, glue };
+    if (!again) { state.trim = { a: 0, b: 0, c: 0, d: 0, s: 0 }; state.rawText = null; }   // снимок принимается только после успешного разбора; неверный файл не ломает обрезку прежнего
     let merged = null;   // «несколько файлов — один день»: точки всех файлов в один трек (по времени, если оно есть), каждый файл — свой отрезок
     if (files.length > 1 && $('mergeDay').checked) {
       try {
@@ -822,12 +823,12 @@
     if (!got.length) return;
     got.sort((a, b) => (a.r.t && b.r.t ? a.r.t[0] - b.r.t[0] : a.name.localeCompare(b.name, 'ru', { numeric: true })));
     // свой трек начинает (или продолжает) своё путешествие — не клеится к демо
-    if (!isOwn()) { state.seriesBase = loadOwnSaved() || newOwn(); state.route = null; }
-    else bakeToday();
+    const ownBefore = isOwn();
+    if (!ownBefore) { state.seriesBase = (!again && loadOwnSaved()) || newOwn(); state.route = null; }
     ownNote = '';
     if (!glue) {
       const hv = window.RouteLib.hav, P = (q) => ({ lon: q[0], lat: q[1] }), ends = (r) => [{ lon: r.lon[0], lat: r.lat[0] }, { lon: r.lon[r.n - 1], lat: r.lat[r.n - 1] }];
-      const sameDay = (d, r) => { const [a, b] = ends(r); return Math.abs(d.km - r.total / 1000) < Math.max(0.3, d.km * 0.01) && hv(P(d.line[0]), a) < 300 && hv(P(d.line[d.line.length - 1]), b) < 300; };
+      const sameDay = (d, r) => { const [a, b] = ends(r), date = r.t ? new Date(r.t[0] + (r.lon[0] / 15) * 3600e3).toISOString().slice(0, 10) : null; return !(d.date && date && d.date !== date) && Math.abs(d.km - r.total / 1000) < Math.max(0.3, d.km * 0.01) && hv(P(d.line[0]), a) < 300 && hv(P(d.line[d.line.length - 1]), b) < 300; };
       const days0 = [...state.seriesBase.days].sort((a, b) => a.day - b.day);
       // 1) этот день уже есть в путешествии — не добавляем его второй раз
       const fresh = got.filter((g) => !days0.some((d) => sameDay(d, g.r)));
@@ -836,23 +837,30 @@
         if (!fresh.length) {   // загружен только уже известный день: путешествие не растёт
           const isLast = dd.day === days0[days0.length - 1].day;
           if (!isLast) ownNote = `Этот день уже есть в путешествии (день ${dd.day}) — второй раз не добавляю.`;
-          else { state.route = dup.r; state.routeIsDemo = false; }
+          else {
+            state.route = dup.r; state.routeIsDemo = false;
+            // Для обрезки повторно выбранного дня база должна заканчиваться вчера, а не содержать его самого.
+            state.pre = { ...pre, base: { ...state.seriesBase, days: days0.slice(0, -1), media: (state.seriesBase.media || []).filter(m => m.day < dd.day), notes: (state.seriesBase.notes || []).filter(n => n.day < dd.day), checkpoints: (state.seriesBase.checkpoints || []).filter(c => c.day < dd.day) }, demoDay: false, demoNote: false };
+          }
+          if (!ownBefore) { photoFiles = []; state.o.photos = []; renderPhotos(); ownFields(state.seriesBase); }
           placePhotos(); refreshModes(); setMode('series'); play(true); $('continue').hidden = true; if (isLast) geocode(dup.r); return;
         }
         got.length = 0; fresh.forEach((g) => got.push(g));
       }
+      if (ownBefore && !again) bakeToday();   // только новый день завершает прежний редактор; дубликат ничего не очищает
       // 2) трек начинается далеко от конца путешествия — это другое путешествие, а не «следующий день»
       const lastD = days0[days0.length - 1];
       if (lastD) {
         const gap = hv(P(lastD.line[lastD.line.length - 1]), ends(got[0].r)[0]) / 1000;
         if (gap > 80) { farUndo = { base: state.seriesBase, files }; state.seriesBase = newOwn(); ownNote = `Этот трек начинается в ${Math.round(gap).toLocaleString('ru-RU')} км от конца прошлого путешествия — начал новое. <button class="linkbtn" id="glue">Нет, это продолжение</button>`; }
       }
-    }
+    } else if (ownBefore && !again) bakeToday();
     if (state.demoDay || state.demoNote) { photoFiles = photoFiles.filter((p) => !p.demo); if (state.demoNote) { state.o.note = ''; $('note').value = ''; } state.demoDay = false; state.demoNote = false; }
     if (!again) {   // названия прошлого дня не относятся к новому файлу; обрезка сохраняет текущие правки
       state.o.startName = ''; $('startName').value = ''; touched.startName = false;
       state.o.endName = ''; $('endName').value = ''; touched.endName = false;
     }
+    pre.base = state.seriesBase; state.pre = pre;   // база до добавления выбранных файлов, затем обрезка восстанавливает её
     got.forEach((g) => { state.seriesBase = window.Director.addDay(state.seriesBase, segOf(g.r, null), [], []).journey; });   // каждый файл — сохранённый день
     const last = got[got.length - 1];
     state.route = last.r; state.routeIsDemo = false;
@@ -862,18 +870,21 @@
     $('continue').hidden = true; $('trimBox').hidden = !(single && multi < 2); syncTrim();
     geocode(last.r);
   }
+  function ownFields(J) {
+    const lastDay = [...J.days].sort((a, b) => a.day - b.day).at(-1), note = (J.notes || []).find(n => n.day === lastDay.day);
+    state.o.note = note ? note.text : ''; $('note').value = state.o.note; state.demoDay = false; state.demoNote = false;
+    state.o.startName = lastDay.from || ''; $('startName').value = state.o.startName; touched.startName = false;
+    state.o.endName = lastDay.to || ''; $('endName').value = state.o.endName; touched.endName = false;
+  }
   $('continue').onclick = () => {
     ++sourceId;
     const J = loadOwnSaved(); if (!J) return;
-    state.seriesBase = J; state.route = null; state.routeIsDemo = false; state.demoDay = false;
-    const lastDay = [...J.days].sort((a, b) => a.day - b.day).at(-1), note = (J.notes || []).find(n => n.day === lastDay.day);
-    photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = note ? note.text : ''; $('note').value = state.o.note; state.demoNote = false;
-    state.o.startName = lastDay.from || ''; $('startName').value = state.o.startName; touched.startName = false;
-    state.o.endName = lastDay.to || ''; $('endName').value = state.o.endName; touched.endName = false;
+    state.seriesBase = J; state.route = null; state.routeIsDemo = false;
+    photoFiles = []; state.o.photos = []; renderPhotos(); ownFields(J);
     setKind('long');
     $('continue').hidden = true; refreshModes(); setMode('series'); play(true);
   };
-  $('mergeDay').onchange = () => { if (state.pre && state.pre.files.length > 1) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; state.demoNote = q.demoNote; photoFiles = q.photos.slice(); state.o.note = q.note; handleFiles(q.files, q.glue); } };
+  $('mergeDay').onchange = () => { if (state.pre && state.pre.files.length > 1) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; handleFiles(q.files, q.glue, true); } };
   $('resetOwn').onclick = () => { try { localStorage.removeItem(OWN_KEY); } catch (e) {} $('continue').hidden = true; $('resetOwn').hidden = true; if (isOwn()) loadSeries().then(ok => { if (ok) $('day47').click(); }); };
   { const J = loadOwnSaved(); if (J) { $('resetOwn').hidden = false; $('continue').hidden = false; $('continue').textContent = `Продолжить моё путешествие · ${J.days.length} ${J.days.length % 10 === 1 && J.days.length % 100 !== 11 ? 'день' : J.days.length % 10 >= 2 && J.days.length % 10 <= 4 && (J.days.length % 100 < 10 || J.days.length % 100 >= 20) ? 'дня' : 'дней'}`; } }
   async function loadDemoDay(id = ++sourceId) {
