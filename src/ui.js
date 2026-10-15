@@ -849,12 +849,15 @@
       }
     }
     if (state.demoDay || state.demoNote) { photoFiles = photoFiles.filter((p) => !p.demo); if (state.demoNote) { state.o.note = ''; $('note').value = ''; } state.demoDay = false; state.demoNote = false; }
+    if (!again) {   // названия прошлого дня не относятся к новому файлу; обрезка сохраняет текущие правки
+      state.o.startName = ''; $('startName').value = ''; touched.startName = false;
+      state.o.endName = ''; $('endName').value = ''; touched.endName = false;
+    }
     got.forEach((g) => { state.seriesBase = window.Director.addDay(state.seriesBase, segOf(g.r, null), [], []).journey; });   // каждый файл — сохранённый день
     const last = got[got.length - 1];
     state.route = last.r; state.routeIsDemo = false;
     // многодневный файл: зрителю сначала нужен весь путь, потом последний день
     setKind(multi >= 3 ? 'long' : 'short');
-    if (!touched.endName) { state.o.endName = ''; $('endName').value = ''; }
     saveOwn(); nameDays(); placePhotos(); refreshModes(); setMode('series'); play(true);
     $('continue').hidden = true; $('trimBox').hidden = !(single && multi < 2); syncTrim();
     geocode(last.r);
@@ -863,8 +866,10 @@
     ++sourceId;
     const J = loadOwnSaved(); if (!J) return;
     state.seriesBase = J; state.route = null; state.routeIsDemo = false; state.demoDay = false;
-    photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = ''; $('note').value = ''; state.demoNote = false;
-    state.o.endName = ''; $('endName').value = ''; touched.endName = false;
+    const lastDay = [...J.days].sort((a, b) => a.day - b.day).at(-1), note = (J.notes || []).find(n => n.day === lastDay.day);
+    photoFiles = []; state.o.photos = []; renderPhotos(); state.o.note = note ? note.text : ''; $('note').value = state.o.note; state.demoNote = false;
+    state.o.startName = lastDay.from || ''; $('startName').value = state.o.startName; touched.startName = false;
+    state.o.endName = lastDay.to || ''; $('endName').value = state.o.endName; touched.endName = false;
     setKind('long');
     $('continue').hidden = true; refreshModes(); setMode('series'); play(true);
   };
