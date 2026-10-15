@@ -182,6 +182,13 @@
       <small class="hint" id="pHint" hidden>В примерах знак и цвет заданы заранее. Ваши настройки применятся к вашему треку.</small>
       </div>
       </details>
+      <div class="settings-body">
+        <div class="f">Настройки в файле</div>
+        <button type="button" class="ghost" id="settingsSave">Сохранить настройки в файл</button>
+        <button type="button" class="ghost" id="settingsLoad">Загрузить настройки</button>
+        <input type="file" id="settingsFile" accept=".json,application/json" hidden>
+        <small class="hint" id="settingsStatus" role="status"></small>
+      </div>
     </div>
   </section>
 
@@ -237,6 +244,6 @@
 <script src="src/audio.js?v=10141012"></script>
 <script src="src/export.js?v=10141012"></script>
 <script src="src/layers-export.js?v=10141012"></script>
-<script src="src/ui.js?v=10161002"></script>
+<script src="src/ui.js?v=10161003"></script>
 </body>
 </html>

@@ -268,6 +268,54 @@
   $('logoClear').onclick = () => { state.logo = null; syncLogo(); saveCustom(); };
   syncLogo();
 
+  /* ---- перенос оформления одним файлом; маршрут и фото остаются отдельно ---- */
+  $('settingsSave').onclick = () => {
+    const data = { format: 'route-story-settings', version: 1, appearance: AP.normalize(state.appearance), labels: state.labels, logo: state.logo, styleId: state.styleId, relief: state.relief, show: state.show };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })), a = document.createElement('a');
+    a.href = url; a.download = 'route-story-settings.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    $('settingsStatus').textContent = 'Файл настроек сохранён. Его можно загрузить в другом браузере.';
+  };
+  async function readSettings(data) {
+    const obj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+    if (!obj(data) || data.format !== 'route-story-settings' || data.version !== 1 || !obj(data.appearance) || !obj(data.labels) || !obj(data.show) || typeof data.styleId !== 'string' || !Object.hasOwn(STYLES, data.styleId) || typeof data.relief !== 'boolean') throw new Error('Выберите файл настроек Route Story поддерживаемой версии.');
+    const labels = {}, show = {};
+    for (const [k] of LABEL_DEFS) if (Object.hasOwn(data.labels, k)) {
+      if (typeof data.labels[k] !== 'string') throw new Error('В файле повреждены надписи.');
+      const v = data.labels[k].trim().slice(0, 28); if (v) labels[k] = v;
+    }
+    for (const [k] of SHOWS) {
+      if (Object.hasOwn(data.show, k) && typeof data.show[k] !== 'boolean') throw new Error('В файле повреждены настройки показа.');
+      show[k] = Object.hasOwn(data.show, k) ? data.show[k] : k !== 'relief';
+    }
+    show.relief = data.relief;
+    let logo = null;
+    if (data.logo !== null) {
+      if (!obj(data.logo) || typeof data.logo.url !== 'string' || data.logo.url.length > 3 * 1024 * 1024 || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(data.logo.url) || !['header', 'ends', 'both'].includes(data.logo.where)) throw new Error('В файле повреждён логотип.');
+      await new Promise((resolve, reject) => { const im = new Image(); im.onload = () => resolve(); im.onerror = () => reject(new Error('Не удалось прочитать логотип из файла.')); im.src = data.logo.url; });
+      logo = { url: data.logo.url, where: data.logo.where };
+    }
+    return { appearance: AP.normalize(data.appearance), labels, logo, styleId: data.styleId, relief: data.relief, show };
+  }
+  $('settingsLoad').onclick = () => $('settingsFile').click();
+  $('settingsFile').onchange = async e => {
+    const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+    $('settingsStatus').textContent = 'Загружаю настройки…';
+    try {
+      if (file.size > 4 * 1024 * 1024) throw new Error('Файл слишком большой. Выберите файл настроек до 4 МБ.');
+      let data;
+      try { data = JSON.parse((await file.text()).replace(/^\uFEFF/, '')); } catch (err) { throw new Error('Не удалось прочитать файл. Выберите сохранённый файл настроек Route Story.'); }
+      const settings = await readSettings(data);   // до полной проверки текущие настройки не меняем
+      Object.assign(state, settings);
+      [...$('styles').children].forEach(b => b.classList.toggle('on', b.dataset.id === state.styleId));
+      $('iconLibrary').textContent = window.StyleIcons.familyName(state.styleId);
+      [...$('labelsGrid').querySelectorAll('input')].forEach(i => { i.value = state.labels[i.dataset.k] || ''; });
+      [...document.querySelectorAll('#shows input,#mapSettings input')].forEach(i => { i.checked = state.show[i.dataset.k]; });
+      $('relief').value = state.relief ? 'on' : 'off';
+      syncLogo(); saveAppearance(); saveCustom(); clearTimeout(appearanceTimer); clearTimeout(customTimer); t = 0; rebuild();
+      $('settingsStatus').textContent = 'Настройки загружены.';
+    } catch (err) { $('settingsStatus').textContent = 'Не удалось загрузить настройки. ' + err.message; }
+  };
+
   /* ---- экраны ролика: скрыть необязательные, сделать любой дольше или короче ---- */
   const RN = { 'day-card': 'Обложка', 'trip-title': 'Обложка', 'season-card': 'Обложка', 'progress-overview': 'Путь до сегодня', 'overview-to-detail': 'Переход к дню', 'route-reveal': 'Дорога', 'camera-follow': 'Дорога', 'elevation-profile': 'Профиль высот', 'weather-card': 'Погода', 'time-on-road': 'Время в пути', 'high-point': 'Высшая точка', 'distance-counter': 'Километры', 'checkpoint-arrival': 'Прибытие', 'photo-reveal': 'Фото', 'note-card': 'Заметка', 'highlights-reel': 'Фото пути', 'pullback': 'Финал', 'progress-poster': 'Финал', 'journey-recap': 'Вехи пути', 'day-summary': 'Итог дня' };
   const LOCKED = new Set(['day-card', 'trip-title', 'season-card', 'progress-overview', 'overview-to-detail', 'route-reveal', 'camera-follow', 'pullback', 'progress-poster', 'journey-recap', 'day-summary']);
