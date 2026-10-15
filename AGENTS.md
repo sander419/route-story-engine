@@ -2,13 +2,13 @@
 
 Продукт без сборки: `index.html` + `src/*.js`, экспорт MP4 прямо в браузере, без сервера. Сдача вайбатона 15–17.10.2026. Живой сайт = ветка `main` (GitHub Pages, выкладка — обычный `git push`).
 
-Первым делом: этот файл → `docs/CODEX-PROMPT.md` (порядок работы) → `docs/NEXT-SESSION.md` (состояние и планы).
+Первым делом: этот файл → `docs/CODEX-HANDOFF-2026-10-16.md` (правила, ловушки, очередь задач; главный) → `docs/NEXT-SESSION.md` (состояние и планы). Старый `docs/CODEX-PROMPT.md` — запасной.
 
 ## Запуск и проверка
 - Одной командой: `bash tools/check.sh` — сервер на 4180 + все тесты (маршрут, материалы, режиссёр, smoke, своё путешествие, шрифты, рельеф, тайминги, пользовательские настройки, телефон). Должно закончиться словами `ВСЁ ПРОШЛО`.
 - Вручную: `python -m http.server 4180` в папке проекта.
 - Путь жюри (11 чужих файлов через интерфейс до MP4, проверка ffprobe): `node tools/judge.mjs`; `URL=https://sander419.github.io/route-story-engine/` — против живого сайта; `JURY_DIR=папка` — свои файлы.
-- Глазами: `node tools/story-sheet.mjs <стиль> <short|long> <v|h>` — раскадровка ролика одной картинкой (`out/story-*.jpg`); `node tools/episode-frames.mjs <тип> <стиль> <v|h>` — кадры; `node tools/ui-tabs.mjs` — экран сайта на ноутбуке и телефоне.
+- Глазами: `node tools/demo-shot.mjs out/xx 0.09,0.3,0.45 <стиль>` — кадры демо-дня; `node tools/file-shot.mjs <трек> out/fs 0.3,0.5` — кадры своего трека; `tools/story-sheet.mjs` показывает устаревшие кадры, не использовать; `node tools/episode-frames.mjs <тип> <стиль> <v|h>` — кадры; `node tools/ui-tabs.mjs` — экран сайта на ноутбуке и телефоне.
 - Playwright берётся из `C:/Users/glina/route-story-spike` (Edge). Без него smoke и тесты не запустятся.
 
 ## Где что лежит

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Варианты характера стилей</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--bg:#f1eee6;--ink:#1d2623}
+@media (prefers-color-scheme:dark){:root{--bg:#161a19;--ink:#ece8dc}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "RS Geologica",system-ui,sans-serif;padding:24px 16px 48px}
+h1{font:700 26px/1.2 "RS Geologica";margin:0 0 6px}
+.lead{max-width:760px;opacity:.75;margin:0 0 28px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;max-width:1300px}
+.opt h2{font:700 19px/1.2 "RS Geologica";margin:0 0 4px}
+.opt p{margin:0 0 12px;opacity:.75;font-size:14px;max-width:34ch}
+.pair{display:flex;gap:12px}
+.ph{position:relative;width:calc(50% - 6px);aspect-ratio:9/16;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px #0004;container-type:inline-size}
+.ph svg.map{position:absolute;inset:0;width:100%;height:100%}
+.ph .t{position:absolute;left:7cqw;right:7cqw}
+/* === A. Бумажный дневник === */
+.A{background:#e9dcbd}
+.A .land{fill:#d9c89c}.A .water{fill:#a9c3c4}.A .rt{stroke:#b13a21;stroke-width:5;fill:none;stroke-linecap:round;stroke-dasharray:1 0}
+.A .grain{position:absolute;inset:0;background:repeating-linear-gradient(0deg,#0000 0 3px,#5a3a1a10 3px 4px),radial-gradient(#0000 40%,#5a3a1a33);mix-blend-mode:multiply}
+.A .hd{top:5cqw;font:400 4.4cqw "Marck Script",cursive;color:#5a3a1a}
+.A .ttl{top:14cqw;font:400 9cqw/1.05 "Yeseva One",serif;color:#3a2412}
+.A .pol{position:absolute;background:#fffaf0;padding:2cqw 2cqw 6cqw;box-shadow:0 2px 8px #0005;transform:rotate(-5deg);width:30cqw}
+.A .pol i{display:block;aspect-ratio:1;background:linear-gradient(#9bb7c7,#6f94a8)}
+.A .pol:after{content:"";position:absolute;top:-3cqw;left:9cqw;width:12cqw;height:5cqw;background:#e0a87c;opacity:.85;transform:rotate(6deg)}
+.A .panel{bottom:6cqw;background:#fff6dd;border:2px solid #7a5a35;border-radius:2cqw;padding:3.5cqw 4cqw;transform:rotate(-1deg);box-shadow:0 3px 0 #7a5a35}
+.A .panel b{font:400 15cqw/1 "Yeseva One";color:#3a2412}.A .panel small{display:block;font:400 4.5cqw "Marck Script";color:#7a5a35}
+/* === B. Ночная карта === */
+.B{background:#08101f}
+.B .land{fill:#10213d}.B .water{fill:#060b16}.B .rt{stroke:#ffb454;stroke-width:5;fill:none;stroke-linecap:round;filter:drop-shadow(0 0 6px #ff8a2a) drop-shadow(0 0 14px #ff6b3588)}
+.B .hd{top:5cqw;font:700 4cqw "RS DINish";letter-spacing:.18em;color:#7fa6e0}
+.B .ttl{top:13cqw;font:700 13cqw/.95 "RS DINish";color:#f2f6ff;text-transform:uppercase}
+.B .glass{position:absolute;bottom:6cqw;left:6cqw;right:6cqw;background:#0d1a33a6;backdrop-filter:blur(8px);border:1px solid #6f95d855;border-radius:3cqw;padding:4cqw}
+.B .glass b{font:700 17cqw/1 "RS DINish";color:#fff;text-shadow:0 0 14px #ffb45466}.B .glass small{display:block;font:600 3.8cqw "RS DINish";letter-spacing:.16em;color:#ffb454}
+.B .ph .pin{position:absolute;width:15cqw;aspect-ratio:1;border-radius:50%;border:2px solid #ffb454;background:linear-gradient(#9bb7c7,#4b6f86);box-shadow:0 0 12px #ffb45499}
+/* === C. Журнал === */
+.C{background:#f1eee6}
+.C .land{fill:#e4e0d4}.C .water{fill:#cfd6cf}.C .rt{stroke:#c23e28;stroke-width:6;fill:none;stroke-linecap:square}
+.C .circ{position:absolute;width:70cqw;aspect-ratio:1;border-radius:50%;background:#c23e28;right:-22cqw;top:-8cqw;opacity:.95}
+.C .hd{top:5cqw;font:700 3.6cqw "RS Geologica";letter-spacing:.14em;color:#222725}
+.C .ttl{top:14cqw;font:800 14cqw/.9 "RS Geologica";color:#222725;letter-spacing:-.04em}
+.C .bar{position:absolute;bottom:0;left:0;right:0;background:#222725;color:#f1eee6;padding:5cqw 7cqw}
+.C .bar b{font:800 15cqw/1 "RS Geologica";letter-spacing:-.04em}.C .bar small{display:block;font:600 3.6cqw "RS Geologica";letter-spacing:.14em;color:#e9a396}
+.C .sq{position:absolute;width:28cqw;aspect-ratio:1;background:linear-gradient(#9bb7c7,#6f94a8);border:1.2cqw solid #f1eee6;box-shadow:0 3px 0 #222725}
+/* === D. Тропа (лес и штамп) === */
+.D{background:#1f3329}
+.D .land{fill:#2c4638}.D .water{fill:#3d6b78}.D .rt{stroke:#e8c57e;stroke-width:5;fill:none;stroke-linecap:round;stroke-dasharray:14 9}
+.D .hd{top:5cqw;font:600 3.8cqw "Onest";letter-spacing:.2em;color:#a9bfa6;text-transform:uppercase}
+.D .ttl{top:13cqw;font:400 12cqw/1 "Prata",serif;color:#f4ead2}
+.D .stamp{position:absolute;right:6cqw;bottom:34cqw;width:30cqw;aspect-ratio:1;border:1.2cqw double #e8c57e;border-radius:50%;display:grid;place-items:center;color:#e8c57e;font:600 4cqw "Onest";text-align:center;transform:rotate(-12deg);letter-spacing:.1em}
+.D .tag{position:absolute;bottom:6cqw;left:7cqw;right:7cqw;display:flex;align-items:flex-end;justify-content:space-between;border-top:1px solid #e8c57e66;padding-top:3cqw;color:#f4ead2}
+.D .tag b{font:400 17cqw/1 "Prata"}.D .tag small{font:500 3.6cqw "Onest";letter-spacing:.14em;color:#a9bfa6;text-transform:uppercase}
+.D .pho{position:absolute;width:26cqw;aspect-ratio:4/5;border-radius:50% 50% 3cqw 3cqw;border:1cqw solid #f4ead2;background:linear-gradient(#9bb7c7,#6f94a8)}
+.note{max-width:760px;margin:30px 0 0;font-size:14px;opacity:.7}
+</style></head><body>
+<h1>Четыре характера для одного движка</h1>
+<p class="lead">Раскладка и камера у всех одни. Различается то, что вы просили: подложка, цвета, шрифты, форма фото и значков, вид цифр. Это макеты: цифры и карта условные. Слева обложка, справа экран дороги.</p>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+<g id="map"><path class="land" d="M0 0h100v180H0z" fill="currentColor"/></g></defs></svg>
+
+<div class="row">
+
+<section class="opt"><h2>A · Бумажный дневник</h2><p>Тёплая бумага, зерно, шрифт от руки, фото как полароид с липкой лентой, чернильная рамка у цифр.</p>
+<div class="pair">
+ <div class="ph A"><div class="grain"></div><div class="t hd">день 47 · Иркутск → Байкал</div><div class="t ttl" style="top:22cqw">«Изнурительно, но весело»</div>
+  <div class="t" style="top:78cqw;font:700 11cqw/1 'Yeseva One';color:#3a2412">69 км</div><div class="t" style="top:92cqw;font:400 5cqw 'Marck Script';color:#7a5a35">5 ч 10 мин · +237 м</div></div>
+ <div class="ph A"><svg class="map" viewBox="0 0 100 178" preserveAspectRatio="none"><path class="land" d="M0 0h100v178H0z"/><path class="water" d="M0 0h100v60C70 48 40 64 0 52z"/><path class="rt" d="M24 150C30 120 44 110 40 88S58 66 66 48"/></svg><div class="grain"></div>
+  <div class="t hd">день 47</div><div class="t ttl" style="font-size:9cqw">Иркутск → Байкал</div>
+  <div class="pol" style="left:6cqw;top:42cqw"><i></i></div><div class="pol" style="right:6cqw;top:80cqw;transform:rotate(4deg)"><i></i></div>
+  <div class="t panel"><b>42,7</b> <small>километров пройдено</small></div></div>
+</div></section>
+
+<section class="opt"><h2>B · Ночная карта</h2><p>Тёмно-синий, маршрут светится, стеклянная плашка, узкие цифры, фото в круглых светящихся метках.</p>
+<div class="pair">
+ <div class="ph B"><div class="t hd">ДЕНЬ 47</div><div class="t ttl" style="top:16cqw">Иркутск<br>→ Байкал</div>
+  <div class="glass"><small>ДИСТАНЦИЯ</small><b>69 КМ</b></div></div>
+ <div class="ph B"><svg class="map" viewBox="0 0 100 178" preserveAspectRatio="none"><path class="land" d="M0 0h100v178H0z"/><path class="water" d="M0 0h100v60C70 48 40 64 0 52z"/><path class="rt" d="M24 150C30 120 44 110 40 88S58 66 66 48"/></svg>
+  <div class="t hd">ДЕНЬ 47</div><div class="t ttl" style="font-size:9cqw">ИРКУТСК → БАЙКАЛ</div>
+  <div class="pin" style="left:12cqw;top:60cqw"></div><div class="pin" style="right:12cqw;top:84cqw"></div>
+  <div class="glass"><small>ПРОЙДЕНО</small><b>42,7 КМ</b></div></div>
+</div></section>
+
+<section class="opt"><h2>C · Журнал</h2><p>Светлая бумага, красный круг, очень крупный жирный шрифт, тёмная полоса снизу, фото квадратами с жёсткой тенью.</p>
+<div class="pair">
+ <div class="ph C"><div class="circ"></div><div class="t hd">ДЕНЬ 47</div><div class="t ttl" style="top:16cqw">Иркутск<br>Байкал</div>
+  <div class="bar"><small>ДИСТАНЦИЯ</small><b>69 км</b></div></div>
+ <div class="ph C"><svg class="map" viewBox="0 0 100 178" preserveAspectRatio="none"><path class="land" d="M0 0h100v178H0z"/><path class="water" d="M0 0h100v60C70 48 40 64 0 52z"/><path class="rt" d="M24 150C30 120 44 110 40 88S58 66 66 48"/></svg>
+  <div class="t hd">ДЕНЬ 47</div><div class="t ttl" style="font-size:10cqw;top:11cqw">Иркутск → Байкал</div>
+  <div class="sq" style="left:6cqw;top:52cqw"></div><div class="sq" style="right:6cqw;top:84cqw"></div>
+  <div class="bar"><small>ПРОЙДЕНО</small><b>42,7 км</b></div></div>
+</div></section>
+
+<section class="opt"><h2>D · Тропа</h2><p>Тёмная хвоя и лён, пунктирный путь как на туристической карте, штамп, фото в арках, засечный шрифт.</p>
+<div class="pair">
+ <div class="ph D"><div class="t hd">день 47 · иркутск → байкал</div><div class="t ttl" style="top:16cqw">Листвянка</div>
+  <div class="stamp">ДЕНЬ<br>47</div><div class="tag"><b>69 км</b><small>5 ч 10 мин<br>+237 м</small></div></div>
+ <div class="ph D"><svg class="map" viewBox="0 0 100 178" preserveAspectRatio="none"><path class="land" d="M0 0h100v178H0z"/><path class="water" d="M0 0h100v60C70 48 40 64 0 52z"/><path class="rt" d="M24 150C30 120 44 110 40 88S58 66 66 48"/></svg>
+  <div class="t hd">день 47</div><div class="t ttl" style="font-size:9cqw;top:11cqw">Иркутск → Байкал</div>
+  <div class="pho" style="left:8cqw;top:56cqw"></div><div class="pho" style="right:8cqw;top:86cqw"></div>
+  <div class="tag"><b>42,7 км</b><small>пройдено</small></div></div>
+</div></section>
+
+</div>
+<p class="note">Если нравится направление, скажите букву. Можно взять один характер для всех стилей или по одному на каждый. Подложку, шрифты и форму фото можно потом менять отдельно.</p>
+</body></html>
