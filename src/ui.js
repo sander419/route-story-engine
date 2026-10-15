@@ -275,21 +275,26 @@
   function showErr(m) { $('err').textContent = m; $('err').hidden = !m; }
 
   /* обрезка трека: доли длины с начала и с конца; новый файл сбрасывает, ползунок пересобирает тот же файл */
-  state.trim = { a: 0, b: 0 };
+  state.trim = { a: 0, b: 0, c: 0, d: 0 };
   function trimPts(pts) {
     const hav = window.RouteLib.hav, cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hav(pts[i - 1], pts[i]));
-    const D = cum[cum.length - 1] || 1, lo = (state.trim.a / 100) * D, hi = D - (state.trim.b / 100) * D;
-    state.rawTotal = D; const out = pts.filter((_, i) => cum[i] >= lo && cum[i] <= hi);
+    const D = cum[cum.length - 1] || 1, T = state.trim, lo = (T.a / 100) * D, hi = D - (T.b / 100) * D, cl = (T.c / 100) * D, ch = (T.d / 100) * D, cut = T.d > T.c;
+    state.rawTotal = D;
+    const out = pts.filter((_, i) => cum[i] >= lo && cum[i] <= hi && !(cut && cum[i] > cl && cum[i] < ch));
+    if (cut) {   // вырезанный участок: после него новый отрезок — на карте разрыв, километры через него не считаются
+       const idx = pts.map((q, i) => i).filter((i) => cum[i] >= lo && cum[i] <= hi && !(cum[i] > cl && cum[i] < ch)); idx.forEach((i) => { if (cum[i] >= ch) pts[i].seg = (pts[i].seg || 0) + 100000; });
+    }
     return out.length >= 2 ? out : pts;
   }
   function syncTrim() {
-    const D = (state.rawTotal || 0) / 1000; $('trimA').value = state.trim.a; $('trimB').value = state.trim.b;
-    $('trimAo').textContent = (D * state.trim.a / 100).toFixed(1).replace('.', ',') + ' км'; $('trimBo').textContent = (D * state.trim.b / 100).toFixed(1).replace('.', ',') + ' км';
+    const D = (state.rawTotal || 0) / 1000, T = state.trim, km1 = (v) => v.toFixed(1).replace('.', ',') + ' км'; ['A', 'B', 'C', 'D'].forEach((k) => { $('trim' + k).value = T[k.toLowerCase()]; });
+    $('trimAo').textContent = km1(D * T.a / 100); $('trimBo').textContent = km1(D * T.b / 100);
+    $('trimCo').textContent = T.d > T.c ? km1(D * T.c / 100) : '—'; $('trimDo').textContent = T.d > T.c ? km1(D * T.d / 100) + ' · вырезано ' + km1(D * (T.d - T.c) / 100) : '—';
   }
   let trimTimer = null;
-  ['trimA', 'trimB'].forEach((id) => { $(id).oninput = () => { state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.mode === 'track' && state.rawText) loadText(state.rawText, state.rawName, true); else if (state.pre) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; state.demoNote = q.demoNote; photoFiles = q.photos.slice(); state.o.note = q.note; handleFiles(q.files, q.glue, true); } }, 250); }; });
+  ['trimA', 'trimB', 'trimC', 'trimD'].forEach((id) => { $(id).oninput = () => { state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; state.trim.c = +$('trimC').value; state.trim.d = +$('trimD').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.mode === 'track' && state.rawText) loadText(state.rawText, state.rawName, true); else if (state.pre) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; state.demoNote = q.demoNote; photoFiles = q.photos.slice(); state.o.note = q.note; handleFiles(q.files, q.glue, true); } }, 250); }; });
   function loadText(text, filename, keepTrim) {
-    showErr(''); if (!keepTrim) { state.trim = { a: 0, b: 0 }; state.rawText = filename === 'day47.gpx' ? null : text; state.rawName = filename; state.pre = null; }
+    showErr(''); if (!keepTrim) { state.trim = { a: 0, b: 0, c: 0, d: 0 }; state.rawText = filename === 'day47.gpx' ? null : text; state.rawName = filename; state.pre = null; }
     try {
       if (text.trimStart().startsWith('{')) { const j = JSON.parse(text); if (Array.isArray(j.stops) && j.stops.length > 1 && j.stops[0].lat != null) { loadJourney(j); return; } }
       const parsed = parseAny(text, filename);
@@ -690,7 +695,7 @@
   async function handleFiles(files, glue, again) {
     showErr('');
     if (state.mode === 'track') { readFile(files[0]); return; }
-    if (!again) { state.trim = { a: 0, b: 0 }; state.rawText = null; state.pre = { base: state.seriesBase, route: state.route, routeIsDemo: state.routeIsDemo, demoDay: state.demoDay, demoNote: state.demoNote, photos: photoFiles.slice(), note: state.o.note, files, glue }; }   // снимок до загрузки: ползунок обрезки перезагружает тот же файл на его место
+    if (!again) { state.trim = { a: 0, b: 0, c: 0, d: 0 }; state.rawText = null; state.pre = { base: state.seriesBase, route: state.route, routeIsDemo: state.routeIsDemo, demoDay: state.demoDay, demoNote: state.demoNote, photos: photoFiles.slice(), note: state.o.note, files, glue }; }   // снимок до загрузки: ползунок обрезки перезагружает тот же файл на его место
     const single = files.length === 1;
     const got = []; let multi = 0;
     for (const f of files) {
