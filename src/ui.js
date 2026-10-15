@@ -1038,16 +1038,18 @@
     $('layersBox').hidden = state.xmode !== 'layers';
     $('export').textContent = exportLabel();
   }));
-  let layerUrls = [], keepResult = false;
+  let layerUrls = [], resultUrls = [], keepResult = false;
   $('export').onclick = async () => {
     if (!ready()) return;
     const btn = $('export');
     if (abort) { abort.abort(); return; }
+    const fmt = state.fmt, append = keepResult, wasHidden = $('result').hidden;
+    let completed = false; keepResult = false;
     abort = new AbortController();
     play(false);
     btn.textContent = 'Отменить';
     $('prog').hidden = false; $('result').hidden = true; showErr('');
-    const [W, H] = SIZES[state.fmt][$('res').value];
+    const [W, H] = SIZES[fmt][$('res').value];
     const o = { ...state.o };
     const route = state.route || { name: (state.journeyData || state.seriesBase || {}).title || 'route-story' };
     try {
@@ -1055,7 +1057,7 @@
       const dur = buildScene(W, H).duration;
       await fontsReady;
       const slug0 = (state.mode === 'series' && state.lastEp ? `${state.seriesBase.title} день ${state.lastEp.res.plan.episodeNumber} ${state.etype}` : state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
-      const sz = state.fmt === 'v' ? '9x16' : '16x9';
+      const sz = fmt === 'v' ? '9x16' : '16x9';
       if (state.xmode === 'layers') {
         const Ls = { map: $('lyMap').checked, route: $('lyRoute').checked, hud: $('lyHud').checked };
         const keys = Object.keys(Ls).filter((k) => Ls[k]);
@@ -1074,7 +1076,7 @@
           links.push({ url, nm: `${slug0}-${g.id}-${sz}-${fmt === 'png' ? 'png' : 'alpha'}.${lr.ext}`, size: lr.blob.size, ext: lr.ext, frames: lr.frames });
         }
         $('result').innerHTML = links.map((l) => (l.ext === 'webm' ? `<video class="chk" src="${l.url}" controls loop muted playsinline></video>` : '') + `<a href="${l.url}" download="${l.nm}">Скачать ${l.nm}</a><small>${W}×${H} · ${(l.size / 1048576).toFixed(1)} МБ</small>`).join('') + '<small>Фон прозрачный. Положите слои поверх своих фото и видео в любом редакторе.</small>';
-        $('result').hidden = false;
+        $('result').hidden = false; completed = true;
         window.__lastLayers = links;
         return;
       }
@@ -1084,18 +1086,21 @@
         W, H, fps: 30, duration: dur, signal: abort.signal,
         onStage: (txt, p) => { $('stage').textContent = `${txt} ${Math.round(p * 100)}%`; $('bar').style.width = p * 100 + '%'; },
       });
-      if (objUrl) URL.revokeObjectURL(objUrl);
       objUrl = URL.createObjectURL(res.blob);
       const slug = slug0;
-      const name = `${slug}-${state.fmt === 'v' ? '9x16' : '16x9'}.${res.ext}`;
-      const other = state.fmt === 'v' ? 'h' : 'v', keep = keepResult ? $('result').innerHTML : ''; keepResult = false;
+      const name = `${slug}-${sz}.${res.ext}`;
+      const other = fmt === 'v' ? 'h' : 'v', keep = append ? $('result').innerHTML : '';
+      // Освобождаем только результаты, которые действительно заменяем; оба формата остаются доступными.
+      if (!append) { resultUrls.forEach(u => URL.revokeObjectURL(u)); resultUrls = []; }
+      resultUrls.push(objUrl);
       $('result').innerHTML = keep + `<video src="${objUrl}" controls playsinline></video><a href="${objUrl}" download="${name}">Скачать ${name}</a><small>${W}×${H}, ${(res.blob.size / 1048576).toFixed(1)} МБ, ${res.ext.toUpperCase()}</small>` + (keep ? '' : `<button id="again" type="button">Сделать то же в ${other === 'h' ? '16:9 для YouTube' : '9:16 для Reels и Shorts'}</button>`);
-      $('result').hidden = false;
+      $('result').hidden = false; completed = true;
       const again = $('again'); if (again) again.onclick = () => { keepResult = true; [...$('fmt').children].find((x) => x.dataset.v === other).click(); setTimeout(() => $('export').click(), 900); again.remove(); };   // второй формат тем же маршрутом, первый файл остаётся на экране
       window.__lastExport = { url: objUrl, name, size: res.blob.size, codec: res.codec };
     } catch (e) {
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));
     } finally {
+      if (!completed) $('result').hidden = wasHidden;
       abort = null; btn.textContent = exportLabel(); $('prog').hidden = true;
     }
   };
