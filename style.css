@@ -63,6 +63,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-2);background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-2)}
 .tabs button{border:0;border-radius:var(--radius-md);padding:var(--space-2) var(--space-1);display:flex;align-items:center;justify-content:center;gap:var(--space-2);color:var(--dim);font-weight:600;font-size:var(--text-base)}
 .tabs button i{font-style:normal;width:24px;height:24px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font-size:var(--text-xs);flex:none}
+.tabs button i{border:0;border-radius:0}
+.ui-icon{width:22px;height:22px;display:inline-block;vertical-align:middle;flex:none;pointer-events:none}
+.ctrl .ui-icon{width:20px;height:20px}
+.drop b .ui-icon,#addNote .ui-icon{margin-right:8px}
+.photo-position{display:block;margin-top:12px;font-size:var(--text-sm)}
+.photo-position input[type=range]{display:block;width:100%;min-height:44px}
+.photo-position output{font-size:var(--text-xs);color:var(--dim)}
 .tabs button.on{background:var(--acc);color:var(--acc-ink)}
 .tab{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4)}
 .lead{margin:0;color:var(--dim);font-size:var(--text-sm)}

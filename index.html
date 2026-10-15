@@ -9,7 +9,7 @@
 <link rel="preload" href="fonts/dinish.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css?v=10151502">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=10151641">
+<link rel="stylesheet" href="style.css?v=10161001">
 </head>
 <body>
 <header class="top">
@@ -37,9 +37,9 @@
       <div class="headline" id="headline">Пример: день 47 путешествия</div>
       <button class="go" id="export">Скачать видео</button>
     </div>
-    <div class="prog" id="prog" hidden><div id="bar"></div><span id="stage"></span></div>
+    <div class="prog" id="prog" role="progressbar" aria-label="Подготовка видео" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div id="bar"></div><span id="stage"></span></div>
     <div class="result" id="result" hidden></div>
-    <div class="err" id="err" hidden></div>
+    <div class="err" id="err" role="alert" hidden></div>
     <p class="hint" id="draftStatus" role="status" hidden></p>
 
     <nav class="tabs" id="tabs" aria-label="Шаги">
@@ -126,11 +126,11 @@
             <label class="f">Заголовки<select id="headingFont"></select></label>
             <label class="f">Текст<select id="bodyFont"></select></label>
           </div>
-          <small class="hint">Шрифты из вашей коллекции Typography Collection 2026. Цифры — DINish.</small>
+          <small class="hint">Выберите шрифты заголовков и основного текста. Шрифты уже включены в приложение.</small>
           <div class="palette-presets" id="palettePresets" aria-label="Готовые палитры"></div>
           <details><summary>Свои цвета</summary><div class="palette-fields" id="paletteFields"></div></details>
           <small class="hint" id="paletteContrast" role="status"></small>
-          <small class="hint">Полная настройка — в «Дневнике». В других стилях применяются общие шрифты и цвета; отдельный декор сохраняется. Фотографии сохраняют свои цвета.</small>
+          <small class="hint">Шрифты и цвета работают во всех стилях. У каждого стиля сохраняются свои детали. Цвета фотографий не меняются.</small>
           <button class="ghost" id="appearanceReset" type="button">Сбросить шрифты и цвета</button>
         </div>
       </details>
@@ -246,6 +246,7 @@
 <script src="src/export.js?v=10141012"></script>
 <script src="src/layers-export.js?v=10141012"></script>
 <script src="src/draft.js?v=10161001"></script>
-<script src="src/ui.js?v=10161009"></script>
+<script src="src/ui-icons.js?v=10161001"></script>
+<script src="src/ui.js?v=10161010"></script>
 </body>
 </html>

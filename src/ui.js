@@ -133,12 +133,28 @@
       const img = document.createElement('img'); img.src = p.url; img.alt = '';
       const mid = document.createElement('div');
       const inp = document.createElement('input'); inp.placeholder = 'Подпись (необязательно)'; inp.maxLength = 40; inp.value = p.caption;
+      inp.setAttribute('aria-label', `Подпись к фото ${i + 1}`);
       inp.oninput = () => { p.caption = inp.value; state.o.photos[i] && (state.o.photos[i].caption = inp.value); rebuild(true); };
       const sm = document.createElement('small'); sm.textContent = state.route && p.s != null ? `${how[p.how] || ''} · ${(p.s / 1000).toFixed(1)} км` : '';
       mid.append(inp, sm);
       const del = document.createElement('button'); del.textContent = '×'; del.title = 'Убрать фото';
+      del.setAttribute('aria-label', `Убрать фото ${i + 1}`); del.replaceChildren(window.UIIcons.icon('close'));
       del.onclick = () => { URL.revokeObjectURL(p.url); photoFiles.splice(i, 1); placePhotos(); };
       row.append(img, mid, del); box.appendChild(row);
+    });
+    renderPhotoPositions();
+  }
+  function renderPhotoPositions() {
+    let box = $('photoPositions');
+    if (!box) { box = document.createElement('div'); box.id = 'photoPositions'; $('pmapBox').appendChild(box); }
+    box.replaceChildren(); if (!state.route) return;
+    photoFiles.forEach((p, i) => {
+      const label = document.createElement('label'); label.className = 'photo-position'; label.textContent = `Место фото ${i + 1} на маршруте`;
+      const range = document.createElement('input'); range.type = 'range'; range.id = `photo-position-${i}`; range.min = 0; range.max = 100; range.step = .1; range.value = 100 * (p.s || 0) / state.route.total;
+      range.setAttribute('aria-label', label.textContent);
+      const value = document.createElement('output'), sync = () => { value.textContent = `${((p.s || 0) / 1000).toFixed(1)} км`; range.setAttribute('aria-valuetext', value.textContent); }; sync();
+      range.oninput = () => { p.s = state.route.total * +range.value / 100; p.how = 'hand'; p.handKey = photoRouteKey(state.route); state.o.photos[i].s = p.s; sync(); const sm = $('photoList').querySelectorAll('small')[i]; if (sm) sm.textContent = `вручную · ${value.textContent}`; drawPmap(); rebuild(true); };
+      label.append(range,value); box.appendChild(label);
     });
   }
 
@@ -155,6 +171,7 @@
     state.o.tnotes.forEach((n, i) => {
       const row = document.createElement('div'); row.className = 'tnote';
       const inp = document.createElement('input'); inp.maxLength = 40; inp.placeholder = ['Например: тут сломалась спица', 'Например: самый красивый перевал', 'Например: ночёвка у реки'][i % 3]; inp.value = n.text;
+      inp.setAttribute('aria-label', `Текст заметки ${i + 1}`);
       inp.oninput = () => { n.text = inp.value; rebuild(true); };
       const rg = document.createElement('input'); rg.type = 'range'; rg.min = 3; rg.max = 97; rg.value = Math.round(n.f * 100); rg.setAttribute('aria-label', 'Место на маршруте');
       const lab = document.createElement('small'); lab.textContent = 'на ' + kmAt(n.f);
@@ -350,7 +367,7 @@
   }
 
   /* ---- шаги под роликом ---- */
-  function showTab(id) { [...$('tabs').children].forEach((b) => b.classList.toggle('on', b.dataset.t === id)); ['route', 'text', 'photo', 'look'].forEach((k) => { $('t-' + k).hidden = k !== id; }); if (id === 'photo') drawPmap(); if (id === 'look' && matchMedia('(max-width:999px)').matches) $('tabs').scrollIntoView({ block: 'start' }); }
+  function showTab(id) { [...$('tabs').children].forEach((b) => { b.classList.toggle('on', b.dataset.t === id); b.setAttribute('aria-current', b.dataset.t === id ? 'step' : 'false'); }); ['route', 'text', 'photo', 'look'].forEach((k) => { $('t-' + k).hidden = k !== id; }); if (id === 'photo') drawPmap(); if (id === 'look' && matchMedia('(max-width:999px)').matches) $('tabs').scrollIntoView({ block: 'start' }); }
   [...$('tabs').children].forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
 
   /* ---- загрузка ---- */
@@ -1051,6 +1068,7 @@
 
   /* ---- превью ---- */
   function rebuild(keepT) {
+    document.querySelectorAll('#styles button,#fmt button,#kind button,#routeW button').forEach(b => b.setAttribute('aria-pressed', String(b.classList.contains('on'))));
     if (!ready()) return;
     queueDraft();
     const [w, h] = previewSize();
@@ -1084,7 +1102,7 @@
   $('musicFile').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { musicFileBuf = await f.arrayBuffer(); await window.RSAudio.fromFile(musicFileBuf, 1); } catch (er) { musicFileBuf = null; showErr('Не получилось прочитать музыку: ' + (er.message || er)); } audioKey = ''; syncAudio(); };
   document.addEventListener('pointerdown', () => { if (playing) syncAudio(); }, { once: true });   // браузер разрешает звук только после действия пользователя
 
-  function play(on) { playing = on; $('play').textContent = on ? '❚❚' : '▶'; last = performance.now(); syncAudio(); }
+  function play(on) { playing = on; $('play').replaceChildren(window.UIIcons.icon(on ? 'pause' : 'play')); $('play').setAttribute('aria-label', on ? 'Пауза' : 'Играть'); last = performance.now(); syncAudio(); }
   $('play').onclick = () => { if (!playing && scene && t >= scene.duration) t = 0; play(!playing); };
   $('scrub').oninput = () => { play(false); window.RSAudio && window.RSAudio.stop(); t = ($('scrub').value / 1000) * (scene ? scene.duration : 1); dirty = true; };
 
@@ -1127,12 +1145,12 @@
     abort = new AbortController();
     play(false);
     btn.textContent = 'Отменить';
-    $('prog').hidden = false; $('result').hidden = true; showErr('');
+    $('prog').hidden = false; $('prog').setAttribute('aria-valuenow','0'); $('result').hidden = true; showErr('');
     const [W, H] = SIZES[fmt][$('res').value];
     const o = { ...state.o };
     const route = state.route || { name: (state.journeyData || state.seriesBase || {}).title || 'route-story' };
     try {
-      if (state.mode === 'series' && (placesJob || weatherJob)) { $('stage').textContent = 'Ищу города по пути и погоду того дня…'; $('bar').style.width = '2%'; await Promise.race([Promise.all([placesJob, weatherJob]), new Promise((r) => setTimeout(r, 32000))]); }
+      if (state.mode === 'series' && (placesJob || weatherJob)) { $('stage').textContent = 'Ищу города по пути и погоду того дня…'; $('bar').style.width = '2%'; $('prog').setAttribute('aria-valuenow','2'); await Promise.race([Promise.all([placesJob, weatherJob]), new Promise((r) => setTimeout(r, 32000))]); }
       const dur = buildScene(W, H).duration;
       await fontsReady;
       const slug0 = (state.mode === 'series' && state.lastEp ? `${state.seriesBase.title} день ${state.lastEp.res.plan.episodeNumber} ${state.etype}` : state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
@@ -1149,7 +1167,7 @@
           const g = groups[gi];
           const lr = await window.RSLayers.exportLayerFile({
             makeScene: (w, h) => buildScene(w, h), W, H, fps: +$('lyFps').value, duration: dur, layers: g.layers, format: fmt, name: slug0 + ' — ' + labels[g.id], signal: abort.signal,
-            onStage: (txt, p) => { const pp = (gi + p) / groups.length; $('stage').textContent = `${groups.length > 1 ? '[' + (gi + 1) + '/' + groups.length + '] ' : ''}${txt} ${Math.round(p * 100)}%`; $('bar').style.width = pp * 100 + '%'; },
+            onStage: (txt, p) => { const pp = (gi + p) / groups.length; $('stage').textContent = `${groups.length > 1 ? '[' + (gi + 1) + '/' + groups.length + '] ' : ''}${txt} ${Math.round(p * 100)}%`; $('bar').style.width = pp * 100 + '%'; $('prog').setAttribute('aria-valuenow', Math.round(pp * 100)); },
           });
           const url = URL.createObjectURL(lr.blob); layerUrls.push(url);
           links.push({ url, nm: `${slug0}-${g.id}-${sz}-${fmt === 'png' ? 'png' : 'alpha'}.${lr.ext}`, size: lr.blob.size, ext: lr.ext, frames: lr.frames });
@@ -1163,7 +1181,7 @@
       const res = await window.RSExport.exportVideo({ audio,
         makeScene: (w, h) => buildScene(w, h),
         W, H, fps: 30, duration: dur, signal: abort.signal,
-        onStage: (txt, p) => { $('stage').textContent = `${txt} ${Math.round(p * 100)}%`; $('bar').style.width = p * 100 + '%'; },
+        onStage: (txt, p) => { $('stage').textContent = `${txt} ${Math.round(p * 100)}%`; $('bar').style.width = p * 100 + '%'; $('prog').setAttribute('aria-valuenow', Math.round(p * 100)); },
       });
       objUrl = URL.createObjectURL(res.blob);
       const slug = slug0;
@@ -1185,6 +1203,10 @@
   };
 
   // открыли страницу — сразу играет демо-серия «День 47» (своим GPX её можно заменить)
+  [...$('tabs').children].forEach(b => { const i = b.querySelector('i'); i.setAttribute('aria-hidden','true'); i.replaceChildren(window.UIIcons.icon(b.dataset.t)); b.setAttribute('aria-controls','t-'+b.dataset.t); });
+  $('drop').querySelector('b').prepend(window.UIIcons.icon('upload'));
+  $('addNote').prepend(window.UIIcons.icon('plus'));
+  showTab('route');
   (async () => { const id = ++sourceId; if (await loadSeries(id)) loadDemoDay(id); })();
 
   window.__app = { loadSeries, state, loadText, loadJourney, setMode, rebuild, buildScene, SIZES, get scene() { return scene; } };
