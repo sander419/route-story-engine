@@ -90,6 +90,7 @@
       const out = { cv, pad: 0 }; cache.set(key, out); return out;
     }
     let flat = false;   // экран дороги — карта во весь кадр, текст поверх затемнения, без карточек и рамок
+    let factInk = null;   // временная перекраска только фактов на полосе «Журнала», палитра C не меняется
     function drawCard(ctx, c, x, y, w, h, a = 1, rot = 0, dy = 0) {
       if (flat) return;
       ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate(0); ctx.drawImage(c.cv, -w / 2 - c.pad, -h / 2 - c.pad); ctx.restore();
@@ -168,12 +169,12 @@
       const c = card(w, h, { seed }); drawCard(ctx, c, x, y, w, h, a, rot, dy);
       ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2 + dy); ctx.rotate((rot * Math.PI) / 180); ctx.translate(-w / 2, -h / 2);
       let cy = pad * 0.9;
-      if (kicker) { cy += px(38) * 0.85; text(ctx, kicker, pad, cy, { size: 38, weight: 600, color: C.secondary, ls: 0.05, max: (w - 2 * pad) / u }); cy += px(16) + px(32) * 0.15; }
+      if (kicker) { cy += px(38) * 0.85; text(ctx, kicker, pad, cy, { size: 38, weight: 600, color: factInk || C.secondary, ls: 0.05, max: (w - 2 * pad) / u }); cy += px(16) + px(32) * 0.15; }
       const base = cy + nH; const right = w - pad - (unit ? unitW + px(16) : 0);
-      if (wordy) text(ctx, numStr, pad, base, { size: size / u, fam: HEAD, weight: S.headW, color: C.green, ls: -0.02 });
-      else drawNum(ctx, numStr, right, base, size, C.ink);
-      if (unit) text(ctx, unit, w - pad - unitW, base, { size: 44, weight: 500, color: C.secondary, fam: BODY });
-      if (sub) text(ctx, sub, pad, base + px(16) + px(44) * 0.9, { size: 44, weight: 500, color: C.secondary, max: (w - 2 * pad) / u });
+      if (wordy) text(ctx, numStr, pad, base, { size: size / u, fam: HEAD, weight: S.headW, color: factInk || C.green, ls: -0.02 });
+      else drawNum(ctx, numStr, right, base, size, factInk || C.ink);
+      if (unit) text(ctx, unit, w - pad - unitW, base, { size: 44, weight: 500, color: factInk || C.secondary, fam: BODY });
+      if (sub) text(ctx, sub, pad, base + px(16) + px(44) * 0.9, { size: 44, weight: 500, color: factInk || C.secondary, max: (w - 2 * pad) / u });
       ctx.restore(); return h;
     }
 
@@ -429,14 +430,22 @@
         const gx = portrait ? px(40) : W - px(560), gy = portrait ? H - px(560) : px(250), gw = portrait ? W - px(80) : px(520), gh = portrait ? px(470) : px(580);
         ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(gx, gy, gw, gh, px(34)); else ctx.rect(gx, gy, gw, gh); ctx.fillStyle = window.Appearance.rgba(AP.bg, 0.6); ctx.fill(); ctx.lineWidth = px(2); ctx.strokeStyle = window.Appearance.rgba(AP.accent, 0.3); ctx.stroke(); ctx.restore();
       }
-      flat = !!ok;
+      if (S.char === 'magazine') {   // полоса занимает зону фактов: снизу в вертикали, справа в горизонтали
+        ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = AP.text;
+        if (portrait) ctx.fillRect(0, px(c.metric[1] - 32), W, H - px(c.metric[1] - 32));
+        else ctx.fillRect(px(c.metric[0] - 24), px(250), W - px(c.metric[0] - 24), H - px(250));
+        ctx.restore();
+      }
+      flat = !!ok || S.char === 'magazine';
       text(ctx, jr ? E.journeyName() : E.routeNames(), px(c.names[0]), px(portrait ? 205 : 175), { size: portrait ? 68 : 64, weight: 600, color: C.ink, max: c.names[2], a, fam: BODY });
       if (!ok) tape(ctx, c.tape, 3, a, 0);
       const prev = s.t0 > E.run(s).t0 ? E.at(s.t0 - 0.0001) : null, [oa, ia] = prev ? xf(lt) : [0, 1];
-      if (prev && oa > 0.01) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * oa);
-      roadFact(ctx, s, p, t, lt, dur, ia * env);
-      flat = false;
-      if (ok) { const T = jr ? terr.all : terr.today; text(ctx, flatUsed ? 'Карта © OpenStreetMap, OpenFreeMap' : T ? 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag : '', px(60), H - px(36), { size: 28, weight: 400, color: C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
+      factInk = S.char === 'magazine' ? AP.bg : null;
+      try {
+        if (prev && oa > 0.01) roadFact(ctx, prev.s, prev.s.params || {}, s.t0 - 0.0001, prev.lt, prev.s.durationSec, env * oa);
+        roadFact(ctx, s, p, t, lt, dur, ia * env);
+      } finally { factInk = null; flat = false; }
+      if (ok) { const T = jr ? terr.all : terr.today; text(ctx, flatUsed ? 'Карта © OpenStreetMap, OpenFreeMap' : T ? 'Рельеф: AWS Terrain Tiles · высоты ×' + T.exag : '', px(60), H - px(36), { size: 28, weight: 400, color: portrait && S.char === 'magazine' ? AP.bg : C.secondary, a: a * 0.8, max: (W - px(120)) / u }); }
     }
     function roadFact(ctx, s, p, t, lt, dur, a) {
       const c = L.road;
@@ -501,13 +510,13 @@
         const ex = gi >= pr.length - 1 ? X(pr.length - 1) : lerp(X(gi), X(gi + 1), gf), ey = gi >= pr.length - 1 ? Y(pr[pr.length - 1]) : lerp(Y(pr[gi]), Y(pr[gi + 1]), gf);
         ctx.save(); ctx.globalAlpha *= a; ctx.translate(0, dy);
         ctx.beginPath(); ctx.moveTo(cx, cy + chh); ctx.lineTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineTo(ex, cy + chh); ctx.closePath();
-        ctx.fillStyle = window.Appearance.rgba(AP.route, .18); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = (c.small ? 6 : 12) * u; ctx.strokeStyle = C.accent; ctx.stroke();
+        ctx.fillStyle = window.Appearance.rgba(factInk || AP.route, .18); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(cx, Y(pr[0])); for (let i = 1; i <= Math.min(gi, pr.length - 1); i++) ctx.lineTo(X(i), Y(pr[i])); ctx.lineTo(ex, ey); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = (c.small ? 6 : 12) * u; ctx.strokeStyle = factInk || C.accent; ctx.stroke();
         const mi = pr.indexOf(hi);
-        if (p.maxEle != null && g >= mi) { const ma = smooth((g - mi) / 3); ctx.globalAlpha *= ma; ctx.beginPath(); ctx.arc(X(mi), Y(hi), 14 * u, 0, 6.2832); ctx.fillStyle = C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = C.accent; ctx.stroke(); }
+        if (p.maxEle != null && g >= mi) { const ma = smooth((g - mi) / 3); ctx.globalAlpha *= ma; ctx.beginPath(); ctx.arc(X(mi), Y(hi), 14 * u, 0, 6.2832); ctx.fillStyle = factInk ? AP.text : C.card; ctx.fill(); ctx.lineWidth = 7 * u; ctx.strokeStyle = factInk || C.accent; ctx.stroke(); }
         ctx.restore();
         tape(ctx, c.tape, -4, a, dy);
-        text(ctx, `${E.fmtN(Math.round(lo))} → ${E.fmtN(Math.round(hi))} м над уровнем моря`, box(c.cap)[0], box(c.cap)[1] + px(c.small ? 32 : 48), { size: c.small ? 32 : 44, weight: 500, color: C.secondary, max: c.cap[2], a });
+        text(ctx, `${E.fmtN(Math.round(lo))} → ${E.fmtN(Math.round(hi))} м над уровнем моря`, box(c.cap)[0], box(c.cap)[1] + px(c.small ? 32 : 48), { size: c.small ? 32 : 44, weight: 500, color: factInk || C.secondary, max: c.cap[2], a });
       }
       metricCard(ctx, c.metric, { kicker: 'набор высоты', big: '+' + E.fmtN(p.gain) + ' м', sub: pr ? c.small ? '' : 'рельеф дня' : 'за день ' + E.today.day, size: c.small ? 110 : L.counter }, a, c.small ? 0 : (1 - easeOut(lt / 0.6)) * px(24), -1, 13);
     }
