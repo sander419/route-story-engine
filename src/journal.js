@@ -137,7 +137,11 @@
       if (!LOGO || !LOGO.ok) return false; const im = LOGO.img, sc = Math.min(maxW / im.width, maxH / im.height), w = im.width * sc, h = im.height * sc;
       ctx.save(); ctx.globalAlpha *= a == null ? 1 : a; ctx.drawImage(im, align === 'right' ? x - w : x, y, w, h); ctx.restore(); return true;
     }
-    const logoEnds = (ctx, a) => { if (LOGO && LOGO.ok && E.logo.where !== 'header') drawLogo(ctx, W - px(86), H - px(portrait ? 330 : 250), px(portrait ? 380 : 420), px(portrait ? 160 : 150), 'right', a); };
+    const logoEnds = (ctx, a, minY = 0) => {
+      if (!LOGO || !LOGO.ok || E.logo.where === 'header') return;
+      const y = Math.max(H - px(portrait ? 330 : 250), minY), h = Math.min(px(portrait ? 160 : 150), H - px(60) - y);
+      if (h > 0) drawLogo(ctx, W - px(86), y, px(portrait ? 380 : 420), h, 'right', a);
+    };
     function text(ctx, str, x, y, o) {   // o: size(u), fam, weight, color, align, max(u), ls(em), a
       if (str == null || str === '') return 0; if (o.size <= 58) str = relabel(str);
       ctx.save(); ctx.globalAlpha *= o.a == null ? 1 : o.a; ctx.fillStyle = o.color || C.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = 'alphabetic';
@@ -336,15 +340,23 @@
         ctx.save(); ctx.globalAlpha *= f(1.0, 0.5); ctx.translate(W - px(portrait ? 230 : 300), portrait ? H - px(470) : H / 2); ctx.rotate(-0.21); ctx.strokeStyle = AP.accent; ctx.lineWidth = px(7); ctx.beginPath(); ctx.arc(0, 0, px(118), 0, 6.2832); ctx.stroke(); ctx.lineWidth = px(3); ctx.beginPath(); ctx.arc(0, 0, px(98), 0, 6.2832); ctx.stroke();
         text(ctx, 'ДЕНЬ', 0, -px(18), { size: 34, weight: 600, ls: .14, color: AP.accent, align: 'center' }); text(ctx, String(E.today.day), 0, px(52), { size: 78, fam: HEAD, weight: HW, color: AP.accent, align: 'center' }); ctx.restore();
       }
+      const km = p && p.km ? Math.round(p.km) : null, items = [km ? [km + ' км', 'дистанция'] : null, p && p.time ? [p.time, 'в пути'] : null, p && p.gain ? ['+' + p.gain + ' м', 'набор высоты'] : null, p && p.maxEle ? [p.maxEle + ' м', 'высшая точка'] : null].filter(Boolean).slice(0, 4);
       const top = px(portrait ? 300 : 230);
       text(ctx, ct.from, x, top, { size: 46, weight: 500, max: tw, color: AP.muted, a: f(0.1) });
       let size = ct.small ? 132 : portrait ? 170 : 150, lines;
-      while (!(lines = wrapLines(ctx, ct.to, HW, px(size), HEAD, px(tw), 3)) && size > 60) size -= 6;
+      const shelf = !items.length ? 100 : portrait ? (items.length - 1) * 215 + 196 : 252;
+      const limit = H / u - (LOGO && E.logo.where !== 'header' ? 160 : portrait ? 160 : 100) - shelf;
+      // Длинная фраза переносится, а не сжимается в одну мелкую строку; снизу остаётся место для цифр и логотипа.
+      for (;;) {
+        lines = wrapLines(ctx, ct.to, HW, px(size), HEAD, px(tw), portrait ? 5 : 3);
+        const bottom = top / u + size + 40 + size * 1.04 * ((lines || []).length - 1) + (portrait ? 130 : 110);
+        if ((lines && bottom <= limit) || size <= 60) break;
+        size = Math.max(60, size - 6);
+      }
       const titleY = top + px(size + 40), ls = lines || [ct.to];
       ls.forEach((ln, i) => text(ctx, ln, x, titleY + i * px(size * 1.04), { size, weight: HW, fam: HEAD, max: tw, ls: -.035, color: AP.text, a: f(0.3) }));
       const fy = titleY + px(size * 1.04) * (ls.length - 1) + px(portrait ? 130 : 110);
       ctx.save(); ctx.globalAlpha *= f(0.6); ctx.fillStyle = AP.accent; ctx.fillRect(x, fy - px(60), px(100), px(10)); ctx.restore();
-      const km = p && p.km ? Math.round(p.km) : null, items = [km ? [km + ' км', 'дистанция'] : null, p && p.time ? [p.time, 'в пути'] : null, p && p.gain ? ['+' + p.gain + ' м', 'набор высоты'] : null, p && p.maxEle ? [p.maxEle + ' м', 'высшая точка'] : null].filter(Boolean).slice(0, 4);
       if (!items.length) { if (!dateStamp(ctx, s, p, x, fy + px(40), tw, f(.7))) text(ctx, E.dateLine(s, p), x, fy + px(40), { size: 54, weight: 600, color: AP.text, max: tw, a: f(0.7) }); logoEnds(ctx, f(0.7)); return; }
       items.forEach(([v, l], i) => {
         const d = 0.7 + i * 0.18, cw = portrait ? 0 : (px(1700) / items.length), X = portrait ? x : x + i * cw, Y = portrait ? fy + px(i * 215) : fy + px(60);
@@ -352,7 +364,8 @@
         text(ctx, l.toUpperCase(), X, Y + px(portrait ? 164 : 160), { size: 36, weight: 600, ls: .12, color: AP.accent, max: portrait ? tw : cw / u - 30, a: f(d + 0.1) });
       });
       if (!dateStamp(ctx, s, p, x, H - px(portrait ? 150 : 90), tw, f(1.1))) text(ctx, E.dateLine(s, p), x, H - px(portrait ? 150 : 90), { size: 40, color: AP.muted, max: tw, a: f(1.1) });
-      logoEnds(ctx, f(1.1));
+      // Логотип начинается ниже последней подписи; высота ограничена свободным полем до низа.
+      logoEnds(ctx, f(1.1), fy + px(portrait ? (items.length - 1) * 215 + 196 : 252));
     }
 
     /* ---------- рельеф: настоящие высоты, 3D-вид с маршрутом поверх (Terrain), запасной вариант — эскиз ---------- */
