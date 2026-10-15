@@ -24,15 +24,30 @@ try {
         const scene = Episode.createEpisodeScene({ journey: J, plan, styleId, appearance, relief: false }, W, H);
         await scene.assetsReady;
         const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-        const ctx = cv.getContext('2d'), outside = [], original = ctx.fillText.bind(ctx);
+        const ctx = cv.getContext('2d'), outside = [], textBoxes = [], icons = [], original = ctx.fillText.bind(ctx), drawImage = ctx.drawImage.bind(ctx);
+        ctx.drawImage = function(im,...args) {
+          if (im._routeIcon && args.length === 4 && this.globalAlpha > .1) {
+            const [x,y,w,h] = args, tr = this.getTransform(), a = tr.transformPoint({x,y}), b = tr.transformPoint({x:x+w,y:y+h});
+            icons.push([a.x,a.y,b.x,b.y]);
+          }
+          return drawImage(im,...args);
+        };
         ctx.fillText = function(str,x,y) {
           const m = this.measureText(str), tr = this.getTransform();
           const qs = [[x-m.actualBoundingBoxLeft,y-m.actualBoundingBoxAscent],[x+m.actualBoundingBoxRight,y+m.actualBoundingBoxDescent]].map(([x,y])=>tr.transformPoint({x,y}));
           if (this.globalAlpha > .1 && qs.some(q=>q.x < -2 || q.y < -2 || q.x > W+2 || q.y > H+2)) outside.push(str);
+          if (this.globalAlpha > .5) {
+            textBoxes.push({ str, box: [qs[0].x,qs[0].y,qs[1].x,qs[1].y] });
+            if (kind === 'arrival' && qs[1].y < 160*u && this.fillStyle !== appearance.text) throw new Error(`${fmt}/${styleId}: шапка прибытия сливается с фоном (${this.fillStyle})`);
+          }
           return original(str,x,y);
         };
         scene.draw(ctx,3);
         if (outside.length) throw new Error(`${fmt}/${kind}/${styleId}: текст за кадром ${outside}`);
+        if (kind === 'photo') for (const icon of icons) for (const q of textBoxes) {
+          const box = q.box;
+          if (icon[0] < box[2] && icon[2] > box[0] && icon[1] < box[3] && icon[3] > box[1]) throw new Error(`${fmt}/${styleId}: значок перекрывает текст «${q.str}»`);
+        }
         if (theme === 'common') {
           // Свободная область под подписью, без текста, шапки и карты.
           const y = kind === 'photo' ? H - (fmt === 'v' ? 255 : 245)*u : kind === 'arrival' ? (fmt === 'v' ? 695 : 595)*u : (fmt === 'v' ? 1210 : 1000)*u;

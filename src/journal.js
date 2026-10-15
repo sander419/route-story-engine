@@ -542,7 +542,7 @@
       const captionY = H - px(portrait ? 330 : 300) - ((lines || [cap]).length - 1) * size * 1.15;
       (lines || [cap]).forEach((ln, i) => text(ctx, ln, x, captionY + i * size * 1.15, { size: size / u, weight: 600, color: AP.photoText, max: max / u }));
       styleDetail(ctx, x, H - px(portrait ? 255 : 245), 280, AP.photoText, 1);
-      text(ctx, E.photoDate(m, s), x, H - px(190), { size: 38, color: AP.photoText, max: max / u });
+      text(ctx, E.photoDate(m, s), x, H - px(190), { size: 38, color: AP.photoText, max: (max - px(portrait ? 0 : 170)) / u });
       if (m.credit) text(ctx, m.credit, x, H - px(112), { size: 30, color: AP.photoText, max: (max - px(170)) / u });
       ctx.restore();
     }
@@ -602,7 +602,8 @@
 
     /* шапка страницы: «День 47» от руки слева, дата справа, тонкая линия — как в бумажном дневнике; держится весь ролик, не мигает */
     function pageHeader(ctx, s, p, dark, t) {
-      const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? AP.finalText : FAM[s.recipe] === 'cover' ? AP.text : FAM[s.recipe] === 'photo' ? AP.photoText : C.ink;
+      const onPhoto = FAM[s.recipe] === 'photo' && E.run(s).shots.some(q => ['photo-reveal', 'highlights-reel'].includes(q.recipe) && (q.params.mediaIds || []).some(id => E.mediaById[id]));
+      const x = px(86), y = px(portrait ? 126 : 94), right = W - x, fin = FAM[s.recipe] === 'fin', ink = fin ? AP.finalText : onPhoto ? AP.photoText : C.ink;
       if (LOGO && LOGO.ok && E.logo.where !== 'ends') drawLogo(ctx, x, y - px(46), px(portrait ? 320 : 360), px(60), 'left', 1); else text(ctx, E.NAME || 'ROUTE STORY', x, y, { size: 36, weight: 500, max: portrait ? 470 : 900, color: ink });
       text(ctx, E.journey.schematic ? 'ИСТОРИЯ ПУТИ' : 'ДЕНЬ ' + E.today.day, right, y, { size: 34, weight: 500, align: 'right', max: 390, color: ink });
       ctx.save(); ctx.strokeStyle = window.Appearance.rgba(ink, .24); ctx.lineWidth = px(1); ctx.beginPath(); ctx.moveTo(x, y + px(34)); ctx.lineTo(right, y + px(34)); ctx.stroke(); ctx.restore();
@@ -622,7 +623,7 @@
       }
       const iso = ar && countryIso(E.countryOf(ar, ar.params));
       if (iso && E.showFlags) pinFlag(ctx, iso, portrait ? W - px(110) : px(120), portrait ? px(400) : px(340), 64, 0, a);
-      if (E.stk(1)) fitImg(ctx, E.stk(1), portrait ? [870, 1690, 110, 110] : [500, 730, 110, 110], a, 0, 0, false);
+      if (E.stk(1)) fitImg(ctx, E.stk(1), portrait ? [870, 1690, 110, 110] : [W / u - 196, H / u - 222, 110, 110], a, 0, 0, false);
     }
     function drawPage(ctx, t, s, su, lt, TR) {
       const dur = s.durationSec, fam = FAM[s.recipe] || 'road', p = s.params || {};
