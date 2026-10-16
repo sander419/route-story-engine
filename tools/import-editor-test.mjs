@@ -13,9 +13,9 @@ const loop = day => {
 };
 const b = await chromium.launch({ channel: 'msedge', headless: true });
 try {
-  for (const mode of process.env.CASE ? [process.env.CASE] : ['duplicate', 'duplicate-trim', 'saved', 'dates', 'trim', 'invalid']) {
+  for (const mode of process.env.CASE ? [process.env.CASE] : ['duplicate', 'duplicate-trim', 'saved', 'dates', 'trim', 'invalid', 'trim-pending']) {
     const c = await b.newContext(), p = await c.newPage(), errors = [];
-    p.on('pageerror', e => errors.push(e.message));
+    p.on('pageerror', e => { errors.push(e.message); console.error(mode, e.stack); });
     try {
       await p.route('https://nominatim.openstreetmap.org/**', r => r.fulfill({ contentType: 'application/json', body: '{}' }));
       await p.goto('http://localhost:4180/'); await p.waitForFunction(() => window.__app?.state.demoDay);
@@ -62,11 +62,21 @@ try {
         assert.equal(after.note, ''); assert.deepEqual(after.photos, []);
         assert.ok(after.historyPhotos.includes('Снимок первого дня')); assert.ok(after.historyNotes.includes(edited.note));
       } else {
+        if (mode === 'trim-pending') {
+          await p.evaluate(() => { const original = File.prototype.text; File.prototype.text = async function() { await new Promise(resolve => window.releaseTrimRead = resolve); return original.call(this); }; });
+        }
         if (mode === 'invalid') {
           await p.setInputFiles('#file', { name: 'bad.txt', mimeType: 'text/plain', buffer: Buffer.from('not a route') });
           await p.waitForFunction(() => !document.getElementById('err').hidden);
         }
         await p.evaluate(() => { const e = document.getElementById('trimA'); e.value = 20; e.dispatchEvent(new Event('input', { bubbles: true })); });
+        if (mode === 'trim-pending') {
+          await p.waitForFunction(() => typeof window.releaseTrimRead === 'function');
+          await p.click('#tabs button[data-t="text"]'); await p.fill('#note', 'Фраза во время обрезки');
+          await p.waitForTimeout(600); assert.deepEqual(errors, [], 'предпросмотр строится по пустой временной базе');
+          assert.notEqual(await p.evaluate(async () => (await RSDrafts.load())?.journey.days.length), 0, 'автосохранение записало временную пустую базу');
+          await p.evaluate(() => releaseTrimRead()); edited.note = 'Фраза во время обрезки';
+        }
         await p.waitForTimeout(1200); const after = await snap();
         assert.ok(after.km / initial.km > .75 && after.km / initial.km < .85, 'обрезка перестала работать после выбора файла');
         assert.equal(after.days, 1, 'обрезка добавила лишний день');

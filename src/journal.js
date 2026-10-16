@@ -294,27 +294,19 @@
       const im = flagOf(iso, 'emblem'); if (!im) return; const sc = px(sU) / Math.max(im.width, im.height), w = im.width * sc, h = im.height * sc;
       ctx.save(); ctx.globalAlpha *= a * 0.95; ctx.shadowColor = 'rgba(30,20,8,.35)'; ctx.shadowBlur = 16 * u; ctx.shadowOffsetY = 8 * u; ctx.drawImage(im, x - w / 2, y - h / 2, w, h); ctx.restore();
     }
-    // Страна — единая подпись под шапкой: флаг, название и герб в общей рамке.
-    function countryBand(ctx, country, a, onPhoto = false) {
+    // Лёгкая строка метаданных: без плашки и рамки, ниже названия места.
+    function countryBand(ctx, country, a, onPhoto = false, topU = 162) {
       const iso = countryIso(country), flag = flagOf(iso, 'flag'); if (!flag) return;
-      const emblem = flagOf(iso, 'emblem'), x = px(86), y = px(162), h = px(68), ink = onPhoto ? AP.photoText : AP.text;
+      const emblem = flagOf(iso, 'emblem'), x = px(86), y = px(topU), h = px(48), ink = onPhoto ? AP.photoText : AP.text;
       ctx.save(); ctx.font = `600 ${px(34)}px ${BODY}`;
-      const labelW = Math.min(ctx.measureText(country).width, W - px(emblem ? 380 : 300));
-      const w = labelW + px(emblem ? 198 : 116), radius = CH.glass ? h / 2 : CH.circle ? 0 : px(5);
+      const labelW = Math.min(ctx.measureText(country).width, W - px(emblem ? 330 : 260));
       ctx.globalAlpha *= a;
-      ctx.fillStyle = onPhoto ? AP.shade : AP.bg;
-      ctx.strokeStyle = window.Appearance.rgba(ink, CH.glass ? .45 : .3); ctx.lineWidth = px(2);
-      if (CH.glass) { ctx.shadowColor = window.Appearance.rgba(AP.accent,.25); ctx.shadowBlur = px(12); }
-      ctx.beginPath(); ctx.roundRect(x,y,w,h,radius); ctx.fill(); ctx.shadowBlur = 0;
-      if (CH.stamp) ctx.setLineDash([px(7),px(4)]); ctx.stroke(); ctx.setLineDash([]);
-      if (CH.circle) { ctx.fillStyle = AP.accent; ctx.fillRect(x,y,px(6),h); }
-      const fw = Math.min(px(58), px(44) * flag.width / flag.height), fh = fw * flag.height / flag.width;
-      ctx.drawImage(flag,x+px(18),y+(h-fh)/2,fw,fh);
-      text(ctx,country,x+px(92),y+px(46),{ size:34,weight:600,color:ink,max:labelW/u });
+      const fw = Math.min(px(58), px(40) * flag.width / flag.height), fh = fw * flag.height / flag.width;
+      ctx.drawImage(flag,x,y+(h-fh)/2,fw,fh);
+      text(ctx,country,x+px(76),y+px(35),{ size:34,weight:600,color:ink,max:labelW/u });
       if (emblem) {
-        const ex = x+w-px(39), ey = y+h/2;
-        ctx.fillStyle = '#fff8ec'; ctx.beginPath(); ctx.arc(ex,ey,px(27),0,Math.PI*2); ctx.fill();
-        const scale = px(46)/Math.max(emblem.width,emblem.height), ew = emblem.width*scale, eh = emblem.height*scale;
+        const ex = x+px(76)+labelW+px(44), ey = y+h/2;
+        const scale = px(44)/Math.max(emblem.width,emblem.height), ew = emblem.width*scale, eh = emblem.height*scale;
         ctx.drawImage(emblem,ex-ew/2,ey-eh/2,ew,eh);
       }
       ctx.restore();
@@ -655,12 +647,18 @@
       photoScene(ctx, ph, ph.params, t, t - run.t0, run.t1 - run.t0, !!ar);
       const label = ar ? E.arrivalLabel(ar, ar.params) : portrait ? 'Моменты пути' : null;
       const x = px(86), y = portrait ? px(300) : px(260), width = W / u - 172;
+      let countryTop = 180;
       if (label) {
         let size = portrait ? 100 : 90, lines;
-        while (!(lines = wrapLines(ctx, label, HW, px(size), HEAD, px(width), portrait ? 1 : 3)) && size > 32) size -= 4;
+        while (size > 32) {
+          lines = wrapLines(ctx, label, HW, px(size), HEAD, px(width), portrait ? 1 : 3);
+          if (lines && (portrait || y / u + (lines.length - 1) * size * 1.17 + size * .3 + 80 <= 540)) break;
+          size -= 4;
+        }
         (lines || [label]).forEach((ln, i) => text(ctx, ln, x, y + i * px(size * 1.17), { size, fam: HEAD, weight: HW, max: width, color: AP.photoText, a }));
+        countryTop = y / u + ((lines || [label]).length - 1) * size * 1.17 + size * .3 + 32;
       }
-      countryBand(ctx,E.countryOf(ar || s,ar ? ar.params : p),a,true);
+      countryBand(ctx,E.countryOf(ar || s,ar ? ar.params : p),a,true,countryTop);
       if (E.stk(1)) fitImg(ctx, E.stk(1), portrait ? [870, 1690, 110, 110] : [W / u - 196, H / u - 222, 110, 110], a, 0, 0, false);
     }
     function drawPage(ctx, t, s, su, lt, TR) {

@@ -775,6 +775,7 @@
     clearTimeout(draftTimer);
     draftStatus('Сохраняю фото и текст в этом браузере…');
     const save = () => {
+      if (!isOwn() || state.mode !== 'series' || !state.route || state.demoDay || !state.seriesBase.days.length) return;
       const rev = ++draftRevision, id = sourceId;
       let data;
       try {
@@ -1004,7 +1005,7 @@
     if (state.mode !== 'journey' && state.route) parts.push(createScene(state.route, state.styleId, o, w, h));
     return parts.length > 1 ? window.Journey.composite(parts, w, h) : parts[0];
   }
-  function ready() { if (state.mode === 'series') return !!state.seriesBase; return state.mode === 'journey' ? !!state.journeyData : state.mode === 'both' ? !!(state.journeyData && state.route) : !!state.route; }
+  function ready() { if (state.mode === 'series') return !!state.seriesBase?.days?.length; return state.mode === 'journey' ? !!state.journeyData : state.mode === 'both' ? !!(state.journeyData && state.route) : !!state.route; }
 
   function setMode(m) {
     state.mode = m;
@@ -1074,6 +1075,7 @@
     const [w, h] = previewSize();
     cv.width = w; cv.height = h;
     fontsReady.then(() => {
+      if (!ready()) return;   // обрезка могла временно восстановить базу без последнего дня
       scene = buildScene(w, h);
       if (!keepT && t > scene.duration) t = 0;
       dirty = true;

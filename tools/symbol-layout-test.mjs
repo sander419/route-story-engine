@@ -10,11 +10,11 @@ try {
     await Appearance.ready(); const { J: base, res } = __app.state.lastEp, frames = [];
     const photo = res.plan.beats.find(b => b.recipe === 'photo-reveal');
     const skins = { journal: ['paper','yeseva','geologica'], night: ['night','din','din'], editorial: ['magazine','geologica','geologica'], paper: ['trail','prata','onest'] };
-    for (const country of ['Казахстан', 'Турция', 'Неизвестная страна']) for (const fmt of ['v','h']) for (const kind of ['photo','arrival']) for (const [styleId, sk] of Object.entries(skins)) for (const showFlags of [true, false]) {
+    for (const country of ['Казахстан', 'Турция', 'Неизвестная страна']) for (const fmt of ['v','h']) for (const kind of ['photo','arrival','sequence']) for (const [styleId, sk] of Object.entries(skins)) for (const showFlags of [true, false]) {
       const W = fmt === 'v' ? 540 : 960, H = fmt === 'v' ? 960 : 540, u = .5;
       const J = { ...base, days: base.days.map(d => ({ ...d, country })), dayNotes: null };
       const shot = kind === 'photo' ? photo : { recipe: 'checkpoint-arrival', params: { label: 'Длинное название места прибытия на маршруте', kind: 'city' } };
-      const plan = { ...res.plan, durationSec: 5, beats: [{ ...shot, startSec: 0, durationSec: 5 }] };
+      const plan = kind === 'sequence' ? { ...res.plan, durationSec: 9, beats: [{ recipe: 'checkpoint-arrival', params: { label: 'Байкал', kind: 'city' }, startSec: 0, durationSec: 3 }, { ...photo, startSec: 3, durationSec: 6 }] } : { ...res.plan, durationSec: 5, beats: [{ ...shot, startSec: 0, durationSec: 5 }] };
       const scene = Episode.createEpisodeScene({ journey: J, plan, styleId, showFlags, relief: false, appearance: Appearance.normalize({ ...Appearance.palettes[sk[0]], heading: sk[1], body: sk[2] }) }, W, H); await scene.assetsReady;
       const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d'), imgs = [], texts = [];
       const draw = ctx.drawImage.bind(ctx), text = ctx.fillText.bind(ctx);
@@ -26,6 +26,8 @@ try {
       if (showFlags && country !== 'Неизвестная страна') {
         const label = texts.find(t => t.s === country); if (!label) throw new Error(name + ': флаг не связан с названием страны');
         const flag = imgs.find(im => im.src.includes('-flag.')); if (!flag) throw new Error(name + ': нет флага');
+        const title = texts.find(t => t.s === 'Байкал');
+        if (title && label.box[1] < title.box[3] + 20*u) throw new Error(name + ': строка страны не отделена от заголовка Байкал');
         const center = b => [(b[0]+b[2])/2,(b[1]+b[3])/2];
         if (Math.abs(center(flag.box)[1] - center(label.box)[1]) > 40*u) throw new Error(name + ': флаг оторван от подписи');
         if (country === 'Казахстан' && !imgs.some(im => im.src.includes('-emblem.'))) throw new Error(name + ': герб не вписан в группу');
@@ -38,7 +40,7 @@ try {
       if (country === 'Казахстан' && showFlags) frames.push({ name: `${kind}-${styleId}-${fmt}`, data: cv.toDataURL().split(',')[1] });
     } return frames;
   });
-  assert.equal(frames.length, 16); mkdirSync('out/country-layout', { recursive: true });
+  assert.equal(frames.length, 24); mkdirSync('out/country-layout', { recursive: true });
   for (const f of frames) writeFileSync(`out/country-layout/${f.name}.png`, Buffer.from(f.data,'base64'));
-  console.log('Страна: флаг, название и герб вместе; без наложений, неизвестных данных и выдуманного герба — 96 кадров OK');
+  console.log('Страна: подпись, флаг и герб без наложений; arrival+photo с Байкалом, неизвестные данные и on/off — 144 кадра OK');
 } finally { await b.close(); }
