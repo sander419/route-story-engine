@@ -255,6 +255,8 @@
   /* ---- что показывать в ролике ---- */
   const SHOWS = [['photos', 'Фото'], ['phrase', 'Главная фраза'], ['notes', 'Заметки на маршруте'], ['places', 'Города по пути'], ['weather', 'Погода'], ['ele', 'Высота и профиль'], ['time', 'Время в пути'], ['flags', 'Флаг страны'], ['stickers', 'Стикеры'], ['relief', '3D-рельеф вместо плоской карты']];
   state.show = Object.fromEntries(SHOWS.map(([k]) => [k, k !== 'relief'])); state.relief = false;   // по умолчанию плоская карта; 3D-рельеф — по галочке
+  state.mapZoom = 1;
+  $('mapZoom').onchange = () => { state.mapZoom = +$('mapZoom').value; t = 0; rebuild(); };
   SHOWS.forEach(([k, nm]) => {
     const l = document.createElement('label'); l.className = 'c'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = k !== 'relief'; cb.dataset.k = k;
     cb.onchange = () => { state.show[k] = cb.checked; state.relief = state.show.relief; t = 0; rebuild(); };
@@ -708,7 +710,7 @@
       photoPins: tot && state.show.photos ? (state.o.photos || []).filter((p) => p.s != null).map((p) => ({ f: Math.min(1, Math.max(0, p.s / tot)), url: p.url })) : [],
       stickers: window.StyleIcons.legacyEnabled && state.show.stickers ? (state.o.stickers || []).map((x) => x || null) : [], showFlags: state.show.flags, showRelief: state.show.relief, appearance: state.appearance,
     };
-    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, labels: state.labels, logo: state.logo, ...extra }, w, h);
+    return window.Episode.createEpisodeScene({ journey: J, plan: res.plan, styleId: state.styleId, lang: state.o.lang, relief: state.relief !== false, labels: state.labels, logo: state.logo, mapZoom: state.mapZoom, ...extra }, w, h);
   }
   const NAMES = { hook: 'завязка', context: 'контекст', 'new-leg': 'новый участок', achievement: 'достижение', moment: 'момент', proof: 'доказательство', outro: 'финал' };
   function renderSeriesPanel(res, change, J) {

@@ -75,7 +75,7 @@
     return e;
   }
 
-  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, labels = null, logo = null, trackNotes = [], photoPins = [], stickers = [], showFlags = true, showRelief = true, appearance = null }, W, H) {
+  function createEpisodeScene({ journey, plan, styleId, lang = 'ru', relief = true, labels = null, logo = null, trackNotes = [], photoPins = [], stickers = [], showFlags = true, showRelief = true, appearance = null, mapZoom = 1 }, W, H) {
     /* Лицо героя (не меняется от стиля к стилю): знак, цвет, имя. Стиль карты — одежда. */
     const S0 = window.RS.STYLES[styleId] || window.RS.STYLES.night, PF = journey.profile || {};
     const palette = window.Appearance.normalize(appearance);
@@ -288,7 +288,7 @@
       return 1;
     }
 
-    const tilesAt = (t) => (S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : J && J.flatTiles && !(relief && showRelief) ? J.flatTiles() : []);
+    const tilesAt = (t) => (mapZoom > 1 && J && J.flatTiles ? J.flatTiles() : S.vec ? window.VMap.tilesAt(cam(t), ax, ay, W, H) : J && J.flatTiles && !(relief && showRelief) ? J.flatTiles() : []);
     const allMediaIds = [...new Set(shots.flatMap((s) => s.params.mediaIds || []))];
     const legacyIcons = window.StyleIcons.legacyEnabled;
     const wxId = wxPackId(WX), wxImg = wxId ? window.StyleIcons.image(styleId, wxId, S.accent) : null;
@@ -823,7 +823,7 @@
         get WX() { return WX; }, weatherIcon: () => wxImg && wxImg.ok ? wxImg.img : null, at: shotAt,
         run: (s) => { const i = shots.indexOf(s), f = famOf(s); let a = i, b = i; while (a > 0 && famOf(shots[a - 1]) === f) a--; while (b < shots.length - 1 && famOf(shots[b + 1]) === f) b++; return { t0: shots[a].t0, t1: shots[b].t1, shots: shots.slice(a, b + 1) }; },
         todaySet: () => ({ pts: todayPts, brk: todayBrk, cum: todayCum, today: true }),
-        manualSet, manualProgress,
+        manualSet, manualProgress, mapZoom: Number.isFinite(+mapZoom) ? clamp(+mapZoom, 1, 4) : 1,
         allSets: () => dayPts.map((d) => ({ pts: d.pts, brk: d.brk, cum: d.day === today.day ? todayCum : null, today: d.day === today.day })),
         reveal: (t) => todayReveal(t),
         wxPackId,

@@ -264,7 +264,8 @@
     }
     function sketch(ctx, coreBox, sets, tr, t, a, opts = {}) {
       const fitBox = opts.deco && E.pins.length ? [coreBox[0] + coreBox[2] * 0.22, coreBox[1], coreBox[2] * 0.56, coreBox[3]] : coreBox;
-      const F = fitPts(sets.flatMap((s) => [s.pts]), fitBox), today = sets.find((s) => s.today) || sets[sets.length - 1];
+      let F = fitPts(sets.flatMap((s) => [s.pts]), fitBox); const today = sets.find((s) => s.today) || sets[sets.length - 1];
+      if (E.mapZoom > 1) { const h = headAt(today.pts, today.cum, tr), base = F, q = base(opts.stop || [h.x,h.y]), [x,y,w,h2] = box(fitBox); F = p => { const v = base(p); return [x+w/2+(v[0]-q[0])*E.mapZoom,y+h2/2+(v[1]-q[1])*E.mapZoom]; }; }
       for (const s of sets) {
         if (s === today) continue;
         const st = stroke(ctx, s.pts, s.brk, F, null, 4 * u, C.guide, E.journey.schematic ? [14 * u, 10 * u] : null, a * 0.75); if (st) st.end();
@@ -419,7 +420,8 @@
       const amp = opts.amp || 0, intro = 1 - smooth(clamp((opts.lt != null ? opts.lt : t) / 5, 0, 1)), fovR = (38 * Math.PI) / 360, dist = (e * 1.15) / Math.tan(fovR) * (iw / ih > 1 ? 0.55 : 0.62);
       const cam = { cx: lerp(cx, hd ? hd.x : cx, 0.55 * follow), cy: lerp(cy, hd ? hd.y : cy, 0.55 * follow), dist, pitch: (opts.bleed ? 50 : 62) + 6 * easeOut(t / 14) - 22 * amp * intro, bearing: heading + 9 * Math.sin(t * 0.17) - 22 * amp * intro, fov: 38, fade: opts.bleed ? 0.2 : 0.05 };   // въезд: из высоты и сбоку — вниз и к маршруту, дальше медленный облёт
       if (FL) { const zw = Z[2] - Z[0], zh = Z[3] - Z[1]; cam.cx = cx; cam.cy = cy; cam.fax = (Z[0] + Z[2]) / 2; cam.fay = (Z[1] + Z[3]) / 2; cam.fz = Math.min(15, Math.max(3, Math.log2(Math.min(zw * 0.8 / Math.max(x1 - x0, 1e-6), zh * 0.8 / Math.max(y1 - y0, 1e-6))))) + 0.3 * smooth(opts.prog || 0); }
-      if (!FL) {   // вся пройденная часть маршрута должна быть в окне: камера отъезжает, если голова ушла далеко от центра (разрывы, петли, длинные дни)
+      if (E.mapZoom > 1) { const q = opts.stop || (hd ? [hd.x,hd.y] : today.pts[0]); cam.cx=q[0]; cam.cy=q[1]; cam.dist/=E.mapZoom; if(FL) cam.fz=Math.min(17,cam.fz-0.3*smooth(opts.prog||0)+Math.log2(E.mapZoom)); }
+      if (!FL && !(E.mapZoom > 1)) {   // в общем плане камера вмещает весь путь; при приближении следует за движением
         const smp = [], upto = !jr && hd ? hd.i : Infinity;
         for (const st of use) { const step = Math.max(1, Math.floor(st.pts.length / 60)); for (let i = 0; i < st.pts.length && i <= upto; i += step) smp.push(st.pts[i]); }
         if (hd) smp.push([hd.x, hd.y]);
@@ -456,10 +458,12 @@
     }
     const xf = (l, len = 0.6) => [1 - smooth(l / (len * 0.45)), smooth((l - len * 0.45) / (len * 0.55))];   // смена карточки: старая уходит, затем приходит новая — тексты не лежат друг на друге
     const roadZone = () => (portrait ? [px(60), px(300), W - px(60), H - px(620)] : [px(60), px(230), px(1330), H - px(150)]);
-    function flatTiles() {   // плитки плоской карты для предзагрузки перед экспортом: камеры дороги по сегодняшнему маршруту и по всему пути
+    let flatTileCache = null;
+    function flatTiles() {   // при приближении предзагружаем область всех положений камеры, а не только первого кадра
+      if (flatTileCache) return flatTileCache;
       if (!window.VMap) return []; const Z = roadZone(), out = [];
-      for (const b of [E.bboxToday(), E.bboxAll()]) { if (!b) continue; const fz = Math.min(15, Math.max(3, Math.log2(Math.min((Z[2] - Z[0]) * 0.8 / Math.max(b.x1 - b.x0, 1e-6), (Z[3] - Z[1]) * 0.8 / Math.max(b.y1 - b.y0, 1e-6))))); for (const dz of [0, 0.3]) out.push(...window.VMap.tilesAt({ cx: (b.x0 + b.x1) / 2, cy: (b.y0 + b.y1) / 2, z: fz + dz, rot: 0 }, (Z[0] + Z[2]) / 2, (Z[1] + Z[3]) / 2, W, H)); }
-      return out;
+      for (const b of [E.bboxToday(), E.bboxAll()]) { if (!b) continue; const fz = Math.min(15, Math.max(3, Math.log2(Math.min((Z[2] - Z[0]) * 0.8 / Math.max(b.x1 - b.x0, 1e-6), (Z[3] - Z[1]) * 0.8 / Math.max(b.y1 - b.y0, 1e-6))))); for (const dz of E.mapZoom > 1 ? [Math.log2(E.mapZoom)] : [0, 0.3]) { const z=Math.min(17,fz+dz), dx=E.mapZoom>1?(b.x1-b.x0)*2**z:0, dy=E.mapZoom>1?(b.y1-b.y0)*2**z:0; out.push(...window.VMap.tilesAt({ cx: (b.x0 + b.x1) / 2, cy: (b.y0 + b.y1) / 2, z, rot: 0 }, (Z[0] + Z[2]) / 2+dx/2, (Z[1] + Z[3]) / 2+dy/2, W+dx, H+dy)); } }
+      flatTileCache = [...new Map(out.map(q=>[`${q.z}/${q.x}/${q.y}`,q])).values()]; return flatTileCache;
     }
     function roadScene(ctx, s, p, t, lt, dur, jr, rs) {
       const c = L.road, env = rs.env, a = env;
