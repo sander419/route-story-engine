@@ -277,6 +277,7 @@
     function todayReveal(t) {
       const s = shots.find((x) => x.recipe === 'route-reveal' || x.recipe === 'camera-follow');
       if (!s) return 1; if (t < s.t0) return 0; if (t >= s.t1) return 1;
+      if (plan.requestedDurationSec) return smooth((t-s.t0)/(s.durationSec*.9));   // выбранная длина: линия, километры и часы движутся по одной шкале
       if (s.follow) { const uu = (t - s.t0) / s.durationSec; return uu < s.move ? 0 : fSample(s.follow, s.follow.f, followX(s, uu)); }
       return sine(clamp(((t - s.t0) / s.durationSec - s.move * 0.85) / (0.95 - s.move * 0.85), 0, 1));
     }

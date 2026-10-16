@@ -420,10 +420,31 @@
   }
 
   /* ================= Проверка плана ================= */
+  const LENGTHS = [20, 30, 45];
+  const timingLimit = b => { const n = ['photo-reveal','highlights-reel'].includes(b.recipe) ? Math.max(1,(b.params.mediaIds||[]).length) : 1; const min=200*n; return {min,max:Math.max(1500,min)}; };
+  function retime(plan, target) {
+    if (!LENGTHS.includes(target) || !plan?.beats?.length) throw new Error('Выберите длину 20, 30 или 45 секунд.');
+    const limits=plan.beats.map(timingLimit), weights=plan.beats.map(b=>Math.max(1,b.durationSec)*100);
+    const wanted=Math.max(limits.reduce((s,q)=>s+q.min,0),Math.min(limits.reduce((s,q)=>s+q.max,0),target*100));
+    const sum=k=>limits.reduce((s,q,i)=>s+clamp(weights[i]*k,q.min,q.max),0);
+    let lo=0,hi=1;while(sum(hi)<wanted)hi*=2;
+    for(let i=0;i<48;i++){const m=(lo+hi)/2;if(sum(m)<wanted)lo=m;else hi=m;}
+    const durations=limits.map((q,i)=>Math.round(clamp(weights[i]*hi,q.min,q.max)));
+    let diff=wanted-durations.reduce((s,d)=>s+d,0);
+    for(let i=0;diff&&i<durations.length*2;i++){const j=i%durations.length,step=Math.sign(diff);if(durations[j]+step>=limits[j].min&&durations[j]+step<=limits[j].max){durations[j]+=step;diff-=step;}}
+    let t=0;const beats=plan.beats.map((b,i)=>{const next={...b,startSec:t/100,durationSec:durations[i]/100};t+=durations[i];return next;});
+    return {...plan,beats,durationSec:t/100,requestedDurationSec:target,fitting:[plan.fitting,`выбрано около ${target} с, фактически ${t/100} с`].filter(Boolean).join('; ')};
+  }
   function validate(plan, J) {
     const errors = [], warnings = [];
     const [, , hMin, hMax] = DURATION[plan.episodeType] || [0, 0, 18, 30];
-    if (plan.durationSec < hMin - 0.01 || plan.durationSec > hMax + 0.01) errors.push(`длительность ${plan.durationSec} с вне ${hMin}–${hMax}`);
+    if (plan.requestedDurationSec != null) {
+      if (!LENGTHS.includes(plan.requestedDurationSec) || !plan.beats.length) errors.push('неверная выбранная длительность');
+      else { const expected=retime(plan,plan.requestedDurationSec);let end=0;
+        for(const b of plan.beats){const lim=timingLimit(b);if(Math.abs(b.startSec-end)>.011||b.durationSec*100<lim.min-.01||b.durationSec*100>lim.max+.01)errors.push('неверное время экрана');end+=b.durationSec;}
+        if(Math.abs(plan.durationSec-expected.durationSec)>.011||Math.abs(end-plan.durationSec)>.011)errors.push('длина не совпадает с экранами');
+      }
+    } else if (plan.durationSec < hMin - 0.01 || plan.durationSec > hMax + 0.01) errors.push(`длительность ${plan.durationSec} с вне ${hMin}–${hMax}`);
     const types = TYPES[plan.episodeType]; if (!types) errors.push('неизвестный тип');
     for (const [beat, req] of types || []) if (req && !plan.beats.some((b) => b.beat === beat)) errors.push(`нет обязательного бита ${beat}`);
     const mediaIds = new Set((J.media || []).map((m) => m.id));
@@ -446,6 +467,6 @@
     return { episodeId: plan.episodeId, episodeType: plan.episodeType, recipes: plan.beats.map((b) => b.recipe), byBeat, hookRecipe: byBeat.hook, momentRecipe: byBeat.moment, outroRecipe: byBeat.outro };
   }
 
-  const API = { summarize, addDay, buildContext, direct, validate, summaryOf, compressHistory, pickWaypoints, weatherLine, pickHook, HOOKS, RECIPES, TYPES, DURATION, hash };
+  const API = { summarize, addDay, buildContext, direct, validate, retime, summaryOf, compressHistory, pickWaypoints, weatherLine, pickHook, HOOKS, RECIPES, TYPES, DURATION, hash };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Director = API;
 })(typeof window !== 'undefined' ? window : globalThis);

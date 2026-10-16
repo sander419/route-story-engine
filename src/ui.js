@@ -349,6 +349,8 @@
   const RN = { 'day-card': 'Обложка', 'trip-title': 'Обложка', 'season-card': 'Обложка', 'progress-overview': 'Путь до сегодня', 'overview-to-detail': 'Переход к дню', 'route-reveal': 'Дорога', 'camera-follow': 'Дорога', 'elevation-profile': 'Профиль высот', 'weather-card': 'Погода', 'time-on-road': 'Время в пути', 'high-point': 'Высшая точка', 'distance-counter': 'Километры', 'checkpoint-arrival': 'Прибытие', 'photo-reveal': 'Фото', 'note-card': 'Заметка', 'highlights-reel': 'Фото пути', 'pullback': 'Финал', 'progress-poster': 'Финал', 'journey-recap': 'Вехи пути', 'day-summary': 'Итог дня' };
   const LOCKED = new Set(['day-card', 'trip-title', 'season-card', 'progress-overview', 'overview-to-detail', 'route-reveal', 'camera-follow', 'pullback', 'progress-poster', 'journey-recap', 'day-summary']);
   state.edits = { off: {}, dur: {} };
+  state.videoLength = 0;
+  $('videoLength').onchange = () => { state.videoLength=+$('videoLength').value; t=0; rebuild(); };
   function applyEdits(plan) {
     const E = state.edits; state.fullBeats = plan.beats;
     let t = 0; const beats = plan.beats.filter((b) => !E.off[b.recipe] || LOCKED.has(b.recipe)).map((b) => { const d = Math.max(1.5, Math.min(15, b.durationSec + (E.dur[b.recipe] || 0))); const o = { ...b, startSec: Math.round(t * 100) / 100, durationSec: Math.round(d * 100) / 100 }; t += d; return o; });
@@ -360,9 +362,10 @@
       const off = !!E.off[b.recipe] && !LOCKED.has(b.recipe), d = Math.max(1.5, Math.min(15, b.durationSec + (E.dur[b.recipe] || 0)));
       const row = document.createElement('div'); row.className = 'srow' + (off ? ' off' : '');
       const name = document.createElement('span'); name.textContent = RN[b.recipe] || b.recipe;
-      const time = document.createElement('small'); time.textContent = off ? 'скрыт' : d.toFixed(1).replace('.', ',') + ' с';
+      const shown=state.lastEp?.res.plan.beats.find(x=>x.recipe===b.recipe);
+      const time = document.createElement('small'); time.textContent = off ? 'скрыт' : (state.videoLength&&shown?shown.durationSec:d).toFixed(1).replace('.', ',') + ' с';
       const mk = (txt, title, fn, dis) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'ghost'; x.textContent = txt; x.title = title; x.disabled = !!dis; x.onclick = () => { fn(); t = 0; rebuild(); }; return x; };
-      row.append(name, time, mk('−', 'Короче на 0,5 с', () => { E.dur[b.recipe] = (E.dur[b.recipe] || 0) - 0.5; }, off || d <= 1.5), mk('+', 'Дольше на 0,5 с', () => { E.dur[b.recipe] = (E.dur[b.recipe] || 0) + 0.5; }, off || d >= 15));
+      row.append(name, time, mk('−', 'Короче на 0,5 с', () => { E.dur[b.recipe] = (E.dur[b.recipe] || 0) - 0.5; }, off || d <= 1.5 || !!state.videoLength), mk('+', 'Дольше на 0,5 с', () => { E.dur[b.recipe] = (E.dur[b.recipe] || 0) + 0.5; }, off || d >= 15 || !!state.videoLength));
       if (!LOCKED.has(b.recipe)) row.append(mk(off ? 'Вернуть' : 'Скрыть', off ? 'Показать экран' : 'Убрать экран из ролика', () => { E.off[b.recipe] = !off; }));
       box.appendChild(row);
     });
@@ -702,7 +705,7 @@
     state.etype = J.schematic ? 'story-so-far' : state.kind === 'long' ? 'new-viewer' : 'returning-viewer'; $('etype').value = state.etype;
     $('kind').hidden = !!J.schematic;
     const res = window.Director.direct(J, state.etype, { aspect: state.fmt === 'v' ? '9:16' : '16:9', dur: state.etype === 'returning-viewer' && !J.schematic ? [18, 24, 20, 28] : null });   // фрагмент — короткий ролик ~20–28 с
-    res.plan = applyEdits(res.plan); state.lastEp = { res, change, J }; renderScreens();
+    res.plan = applyEdits(res.plan); if(state.videoLength)res.plan=window.Director.retime(res.plan,state.videoLength); state.lastEp = { res, change, J }; renderScreens();
     renderSeriesPanel(res, change, J);
     const R = state.route && !state.routeIsDemo ? state.route : state.demoDay ? state.route : null, tot = R ? R.total : 0;
     const extra = {
@@ -1151,7 +1154,8 @@
     const btn = $('export');
     if (abort) { abort.abort(); return; }
     if ($('manualBox').open && window.RouteEditor?.dirty) { showErr('Сначала нажмите «Показать этот путь в ролике» или закройте редактор пути.'); return; }
-    const fmt = state.fmt, append = keepResult, wasHidden = $('result').hidden;
+    const fmt = state.fmt, append = keepResult, wasHidden = $('result').hidden, selectedLength=state.videoLength;
+    $('videoLength').disabled=true;
     let completed = false; keepResult = false;
     abort = new AbortController();
     play(false);
@@ -1196,7 +1200,7 @@
       });
       objUrl = URL.createObjectURL(res.blob);
       const slug = slug0;
-      const name = `${slug}-${sz}.${res.ext}`;
+      const name = `${slug}-${selectedLength?Math.round(dur)+'s-':''}${sz}.${res.ext}`;
       const other = fmt === 'v' ? 'h' : 'v', keep = append ? $('result').innerHTML : '';
       // Освобождаем только результаты, которые действительно заменяем; оба формата остаются доступными.
       if (!append) { resultUrls.forEach(u => URL.revokeObjectURL(u)); resultUrls = []; }
@@ -1209,7 +1213,7 @@
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));
     } finally {
       if (!completed) $('result').hidden = wasHidden;
-      abort = null; btn.textContent = exportLabel(); $('prog').hidden = true;
+      abort = null; $('videoLength').disabled=false; btn.textContent = exportLabel(); $('prog').hidden = true;
     }
   };
 
