@@ -1,0 +1,70 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+const {chromium}=createRequire('C:/Users/glina/route-story-spike/package.json')('playwright');
+mkdirSync('out/project',{recursive:true});
+const hash=x=>createHash('sha256').update(x).digest('hex');
+const gpx=day=>({name:`day-${day}.gpx`,mimeType:'application/gpx+xml',buffer:Buffer.from('<gpx><trk><trkseg>'+Array.from({length:40},(_,i)=>`<trkpt lat="${40+i*.001}" lon="${44+i*.001}"><time>2026-09-${String(day).padStart(2,'0')}T07:${String(i).padStart(2,'0')}:00Z</time></trkpt>`).join('')+'</trkseg></trk></gpx>')});
+function wav(){const n=16000*2,b=Buffer.alloc(44+n*2);b.write('RIFF');b.writeUInt32LE(b.length-8,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(16000,24);b.writeUInt32LE(32000,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(n*2,40);for(let i=0;i<n;i++)b.writeInt16LE(Math.round(Math.sin(i*2*Math.PI*330/16000)*10000),44+i*2);return b;}
+const b=await chromium.launch({channel:'msedge',headless:true});
+let c,p;const errors=[];
+async function open(){c=await b.newContext({acceptDownloads:true});p=await c.newPage();p.on('pageerror',e=>errors.push(e.stack));await p.route('https://nominatim.openstreetmap.org/**',r=>r.fulfill({contentType:'application/json',body:'{}'}));await p.goto('http://localhost:4180/');await p.waitForFunction(()=>window.__app?.state.demoDay);}
+async function routeTab(){await p.click('#tabs [data-t="route"]');await p.evaluate(()=>projectBox.open=true);}
+async function save(name){await routeTab();const event=p.waitForEvent('download');event.catch(()=>{});await p.click('#projectSave');await p.waitForFunction(()=>!projectSave.disabled);assert.match(await p.locator('#projectStatus').textContent(),/^Файл путешествия подготовлен/);const d=await event;assert.equal(d.suggestedFilename(),'route-story-project.json');await d.saveAs(`out/project/${name}.json`);return `out/project/${name}.json`;}
+async function load(file){await routeTab();await p.setInputFiles('#projectFile',file);await p.waitForFunction(()=>!projectSave.disabled);assert.match(await p.locator('#projectStatus').textContent(),/^Путешествие открыто/);await p.waitForTimeout(150);}
+try {
+  await open();
+  assert.equal(await p.locator('#projectSave').count(),1,'нет сохранения всего путешествия');
+  assert.equal(await p.evaluate(async()=>{const bytes=await(await fetch('art/unicycle-real.webp')).arrayBuffer(),file=new Blob([bytes]),url=URL.createObjectURL(file);try{const snapshot=await RSProject.pack({url,note:'blob: это текст, а не ссылка'}),restored=await RSProject.unpack(snapshot);try{return (await(await fetch(restored.data.url)).arrayBuffer()).byteLength===bytes.byteLength&&restored.data.note==='blob: это текст, а не ссылка';}finally{restored.release();}}finally{URL.revokeObjectURL(url);}}),true,'фото без MIME-типа или текст с blob: не переносятся');
+  await p.setInputFiles('#file',gpx(1));await p.waitForFunction(()=>__app.state.seriesBase?.id==='my');
+  await p.click('#tabs [data-t="text"]');await p.fill('#note','Фраза первого дня');
+  await p.click('#tabs [data-t="photo"]');await p.setInputFiles('#photos','art/unicycle-real.webp');await p.waitForFunction(()=>__app.state.o.photos.length===1);await p.fill('#photoList input','Фото первого дня');
+  await p.setInputFiles('#file',gpx(2));await p.waitForFunction(()=>__app.state.seriesBase.days.length===2);await p.waitForTimeout(100);
+  await p.click('#tabs [data-t="text"]');await p.fill('#note','Фраза второго дня');await p.fill('#startName','Свой старт');await p.fill('#endName','Свой финиш');await p.click('#addNote');await p.fill('#tnotes input:not([type])','Заметка на пути');
+  await p.click('#tabs [data-t="photo"]');await p.setInputFiles('#photos','art/unicycle-real.webp');await p.waitForFunction(()=>__app.state.o.photos.length===1);await p.fill('#photoList input','Фото второго дня');
+  await p.evaluate(()=>{const r=document.getElementById('photo-position-0');r.value=77;r.dispatchEvent(new Event('input',{bubbles:true}));});
+  await p.click('#tabs [data-t="look"]');await p.click('#styles [data-id="night"]');await p.evaluate(()=>{mapZoom.value='4';mapZoom.dispatchEvent(new Event('change',{bubbles:true}));videoLength.value='20';videoLength.dispatchEvent(new Event('change',{bubbles:true}));res.value='sd';});
+  await p.setInputFiles('#musicFile',{name:'original.wav',mimeType:'audio/wav',buffer:wav()});await p.waitForFunction(()=>musicStatus.textContent.includes('original.wav'));
+  await p.setInputFiles('#logoFile','art/unicycle-real.webp');await p.waitForFunction(()=>!!__app.state.logo);
+  await p.evaluate(()=>{const label=document.querySelector('#labelsGrid input');label.value='Моя дистанция';label.dispatchEvent(new Event('input',{bubbles:true}));pName.value='Путешественник';pName.dispatchEvent(new Event('input',{bubbles:true}));const flags=document.querySelector('#shows input[data-k="flags"]');flags.click();__app.state.edits.dur['route-reveal']=1;});
+  const look=await p.evaluate(()=>({appearance:__app.state.appearance,labels:__app.state.labels,logo:__app.state.logo,profile:__app.state.profile,show:__app.state.show,edits:__app.state.edits}));
+  const before=await p.evaluate(()=>({km:__app.state.route.total,position:__app.state.o.photos[0].s,days:__app.state.seriesBase.days.length}));
+  const gps=await save('gps');const json=JSON.parse(readFileSync(gps,'utf8'));assert.equal(json.format,'route-story-project');assert.ok(json.assets.some(a=>a.name==='original.wav')===false); // имя музыки хранится отдельно
+  assert.ok(!readFileSync(gps,'utf8').includes('blob:http'),'в файле остались временные ссылки');
+  await c.close();await open();assert.equal(await p.evaluate(()=>localStorage.getItem('route-story-my-journey')),null);await load(gps);
+  assert.deepEqual(await p.evaluate(()=>({appearance:__app.state.appearance,labels:__app.state.labels,logo:__app.state.logo,profile:__app.state.profile,show:__app.state.show,edits:__app.state.edits})),look,'оформление, логотип или экраны не восстановлены');
+  const restored=await p.evaluate(async()=>{const s=__app.state;return{note:s.o.note,from:s.o.startName,to:s.o.endName,caption:s.o.photos[0]?.caption,position:s.o.photos[0]?.s,km:s.route.total,days:s.seriesBase.days.length,history:s.seriesBase.media.map(m=>m.caption),notes:s.o.tnotes,style:s.styleId,zoom:s.mapZoom,length:s.videoLength,music:s.music,pre:s.pre.files[0] instanceof File,typed:s.route.dayArr instanceof Int16Array,bytes:Array.from(new Uint8Array(await(await fetch(s.o.photos[0].url)).arrayBuffer())),historyBytes:Array.from(new Uint8Array(await(await fetch(s.seriesBase.media[0].url)).arrayBuffer()))};});
+  assert.equal(restored.note,'Фраза второго дня');assert.equal(restored.from,'Свой старт');assert.equal(restored.to,'Свой финиш');assert.equal(restored.caption,'Фото второго дня');assert.equal(restored.position,before.position);assert.equal(restored.km,before.km);assert.equal(restored.days,2);assert.ok(restored.history.includes('Фото первого дня'));assert.equal(restored.notes[0].text,'Заметка на пути');assert.equal(restored.style,'night');assert.equal(restored.zoom,4);assert.equal(restored.length,20);assert.equal(restored.music,'own');assert.ok(restored.pre&&restored.typed);
+  for(const bytes of [restored.bytes,restored.historyBytes])assert.equal(hash(Buffer.from(bytes)),hash(readFileSync('art/unicycle-real.webp')),'исходное фото изменено');
+  const again=JSON.parse(readFileSync(await save('gps-again'),'utf8'));assert.ok(again.assets.some(a=>a.sha256===hash(wav())),'исходная музыка изменилась');
+  if(process.env.SAVE_FRAMES){
+    const frames=await p.evaluate(async()=>{await Appearance.ready();const s=__app.state,old={styleId:s.styleId,fmt:s.fmt,appearance:s.appearance},out=[],skins={journal:['paper','yeseva','geologica'],night:['night','din','din'],editorial:['magazine','geologica','geologica'],paper:['trail','prata','onest']};try{for(const styleId of ['journal','night','editorial','paper'])for(const fmt of ['v','h']){s.styleId=styleId;s.fmt=fmt;const sk=skins[styleId];s.appearance=Appearance.normalize({...Appearance.palettes[sk[0]],heading:sk[1],body:sk[2]});const W=fmt==='v'?540:960,H=fmt==='v'?960:540,scene=__app.buildScene(W,H);await scene.assetsReady;for(const fam of ['road','photo']){const beat=s.lastEp.res.plan.beats.find(b=>Journal.FAM[b.recipe]===fam);if(!beat)continue;const c=document.createElement('canvas');c.width=W;c.height=H;scene.draw(c.getContext('2d'),beat.startSec+beat.durationSec*.8);out.push({name:`${styleId}-${fmt}-${fam}`,data:c.toDataURL().split(',')[1]});}}}finally{Object.assign(s,old);__app.rebuild();}return out;});
+    assert.equal(frames.length,16);for(const f of frames)writeFileSync(`out/project/${f.name}.png`,Buffer.from(f.data,'base64'));
+  }
+  for(const [name,change] of [['version',j=>j.version=999],['corrupt',j=>j.assets[0].sha256='broken'],['external',j=>j.data.state.o.photos[0].url='https://example.com/a.jpg'],['route',j=>j.data.state.route.n=0]]){
+    const bad=structuredClone(json);change(bad);await p.setInputFiles('#projectFile',{name:`bad-${name}.json`,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(bad))});await p.waitForFunction(()=>!projectSave.disabled);assert.match(await p.locator('#projectStatus').textContent(),/^Не удалось/);assert.equal(await p.evaluate(()=>__app.state.o.note),'Фраза второго дня');assert.equal(await p.evaluate(()=>__app.state.route.total),before.km);
+  }
+  // Позднее чтение файла не отменяет новый выбор пользователя.
+  await p.evaluate(()=>{const read=File.prototype.text;File.prototype.text=async function(){if(this.name==='late.json')await new Promise(r=>window.releaseProject=r);return read.call(this);};});
+  await p.setInputFiles('#projectFile',{name:'late.json',mimeType:'application/json',buffer:readFileSync(gps)});await p.waitForFunction(()=>typeof releaseProject==='function');
+  await p.click('#tabs [data-t="text"]');await p.fill('#note','Правка во время чтения');await p.evaluate(()=>releaseProject());await p.waitForFunction(()=>!projectSave.disabled);assert.equal(await p.evaluate(()=>__app.state.o.note),'Правка во время чтения');assert.match(await p.locator('#projectStatus').textContent(),/не применён/);
+  await load(gps);
+  // Настоящий MP4 из открытого проекта, включая звук.
+  await p.click('#export');await p.waitForFunction(()=>window.__lastExport?.url,{timeout:180000});const event=p.waitForEvent('download');await p.locator('#result a').last().click();await(await event).saveAs('out/project/restored.mp4');
+  const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_name,width,height:format=duration','-of','json','out/project/restored.mp4'],{encoding:'utf8'}));assert.ok(probe.streams.some(s=>s.codec_name==='aac'));assert.ok(probe.streams.some(s=>s.codec_name==='h264'&&s.width===720&&s.height===1280));assert.ok(Math.abs(+probe.format.duration-20)<.15);
+  const pcm=execFileSync('ffmpeg',['-v','error','-ss','10','-i','out/project/restored.mp4','-t','1','-vn','-ac','1','-ar','16000','-f','f32le','pipe:1']);let power=0;for(let i=0;i<pcm.length;i+=4)power+=pcm.readFloatLE(i)**2;assert.ok(Math.sqrt(power/(pcm.length/4))>.05,'после восстановления музыка молчит');
+  // Обрезка после переноса использует сохранённый исходный GPX и не добавляет день.
+  await p.evaluate(()=>{trimA.value=10;trimA.dispatchEvent(new Event('input',{bubbles:true}));projectSave.click();});assert.match(await p.locator('#projectStatus').textContent(),/Дождитесь применения обрезки/);await p.waitForFunction(k=>__app.state.route.total<k,before.km);assert.equal(await p.evaluate(()=>__app.state.seriesBase.days.length),2);
+  // Показанный ручной путь и отдельно незавершённый редактор восстанавливаются независимо.
+  await p.evaluate(()=>{RouteEditor.load({title:'Длинное путешествие',stops:[{name:'Старт',lat:40,lon:44},{name:'Финиш',lat:41,lon:45}]});manualApply.click();RouteEditor.load({title:'Следующая остановка',stops:[{name:'Старт',lat:40,lon:44},{name:'Финиш',lat:41,lon:45},{name:'Новый город',lat:42,lon:46}]});manualBox.open=true;});
+  const manual=await save('manual');await c.close();await open();await load(manual);
+  assert.equal(await p.evaluate(()=>__app.state.manualData.stops.length),2);assert.equal(await p.evaluate(()=>RouteEditor.data.stops.length),3);assert.equal(await p.evaluate(()=>RouteEditor.dirty),true);
+  await p.click('#export');assert.match(await p.locator('#err').textContent(),/Показать этот путь/);
+  await p.click('#manualApply');await p.waitForFunction(()=>__app.state.manualData.stops.length===3);assert.equal(await p.evaluate(()=>RouteEditor.dirty),false);
+  await p.evaluate(()=>manualBox.open=false);await p.click('#tabs [data-t="look"]');await p.click('#fmt [data-v="h"]');const old=await p.evaluate(()=>window.__lastExport?.url);await p.click('#export');await p.waitForFunction(old=>window.__lastExport?.url&&__lastExport.url!==old,old,{timeout:180000});const hEvent=p.waitForEvent('download');await p.locator('#result a').last().click();await(await hEvent).saveAs('out/project/manual-restored.mp4');
+  const hProbe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_name,width,height','-of','json','out/project/manual-restored.mp4'],{encoding:'utf8'}));assert.ok(hProbe.streams.some(s=>s.codec_name==='h264'&&s.width===1280&&s.height===720));assert.ok(hProbe.streams.some(s=>s.codec_name==='aac'));
+  await p.setViewportSize({width:390,height:844});await routeTab();assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await p.screenshot({path:'out/project/phone.png',fullPage:true});
+  assert.deepEqual(errors,[]);console.log('Полный файл: чистый браузер, два GPS-дня, исходные фото/музыка, настройки, MP4+AAC, обрезка, ручной черновик, повреждения и поздний ответ — OK');
+} finally {await b.close();}

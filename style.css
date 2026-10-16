@@ -281,6 +281,10 @@ button:active:not(:disabled){transform:scale(.96)}
 #t-look .look-section>summary::before{content:'›';font-size:22px;line-height:1;margin-right:8px}
 #t-look .look-section[open]>summary::before{transform:rotate(90deg)}
 #t-look .settings-body{display:grid;gap:12px;padding-top:12px}
+#projectBox{border-top:1px solid var(--line);margin-top:12px}
+#projectBox>summary{min-height:44px;display:list-item;align-content:center;cursor:pointer;font-weight:600}
+#projectBox .settings-body{display:grid;gap:12px;padding:8px 0 16px}
+#projectBox .hint{margin:0}
 #t-look button{min-height:44px;min-width:44px}
 #mapSettings{grid-template-columns:1fr}
 #mapSettings .c{min-height:44px}

@@ -4,6 +4,13 @@ import { mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 const {chromium}=createRequire('C:/Users/glina/route-story-spike/package.json')('playwright');const out='out/music';mkdirSync(out,{recursive:true});
 function wav(hz){const sr=16000,n=sr*2,b=Buffer.alloc(44+n*2);b.write('RIFF');b.writeUInt32LE(b.length-8,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(sr,24);b.writeUInt32LE(sr*2,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(n*2,40);for(let i=0;i<n;i++)b.writeInt16LE(Math.round(Math.sin(i*2*Math.PI*hz/sr)*12000),44+i*2);return b;}
+// Сжатый MP3/Opus может добавить лишние пересечения нуля: ищем основной тон по спектру.
+function dominantTone(pcm){
+  const x=new Float32Array(pcm.buffer,pcm.byteOffset,pcm.length/4);
+  const power=f=>{const a=2*Math.PI*f/16000,c=Math.cos(a),s=Math.sin(a);let re=0,im=0,u=1,v=0;for(const y of x){re+=y*u;im+=y*v;const n=u*c-v*s;v=v*c+u*s;u=n;}return re*re+im*im;};
+  let best=0,hz=0;for(let f=100;f<=1000;f+=5){const q=power(f);if(q>best){best=q;hz=f;}}
+  const center=hz;for(let f=center-4;f<=center+4;f++){const q=power(f);if(q>best){best=q;hz=f;}}return hz;
+}
 const b=await chromium.launch({channel:'msedge',headless:true});
 try{
   const p=await b.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.stack));
@@ -16,7 +23,7 @@ try{
   let old=null;
   async function render(id,fmt,expectHz,codec){await p.click(`#fmt [data-v="${fmt}"]`);await p.click('#export');assert.equal(await p.locator('#musicFile').isDisabled(),true);await p.waitForFunction(u=>window.__lastExport&&__lastExport.url!==u,old,{timeout:180000});old=await p.evaluate(()=>__lastExport.url);const wait=p.waitForEvent('download');await p.locator('#result a').last().click();const d=await wait,file=`${out}/${id}.${codec==='opus'?'webm':'mp4'}`;await d.saveAs(file);
     const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration','-of','json',file],{encoding:'utf8'})),audio=probe.streams.find(s=>s.codec_type==='audio');let measured=+probe.format.duration;if(!Number.isFinite(measured)){const packets=JSON.parse(execFileSync('ffprobe',['-v','error','-show_packets','-show_entries','packet=pts_time,duration_time','-of','json',file],{encoding:'utf8',maxBuffer:4*1024*1024})).packets;measured=packets.reduce((end,q)=>Math.max(end,(+q.pts_time||0)+(+q.duration_time||0)),0);}assert.ok(Math.abs(measured-20)<(codec==='opus'?1:.15),`звук изменил длительность ролика: ${measured}`);
-    if(expectHz){assert.equal(audio?.codec_name,codec);const pcm=execFileSync('ffmpeg',['-v','error','-ss','10','-i',file,'-t','1','-vn','-ac','1','-ar','16000','-f','f32le','pipe:1']);let sum=0,cross=0;for(let i=0;i<pcm.length/4;i++){const v=pcm.readFloatLE(i*4);sum+=v*v;if(i&&v>=0&&pcm.readFloatLE((i-1)*4)<0)cross++;}assert.ok(Math.sqrt(sum/(pcm.length/4))>.05,'музыка закончилась до середины видео');assert.ok(Math.abs(cross-expectHz)<5,`другой трек/старый кеш: ${cross} вместо ${expectHz}`);}else assert.equal(audio,undefined,'музыка осталась после выключения');
+    if(expectHz){assert.equal(audio?.codec_name,codec);const pcm=execFileSync('ffmpeg',['-v','error','-ss','10','-i',file,'-t','1','-vn','-ac','1','-ar','16000','-f','f32le','pipe:1']);let sum=0,cross=0;for(let i=0;i<pcm.length/4;i++){const v=pcm.readFloatLE(i*4);sum+=v*v;if(i&&v>=0&&pcm.readFloatLE((i-1)*4)<0)cross++;}assert.ok(Math.sqrt(sum/(pcm.length/4))>.05,'музыка закончилась до середины видео');const tone=dominantTone(pcm);assert.ok(Math.abs(tone-expectHz)<5,`другой трек/старый кеш: ${tone} вместо ${expectHz}`);}else assert.equal(audio,undefined,'музыка осталась после выключения');
     assert.equal(await p.locator('#musicFile').isDisabled(),false);
   }
   await p.setInputFiles('#musicFile',{name:'tone-a.wav',mimeType:'audio/wav',buffer:wav(220)});await p.waitForFunction(()=>musicStatus.textContent.includes('tone-a.wav')&&__app.state.music==='own');

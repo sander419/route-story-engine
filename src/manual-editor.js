@@ -99,7 +99,7 @@
     }
     $('manualSearch').onclick=search;$('manualQuery').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();search();}};
     box.addEventListener('toggle',()=>{if(box.open)draw();});new ResizeObserver(draw).observe(cv);render();
-    return {load,redraw:draw,get dirty(){return dirty;},get data(){return M.normalize(data);}};
+    return {load,restore(input,changed){load(input);dirty=!!changed;status(changed?'Восстановлены незавершённые правки. Нажмите «Показать этот путь в ролике».':'Путь восстановлен из файла путешествия.');},redraw:draw,get dirty(){return dirty;},get data(){form();return M.normalize(data);}};
   }
   window.ManualEditor={init};
 })();

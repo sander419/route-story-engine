@@ -32,7 +32,7 @@ try {
       await p.waitForFunction(() => __app.state.o.photos.length === 1);
       await p.fill('#photoList input', 'Снимок первого дня'); const edited = await snap();
       if (mode === 'saved') {
-        await p.waitForTimeout(300);
+        await p.waitForFunction(() => draftStatus.textContent.includes('сохранены') && __app.state.lastEp.J.notes.some(n => n.text === 'Моя фраза первого дня'));
         await p.evaluate(() => { const j = JSON.parse(JSON.stringify(__app.state.lastEp.J)); j.media = []; j.days.forEach(d => d.media = []); localStorage.setItem('route-story-my-journey', JSON.stringify(j)); });
         await p.reload(); await p.waitForFunction(() => window.__app?.state.demoDay);
         await p.click('#tabs button[data-t="text"]'); await p.fill('#startName', 'Иркутск'); await p.fill('#endName', 'Байкал');

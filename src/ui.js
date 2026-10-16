@@ -421,8 +421,8 @@
     $('trimS').value = T.s; $('trimSo').textContent = ['нет', 'слабо', 'средне', 'сильно'][T.s];
     $('trimCo').textContent = T.d > T.c ? km1(D * T.c / 100) : '—'; $('trimDo').textContent = T.d > T.c ? km1(D * T.d / 100) + ' · вырезано ' + km1(D * (T.d - T.c) / 100) : '—';
   }
-  let trimTimer = null;
-  ['trimA', 'trimB', 'trimC', 'trimD', 'trimS'].forEach((id) => { $(id).oninput = () => { state.trim.s = +$('trimS').value; state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; state.trim.c = +$('trimC').value; state.trim.d = +$('trimD').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(() => { if (state.mode === 'track' && state.rawText) loadText(state.rawText, state.rawName, true); else if (state.pre) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; handleFiles(q.files, q.glue, true); } }, 250); }; });
+  let trimTimer = null, trimPending = false, trimRevision = 0;
+  ['trimA', 'trimB', 'trimC', 'trimD', 'trimS'].forEach((id) => { $(id).oninput = () => { trimPending=true; const revision=++trimRevision; state.trim.s = +$('trimS').value; state.trim.a = +$('trimA').value; state.trim.b = +$('trimB').value; state.trim.c = +$('trimC').value; state.trim.d = +$('trimD').value; if (state.trim.a + state.trim.b > 90) { if (id === 'trimA') state.trim.a = 90 - state.trim.b; else state.trim.b = 90 - state.trim.a; } syncTrim(); clearTimeout(trimTimer); trimTimer = setTimeout(async () => { try { if (state.mode === 'track' && state.rawText) loadText(state.rawText, state.rawName, true); else if (state.pre) { const q = state.pre; state.seriesBase = q.base; state.route = q.route; state.routeIsDemo = q.routeIsDemo; state.demoDay = q.demoDay; await handleFiles(q.files, q.glue, true); } } finally { if(revision===trimRevision)trimPending=false; } }, 250); }; });
   function loadText(text, filename, keepTrim) {
     showErr(''); if (!keepTrim) { state.trim = { a: 0, b: 0, c: 0, d: 0, s: 0 }; state.rawText = filename === 'day47.gpx' ? null : text; state.rawName = filename; state.pre = null; }
     try {
@@ -797,9 +797,11 @@
           editor: { note: state.o.note, startName: state.o.startName, endName: state.o.endName, tnotes: state.o.tnotes },
           photos: photoFiles.filter(p => !p.demo).map(p => ({ file: p.file, name: p.name, meta: p.meta, caption: p.caption, credit: p.credit, s: p.s, how: p.how, handKey: p.handKey })) });
       } catch (e) { draftStatus('Не удалось сохранить черновик. Оставьте эту страницу открытой и скачайте ролик.'); return; }
+      // Текст и путь пишем до ухода со страницы: запись фото может не успеть завершиться.
+      try { localStorage.setItem(OWN_KEY, JSON.stringify(data.journey)); }
+      catch (e) { draftStatus('Не удалось сохранить черновик. Оставьте эту страницу открытой и скачайте ролик.'); return; }
       draftWrites = draftWrites.catch(() => {}).then(async () => {
         await window.RSDrafts.save(data);
-        localStorage.setItem(OWN_KEY, JSON.stringify(data.journey));
         if (rev === draftRevision && id === sourceId && isOwn() && !state.demoDay) draftStatus('Фото и текст последнего дня сохранены в этом браузере. После открытия нажмите «Продолжить моё путешествие».');
       }).catch(() => {
         if (rev === draftRevision && id === sourceId) draftStatus('Не удалось сохранить черновик. Оставьте эту страницу открытой и скачайте ролик.');
@@ -967,9 +969,10 @@
     ownFields(J);
     const usable = draft?.version === 1 && Array.isArray(draft.journey?.days) && draft.route?.n > 1 && draft.editor && Array.isArray(draft.photos) && draft.photos.length <= 4 && draft.photos.every(p => p.file instanceof Blob) && Array.isArray(draft.editor.tnotes);
     if (usable && dayKey(draft.journey) === dayKey(J)) {
-      state.seriesBase = draft.journey; state.route = draft.route; state.pre = draft.pre; state.trim = draft.trim;
+      const newerFields = JSON.stringify(draft.journey) !== JSON.stringify(J) ? { note: state.o.note, startName: state.o.startName, endName: state.o.endName } : {};
+      state.seriesBase = J; state.route = draft.route; state.pre = draft.pre; state.trim = draft.trim;
       $('mergeDay').checked = !!draft.merge;
-      Object.assign(state.o, draft.editor);
+      Object.assign(state.o, draft.editor, newerFields);
       for (const k of ['note', 'startName', 'endName']) { $(k).value = state.o[k]; touched[k] = true; }
       photoFiles = draft.photos.map(p => ({ ...p, url: URL.createObjectURL(p.file) }));
       renderNotes(); placePhotos(); syncTrim(); $('trimBox').hidden = !state.pre || state.pre.files.length !== 1;
@@ -1166,6 +1169,7 @@
     const btn = $('export');
     if (abort) { abort.abort(); return; }
     if ($('manualBox').open && window.RouteEditor?.dirty) { showErr('Сначала нажмите «Показать этот путь в ролике» или закройте редактор пути.'); return; }
+    if(projectBusy){showErr('Дождитесь завершения работы с файлом путешествия.');return;}
     if(musicLoading){showErr('Дождитесь загрузки музыки.');return;}
     if(state.music==='own'&&!musicFileBuf){showErr('Выберите аудиофайл или вариант «Без музыки».');return;}
     const fmt = state.fmt, append = keepResult, wasHidden = $('result').hidden, selectedLength=state.videoLength;
@@ -1253,6 +1257,98 @@
       refreshModes();setMode('series');play(true);
     },
   });
+  /* ---- полный перенос путешествия, отдельно от старого файла оформления ---- */
+  let projectBusy=false, projectRevision=0, projectRelease=()=>{};
+  for(const event of ['input','change','click'])document.addEventListener(event,()=>{projectRevision++;},true);
+  const projectKeys=['seriesBase','route','pre','trim','rawText','rawName','rawTotal','routeIsDemo','demoDay','demoNote','manualData','kind','styleId','fmt','o','appearance','labels','logo','relief','show','profile','edits','videoLength','mapZoom'];
+  function projectControls(busy){projectBusy=busy;$('projectSave').disabled=$('projectLoad').disabled=busy;}
+  function projectSnapshot(){
+    if(state.mode!=='series'||!state.seriesBase?.days?.length)throw new Error('Сначала откройте путешествие или примените путь по точкам.');
+    if(musicLoading)throw new Error('Дождитесь загрузки музыки.');
+    if(trimPending)throw new Error('Дождитесь применения обрезки маршрута.');
+    const copy=Object.fromEntries(projectKeys.map(k=>[k,state[k]??null]));
+    const photos=list=>(list||[]).map(p=>Object.fromEntries(['name','url','meta','caption','credit','demo','file','s','how','handKey'].filter(k=>p[k]!==undefined).map(k=>[k,p[k]])));
+    if(copy.pre)copy.pre={...copy.pre,photos:photos(copy.pre.photos)};
+    return structuredClone({state:copy,photos:photos(photoFiles),touched,merge:$('mergeDay').checked,res:$('res').value,
+      manual:{data:window.RouteEditor.data,dirty:window.RouteEditor.dirty,open:$('manualBox').open},
+      music:{mode:state.music,name:musicName,file:musicFileBuf?new Blob([musicFileBuf],{type:'application/octet-stream'}):null}});
+  }
+  $('projectSave').onclick=async()=>{
+    if(abort){$('projectStatus').textContent='Дождитесь окончания экспорта или отмените его.';return;}
+    try{
+      const snapshot=projectSnapshot();projectControls(true);$('projectStatus').textContent='Собираю путь и исходные файлы…';
+      const blob=await window.RSProject.pack(snapshot),url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download='route-story-project.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      $('projectStatus').textContent='Файл путешествия подготовлен. Сохраните его на устройстве, чтобы продолжить позже.';
+    }catch(e){$('projectStatus').textContent='Не удалось сохранить путешествие. '+e.message;}
+    finally{projectControls(false);}
+  };
+  function checkProject(data){
+    const fail=()=>{throw new Error('В файле повреждены данные путешествия.');},obj=x=>x&&typeof x==='object'&&!Array.isArray(x),text=x=>typeof x==='string'&&x.length<=20000;
+    if(!obj(data)||!obj(data.state)||!obj(data.music)||!obj(data.manual)||!obj(data.touched)||!['sd','hd'].includes(data.res)||typeof data.merge!=='boolean')fail();
+    const s=data.state;
+    function journey(J,empty=false){
+      if(!obj(J)||!text(J.title)||!text(J.id)||!Array.isArray(J.days)||J.days.length>(J.id==='manual'?2000:10000)||(!empty&&!J.days.length))fail();
+      for(const key of ['media','notes','checkpoints','episodes'])if(!Array.isArray(J[key]))fail();
+      const seen=new Set();for(const d of J.days){
+        if(!obj(d)||!Number.isInteger(d.day)||seen.has(d.day)||!Number.isFinite(d.km)||d.km<0||!Array.isArray(d.line)||d.line.length<2||d.line.length>1000000)fail();seen.add(d.day);
+        for(const p of d.line)if(!Array.isArray(p)||p.length<2||!p.every(Number.isFinite)||Math.abs(p[1])>90||Math.abs(p[0])>100000)fail();
+      }
+    }
+    function route(r){if(r===null)return;if(!obj(r)||!Number.isInteger(r.n)||r.n<2||r.n>1000000||!Number.isFinite(r.total)||r.total<=0||!obj(r.stats))fail();for(const k of ['lat','lon','X','Y','D','brk']){if(!r[k]||r[k].length!==r.n||!Array.from(r[k]).every(Number.isFinite))fail();}if(r.lat.some(x=>Math.abs(x)>90))fail();for(const k of ['ele','speed','t','lonU','dayArr','piece'])if(r[k]!=null&&r[k].length!==r.n)fail();}
+    journey(s.seriesBase);route(s.route);
+    if(s.pre!==null){if(!obj(s.pre)||!Array.isArray(s.pre.files)||!s.pre.files.every(f=>f instanceof File))fail();journey(s.pre.base,true);route(s.pre.route);}
+    if(!['short','long'].includes(s.kind)||!['v','h'].includes(s.fmt)||![1,2,4].includes(s.mapZoom)||![0,20,30,45].includes(s.videoLength)||!obj(s.o)||!obj(s.profile)||!obj(s.edits)||!obj(s.edits.off)||!obj(s.edits.dur)||!obj(s.trim))fail();
+    for(const k of ['title','subtitle','startName','endName','note','lang'])if(!text(s.o[k]))fail();
+    if(!Number.isFinite(s.o.duration)||s.o.duration<1||s.o.duration>300||typeof s.o.showSpeed!=='boolean'||typeof s.o.showEle!=='boolean'||!Array.isArray(s.o.stickers)||s.o.stickers.length!==3||s.o.stickers.some(x=>x!==null&&typeof x!=='string'))fail();
+    if(!Array.isArray(s.o.photos)||!Array.isArray(s.o.places)||!Array.isArray(s.o.tnotes)||s.o.tnotes.length>3||s.o.tnotes.some(n=>!text(n.text)||!Number.isFinite(n.f)||n.f<0||n.f>1))fail();
+    for(const k of ['a','b','c','d','s'])if(!Number.isFinite(s.trim[k])||s.trim[k]<0||s.trim[k]>100)fail();
+    if(!Number.isInteger(s.trim.s)||s.trim.s>3||s.trim.a+s.trim.b>90||Object.values(data.touched).some(x=>typeof x!=='boolean'))fail();
+    if(Object.values(s.edits.dur).some(x=>!Number.isFinite(x)||Math.abs(x)>1000)||Object.values(s.edits.off).some(x=>typeof x!=='boolean'))fail();
+    if(!text(s.profile.name)||!text(s.profile.next)||![...$('pMark').children].some(b=>b.dataset.v===s.profile.mark)||!(s.profile.color===null||/^#[a-f\d]{6}$/i.test(s.profile.color)))fail();
+    if(!Array.isArray(data.photos)||data.photos.length>4||data.photos.some(p=>!obj(p)||!text(p.name)||!text(p.caption)||typeof p.url!=='string'||(!p.demo&&!(p.file instanceof Blob))))fail();
+    if(!['none','own'].includes(data.music.mode)||!text(data.music.name)||(data.music.file!==null&&(!(data.music.file instanceof Blob)||data.music.file.size>20*1024*1024))||(data.music.mode==='own'&&!data.music.file))fail();
+    data.manual.data=window.ManualPath.normalize(data.manual.data);if(typeof data.manual.dirty!=='boolean'||typeof data.manual.open!=='boolean')fail();
+    if(s.seriesBase.id==='manual'){s.manualData=window.ManualPath.normalize(s.manualData);const j=window.ManualPath.journey(s.manualData);if(JSON.stringify(j.days)!==JSON.stringify(s.seriesBase.days)||JSON.stringify(j.manualPath)!==JSON.stringify(s.seriesBase.manualPath)||s.seriesBase.schematic!==true)fail();}
+    return data;
+  }
+  $('projectLoad').onclick=()=>{if(abort){$('projectStatus').textContent='Дождитесь окончания экспорта или отмените его.';return;}$('projectFile').click();};
+  $('projectFile').onchange=async e=>{
+    const file=e.target.files[0];e.target.value='';if(!file)return;
+    if(abort){$('projectStatus').textContent='Дождитесь окончания экспорта или отмените его.';return;}
+    const id=sourceId,rev=projectRevision;let opened=null,committed=false;
+    projectControls(true);$('projectStatus').textContent='Проверяю путешествие, фото и музыку…';
+    try{
+      opened=await window.RSProject.unpack(file);const data=checkProject(opened.data),s=data.state;
+      // Старый валидатор оформления принимает только встроенную картинку логотипа.
+      if(s.logo){const blob=await(await fetch(s.logo.url)).blob();s.logo.url=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});}
+      const settings=await readSettings({format:'route-story-settings',version:1,...s});Object.assign(s,settings);
+      let raw=null;if(data.music.file){raw=await data.music.file.arrayBuffer();const meta=await window.RSAudio.inspect(raw);if(!Number.isFinite(meta.duration)||meta.duration<=0||meta.duration>600)throw new Error('В файле повреждена музыка.');}
+      const type=s.seriesBase.schematic?'story-so-far':s.kind==='long'?'new-viewer':'returning-viewer';
+      window.Director.direct(s.seriesBase,type,{aspect:s.fmt==='v'?'9:16':'16:9'});
+      if(id!==sourceId||rev!==projectRevision||abort)throw new Error('Во время открытия вы изменили работу. Файл не применён — откройте его ещё раз.');
+      play(false);++sourceId;++draftRevision;clearTimeout(draftTimer);clearTimeout(trimTimer);++trimRevision;trimPending=false;clearTimeout(appearanceTimer);clearTimeout(customTimer);farUndo=null;
+      Object.assign(state,Object.fromEntries(projectKeys.map(k=>[k,s[k]])));state.mode='series';photoFiles=data.photos;
+      for(const k of Object.keys(touched))delete touched[k];Object.assign(touched,data.touched);
+      for(const k of ['title','subtitle','startName','endName','note','duration','lang'])if($(k))$(k).value=state.o[k];
+      for(const k of ['showSpeed','showEle'])$(k).checked=!!state.o[k];
+      $('mergeDay').checked=data.merge;$('res').value=data.res;$('mapZoom').value=state.mapZoom;$('videoLength').value=state.videoLength;$('relief').value=state.relief?'on':'off';
+      $('pName').value=state.profile.name;$('pNext').value=state.profile.next;
+      [...$('pMark').children].forEach(b=>b.classList.toggle('on',b.dataset.v===state.profile.mark));
+      [...$('pColor').children].forEach((b,i)=>b.classList.toggle('on',[null,...COLORS][i]===state.profile.color));
+      for(const [box,key] of [['styles','styleId'],['fmt','fmt']])[...$(box).children].forEach(b=>b.classList.toggle('on',(b.dataset.id||b.dataset.v)===state[key]));
+      $('iconLibrary').textContent=window.StyleIcons.familyName(state.styleId);
+      [...$('labelsGrid').querySelectorAll('input')].forEach(i=>i.value=state.labels[i.dataset.k]||'');
+      [...document.querySelectorAll('#shows input,#mapSettings input')].forEach(i=>i.checked=state.show[i.dataset.k]);
+      window.RouteEditor.restore(data.manual.data,data.manual.dirty);$('manualBox').open=data.manual.open;
+      ++musicRevision;++musicVersion;musicLoading=false;musicFileBuf=raw;musicName=data.music.name;state.music=data.music.mode;audioKey='';audioBuf=null;audioJob=null;$('music').value=state.music;$('musicFile').value='';$('musicStatus').textContent=musicName||'Видео будет без музыки.';musicControls();
+      syncAppearance();syncLogo();setKind(state.kind);renderMood();renderNotes();renderPhotos();syncTrim();
+      $('trimBox').hidden=!state.pre||state.pre.files.length!==1;$('continue').hidden=true;
+      $('info').hidden=false;$('info').textContent=`${state.seriesBase.title} · путешествие из файла`;
+      committed=true;projectRelease();projectRelease=opened.release;refreshModes();setMode('series');showErr('');$('projectStatus').textContent='Путешествие открыто: путь, фото, тексты, оформление и музыка восстановлены. Сохраняйте новый файл после изменений.';
+    }catch(err){$('projectStatus').textContent='Не удалось открыть путешествие. '+(err.message||'Проверьте файл.');}
+    finally{if(opened&&!committed)opened.release();projectControls(false);}
+  };
   [...$('tabs').children].forEach(b => { const i = b.querySelector('i'); i.setAttribute('aria-hidden','true'); i.replaceChildren(window.UIIcons.icon(b.dataset.t)); b.setAttribute('aria-controls','t-'+b.dataset.t); });
   $('drop').querySelector('b').prepend(window.UIIcons.icon('upload'));
   $('addNote').prepend(window.UIIcons.icon('plus'));

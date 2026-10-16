@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const {chromium}=createRequire('C:/Users/glina/route-story-spike/package.json')('playwright');
+const b=await chromium.launch({channel:'msedge',headless:true});
+try {
+  const p=await b.newPage();
+  await p.route('https://nominatim.openstreetmap.org/**',r=>r.fulfill({contentType:'application/json',body:'{}'}));
+  await p.goto('http://localhost:4180/');await p.waitForFunction(()=>window.__app?.state.demoDay);
+  await p.setInputFiles('#file','samples/short-section.geojson');
+  await p.waitForFunction(()=>__app.state.seriesBase?.id==='my');
+  await p.waitForFunction(()=>draftStatus.textContent.includes('сохранены'));
+  await p.evaluate(()=>{const save=RSDrafts.save;let first=true;RSDrafts.save=async data=>{if(first){first=false;await new Promise(r=>window.releaseOldDraft=r);}return save(data);};});
+  await p.click('#tabs [data-t="text"]');await p.fill('#note','Старая фраза');
+  await p.waitForFunction(()=>typeof releaseOldDraft==='function');
+  await p.fill('#note','Свежая фраза перед закрытием');
+  await p.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+  const note=()=>p.evaluate(()=>JSON.parse(localStorage.getItem('route-story-my-journey')).notes.at(-1)?.text);
+  assert.equal(await note(),'Свежая фраза перед закрытием','закрытие страницы оставляет старые метаданные, пока фото сохраняются асинхронно');
+  await p.evaluate(()=>releaseOldDraft());await p.waitForFunction(()=>draftStatus.textContent.includes('сохранены'));
+  assert.equal(await note(),'Свежая фраза перед закрытием');
+  await p.reload();await p.waitForFunction(()=>window.__app?.state.demoDay);await p.click('#continue');
+  await p.waitForFunction(()=>__app.state.o.note==='Свежая фраза перед закрытием');
+  await p.waitForFunction(()=>draftStatus.textContent.includes('сохранены'));
+  await p.evaluate(()=>{RSDrafts.save=()=>new Promise(r=>window.holdDraft=r);});
+  await p.click('#tabs [data-t="text"]');await p.fill('#note','Текст новее сохранённых фото');
+  await p.waitForFunction(()=>typeof holdDraft==='function');
+  await p.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+  await p.reload();await p.waitForFunction(()=>window.__app?.state.demoDay);await p.click('#continue');
+  await p.waitForFunction(()=>__app.state.seriesBase?.id==='my');
+  assert.equal(await p.evaluate(()=>__app.state.o.note),'Текст новее сохранённых фото','старый черновик фото перекрыл свежий текст маршрута');
+  console.log('Очередь черновика и немедленное сохранение текста перед закрытием — OK');
+} finally {await b.close();}

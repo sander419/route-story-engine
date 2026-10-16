@@ -9,7 +9,7 @@
 <link rel="preload" href="fonts/dinish.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css?v=10151502">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=10161002">
+<link rel="stylesheet" href="style.css?v=10161003">
 </head>
 <body>
 <header class="top">
@@ -67,6 +67,17 @@
         <button class="chip" id="day47">День из путешествия</button>
         <button class="chip" id="wj">Кругосветка @wahrider</button>
       </div>
+      <details class="look-section" id="projectBox">
+        <summary>Файл путешествия</summary>
+        <div class="settings-body">
+          <p class="hint">Сохраните всё одним файлом: путь, добавленные фото, тексты, оформление и музыку. Откройте его здесь, чтобы продолжить в другом браузере. Файл содержит ваши личные фото и музыку — храните его у себя.</p>
+          <button type="button" class="ghost" id="projectSave">Сохранить путешествие в файл</button>
+          <button type="button" class="ghost" id="projectLoad">Открыть путешествие из файла</button>
+          <input type="file" id="projectFile" accept=".json,application/json" hidden>
+          <p class="hint">Открытие файла заменит текущую работу. Сначала сохраните её, если хотите оставить. До 80 МБ исходных файлов; готовое видео сохраняется отдельно.</p>
+          <small class="hint" id="projectStatus" role="status"></small>
+        </div>
+      </details>
       <details class="look-section" id="manualBox">
         <summary>Свой путь по точкам</summary>
         <div class="manual-editor">
@@ -176,7 +187,7 @@
       <details class="look-section" id="screensBox"><summary>Экраны ролика</summary>
       <div class="settings-body">
         <label class="f">Длина ролика<select id="videoLength"><option value="0">Автоматически</option><option value="20">Короткий · около 20 секунд</option><option value="30">Средний · около 30 секунд</option><option value="45">Длинный · около 45 секунд</option></select></label>
-        <small class="hint">Длина ориентировочная: фото и текст должны успевать читаться. Ручная длительность экранов доступна в режиме «Автоматически». Выбор действует до перезагрузки страницы.</small>
+        <small class="hint">Длина ориентировочная: фото и текст должны успевать читаться. Ручная длительность экранов доступна в режиме «Автоматически». Выбор можно перенести через «Маршрут → Файл путешествия».</small>
         <div class="f">Что показывать в ролике <small class="hint">выключенное не попадёт в кадр</small></div>
         <div class="shows" id="shows"></div>
         <div class="f">Длительность экранов <small class="hint">скрыть лишнее или сделать дольше</small></div>
@@ -190,14 +201,14 @@
         <small class="hint">До 20 МБ и 10 минут. Короткий трек повторяется, начало и конец звучат мягко. Музыка работает в предпросмотре и скачанном ролике.</small>
         <small id="musicStatus" class="hint" role="status">Музыка не выбрана.</small>
         <button type="button" id="musicClear" disabled>Убрать выбранную музыку</button>
-        <small class="hint">Файл остаётся в этом браузере и не отправляется на сервер. После перезагрузки страницы выберите его снова.</small>
+        <small class="hint">Файл остаётся в этом браузере и не отправляется на сервер. Чтобы сохранить его вместе с работой, используйте «Маршрут → Файл путешествия».</small>
       </div>
       </details>
       <details class="look-section" id="mapBox"><summary>Карта</summary>
       <div class="settings-body">
       <div class="shows" id="mapSettings"></div>
       <label class="f">Приближение в видео<select id="mapZoom"><option value="1">Весь маршрут</option><option value="2">Ближе ×2</option><option value="4">Крупно ×4</option></select></label>
-      <small class="hint">При приближении камера следует за движением. Так же будет в готовом ролике. Выбор действует до перезагрузки страницы.</small>
+      <small class="hint">При приближении камера следует за движением. Так же будет в готовом ролике. Выбор можно перенести через «Маршрут → Файл путешествия».</small>
       <small class="hint">Иконки подбираются автоматически · <span id="iconLibrary"></span></small>
       <div id="legacyStickerControls" hidden>
       <div class="f">Настроение <small class="hint">стикеры на обложке, прибытии и в финале</small></div>
@@ -279,9 +290,10 @@
 <script src="src/export.js?v=10161001"></script>
 <script src="src/layers-export.js?v=10141012"></script>
 <script src="src/draft.js?v=10161001"></script>
+<script src="src/project.js?v=10161001"></script>
 <script src="src/ui-icons.js?v=10161001"></script>
 <script src="src/manual-path.js?v=10161002"></script>
-<script src="src/manual-editor.js?v=10161002"></script>
-<script src="src/ui.js?v=10161015"></script>
+<script src="src/manual-editor.js?v=10161003"></script>
+<script src="src/ui.js?v=10161016"></script>
 </body>
 </html>
