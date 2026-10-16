@@ -662,6 +662,7 @@
   state.profile = (() => { try { return { name: '', mark: 'unicycle', color: null, next: '', ...(JSON.parse(localStorage.getItem(PKEY) || '{}')) }; } catch (e) { return { name: '', mark: 'unicycle', color: null, next: '' }; } })();
   if (state.profile.mark === 'auto') state.profile.mark = 'unicycle';
   function profileFor(J, ctxSeg) {
+    if (J.id === 'manual') return { ...state.profile, mark: state.profile.mark || 'unicycle' };
     if (J.schematic) return { name: '@wahrider', mark: 'unicycle', color: HERO_GREEN, next: '' };            // герой вайбатона: Барбос и его зелёный обод
     if (J.id !== 'my') return { name: J.traveler || '', mark: state.profile.mark || 'unicycle', color: state.profile.color, next: state.profile.next };   // пример: знак и цвет — как выбрал пользователь (по умолчанию уницикл)
     const p = state.profile, v = ctxSeg && ctxSeg.avgKmh ? ctxSeg.avgKmh : 0;
@@ -694,7 +695,7 @@
   function buildEpisode(w, h) {
     const inp = seriesInput(), change = inp.change, J1 = applyShow(inp.J), lastSeg = [...J1.days].sort((a, b) => a.day - b.day).pop();
     const J = { ...J1, profile: profileFor(J1, lastSeg) };
-    $('pHint').hidden = J.id === 'my';
+    $('pHint').hidden = J.id === 'my' || J.id === 'manual';
     // фрагмент — короткая серия про сегодняшний участок; вся дорога — сначала весь путь, потом участок; у героя по постам — только трейлер
     state.etype = J.schematic ? 'story-so-far' : state.kind === 'long' ? 'new-viewer' : 'returning-viewer'; $('etype').value = state.etype;
     $('kind').hidden = !!J.schematic;
@@ -741,6 +742,11 @@
         c0.note ? fact(true, 'Фраза дня', `«${c0.note.text}»`) : fact(false, 'Фраза дня', 'не добавлена — шаг «Текст»'),
       ].join('');
     $('etypeBox').hidden = !!J.schematic || J.days.length < 2;   // выбор «для кого серия» имеет смысл только для путешествия из нескольких дней
+    if (J.id === 'manual') {
+      $('headline').innerHTML = `${esc(J.title)}<small>${window.ManualPath.count(J.days.length)} · схема, не GPS · ролик ${Math.round(res.plan.durationSec)} с</small>`;
+      $('change').textContent = `${J.title} · ${window.ManualPath.count(J.days.length)} · схема по вашим отметкам, не GPS`;
+      $('facts').innerHTML = fact(true, 'Ручной путь', `${window.ManualPath.count(J.days.length)} по порядку`) + fact(true, 'Плавное движение', 'промежуточные точки рассчитываются автоматически') + fact(true, 'Схема, не GPS', 'фактические километры и время не выдумываются');
+    }
     const v = window.Director.validate(res.plan, J);
     $('plan').innerHTML = `<div>${res.plan.episodeType} · ${res.plan.durationSec} с · зерно ${res.plan.seed}${res.plan.fallback ? ' · запасной план: ' + res.plan.fallback : ''}${v.ok ? ' · проверка пройдена' : ' · ошибки: ' + v.errors.join('; ')}</div>` +
       res.log.map((l) => `<div class="beat"><b>${NAMES[l.beat] || l.beat}</b>: ${l.selected || '—'}<div class="cand">${l.candidates.map((c) => `<span class="${c.id === l.selected ? 'sel' : ''}">${c.id} ${c.eligible ? c.total : '✕'}</span>`).join(' · ')}</div><div class="cand">${l.reason}</div></div>`).join('') +
@@ -1083,7 +1089,7 @@
     });
   }
   window.RS.setOnTile(() => { dirty = true; });
-  window.VMap.setOnTile(() => { dirty = true; });
+  window.VMap.setOnTile(() => { dirty = true; window.RouteEditor?.redraw(); });
 
   /* ---- звук ---- */
   state.music = 'none'; let musicFileBuf = null, audioKey = '', audioBuf = null, audioJob = null;
@@ -1142,6 +1148,7 @@
     if (!ready()) return;
     const btn = $('export');
     if (abort) { abort.abort(); return; }
+    if ($('manualBox').open && window.RouteEditor?.dirty) { showErr('Сначала нажмите «Показать этот путь в ролике» или закройте редактор пути.'); return; }
     const fmt = state.fmt, append = keepResult, wasHidden = $('result').hidden;
     let completed = false; keepResult = false;
     abort = new AbortController();
@@ -1155,7 +1162,7 @@
       if (state.mode === 'series' && (placesJob || weatherJob)) { $('stage').textContent = 'Ищу города по пути и погоду того дня…'; $('bar').style.width = '2%'; $('prog').setAttribute('aria-valuenow','2'); await Promise.race([Promise.all([placesJob, weatherJob]), new Promise((r) => setTimeout(r, 32000))]); }
       const dur = buildScene(W, H).duration;
       await fontsReady;
-      const slug0 = (state.mode === 'series' && state.lastEp ? `${state.seriesBase.title} день ${state.lastEp.res.plan.episodeNumber} ${state.etype}` : state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
+      const slug0 = (state.mode === 'series' && state.lastEp ? state.seriesBase.id === 'manual' ? `${state.seriesBase.title} путь по точкам` : `${state.seriesBase.title} день ${state.lastEp.res.plan.episodeNumber} ${state.etype}` : state.mode === 'journey' ? state.journeyData.title : (o.title || route.name)).toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || 'route-story';
       const sz = fmt === 'v' ? '9x16' : '16x9';
       if (state.xmode === 'layers') {
         const Ls = { map: $('lyMap').checked, route: $('lyRoute').checked, hud: $('lyHud').checked };
@@ -1205,6 +1212,26 @@
   };
 
   // открыли страницу — сразу играет демо-серия «День 47» (своим GPX её можно заменить)
+  window.RouteEditor = window.ManualEditor.init({
+    current: () => {
+      if (state.seriesBase?.id === 'manual') return state.manualData;
+      const J = isOwn() ? ownToday().J : state.seriesBase;
+      if (!J?.days?.length) throw new Error('Сначала загрузите путь или откройте пример.');
+      const days = [...J.days].sort((a,b)=>a.day-b.day), first=days[0], origin=(J.checkpoints||[]).find(c=>c.kind==='origin'), stops=[];
+      const put=(name,q,country)=>{const p={name:name||`Точка ${stops.length+1}`,lon:((q[0]+180)%360+360)%360-180,lat:q[1],country};if(!stops.length||window.RouteLib.hav(stops.at(-1),p)>1)stops.push(p);};
+      put(first.from||origin?.label||first.to,first.line[0],first.country);
+      days.forEach(d=>put(d.to||d.name,d.line.at(-1),d.country));
+      return window.ManualPath.normalize({title:J.title,stops});
+    },
+    apply: data => {
+      if (abort) throw new Error('Дождитесь окончания экспорта или отмените его.');
+      const J=window.ManualPath.journey(data); queueDraft(true); ++sourceId; clearDayEditor();
+      state.manualData=data; state.seriesBase=J; state.route=null; state.routeIsDemo=false; state.pre=null;
+      $('trimBox').hidden=true; setKind('long'); $('continue').hidden=true; showErr('');
+      $('info').hidden=false; $('info').textContent=`${J.title} · ${window.ManualPath.count(J.days.length)} · схема, не GPS`;
+      refreshModes();setMode('series');play(true);
+    },
+  });
   [...$('tabs').children].forEach(b => { const i = b.querySelector('i'); i.setAttribute('aria-hidden','true'); i.replaceChildren(window.UIIcons.icon(b.dataset.t)); b.setAttribute('aria-controls','t-'+b.dataset.t); });
   $('drop').querySelector('b').prepend(window.UIIcons.icon('upload'));
   $('addNote').prepend(window.UIIcons.icon('plus'));

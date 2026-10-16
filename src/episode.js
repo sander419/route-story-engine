@@ -88,6 +88,8 @@
     const P = (d) => d.line.map(([lo, la]) => [px(lo), py(la)]);
     const dayPts = days.map((d) => ({ day: d.day, pts: P(d), brk: new Set(d.breaks || []) }));   // brk — разрывы записи: через них не считаем длину и не рисуем
     const todayPts = P(today), todayBrk = new Set(today.breaks || []);
+    const manual = journey.manualPath, manualProgress = f => { f=clamp(f,0,1); return f*f*(3-2*f); };
+    const manualSet = manual ? { pts:manual.line.map(([lo,la])=>[px(lo),py(la)]),cum:manual.distances,brk:new Set(),today:true } : null;
     const past = dayPts.filter((d) => d.day < today.day);
     const pastFlat = past.flatMap((d) => d.pts);
     const pastDayAt = []; past.forEach((d) => d.pts.forEach(() => pastDayAt.push(d.day)));
@@ -628,7 +630,7 @@
       }
       LT_NO_SCRIM = TR; if (LY.hud) hud(ctx, t, s, su, lt, TR);
       }
-      if (journey.schematic) T(ctx, 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: J ? J.footerColor(s) : S.dim, align: 'center', alpha: 0.75, shadow: false });
+      if (journey.schematic) T(ctx, manual ? 'Схема по вашим точкам, пунктир — не GPS-трек' : 'Схема по постам канала, пунктир — не GPS-трек', W / 2, H - (S.paper ? 70 : 46) * u, { size: 18, weight: 600, color: J ? J.footerColor(s) : S.dim, align: 'center', alpha: 0.75, shadow: false });
       const SIGM = MARK && MARK !== 'dot';
       if (LY.hud && !J && (SIGM || NAME) && shots.length > 1 && t >= shots[0].t1 - 0.3) {   // в «Дневнике» имя и день — в шапке страницы
         const sa = smooth((t - (shots[0].t1 - 0.3)) / 0.8), onPh = s.recipe === 'photo-reveal' || s.recipe === 'highlights-reel' || (J && J.isDark(s));
@@ -821,6 +823,7 @@
         get WX() { return WX; }, weatherIcon: () => wxImg && wxImg.ok ? wxImg.img : null, at: shotAt,
         run: (s) => { const i = shots.indexOf(s), f = famOf(s); let a = i, b = i; while (a > 0 && famOf(shots[a - 1]) === f) a--; while (b < shots.length - 1 && famOf(shots[b + 1]) === f) b++; return { t0: shots[a].t0, t1: shots[b].t1, shots: shots.slice(a, b + 1) }; },
         todaySet: () => ({ pts: todayPts, brk: todayBrk, cum: todayCum, today: true }),
+        manualSet, manualProgress,
         allSets: () => dayPts.map((d) => ({ pts: d.pts, brk: d.brk, cum: d.day === today.day ? todayCum : null, today: d.day === today.day })),
         reveal: (t) => todayReveal(t),
         wxPackId,
@@ -854,11 +857,12 @@
             case 'distance-counter': { const km = p.newKm * sine(lt / 1.4); return { kicker: 'за день', big: '+' + fmtN(km, km < 100 ? 1 : 0) + ' км', sub: 'всего ' + fmtN(p.totalKm) + ' км' }; }
             case 'overview-to-detail': return { kicker: 'сегодня · день ' + today.day, big: today.date ? new Date(today.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' }) : 'новый день', sub: route2 };
             case 'progress-overview': return { kicker: 'путь до сегодня', big: fmtN(p.totalKm) + ' км', sub: `${p.days} ${daysWord(p.days)}${origin ? ' · от ' + origin.label : ''}` };
-            case 'journey-recap': { const r = recapState(s, lt / dur), st = s.stops[r.k]; return st ? { kicker: DL(st.h.day), big: st.h.label, sub: (journey.dayNotes && journey.dayNotes[st.h.day]) || '' } : null; }
+            case 'journey-recap': { if(manual) { const f=manualProgress(lt/dur), pos=window.ManualPath.at(manual,f); return {kicker:'ПУТЬ ПО ТОЧКАМ',big:manual.stops.length<=12?manual.stops[pos.target].name:`${Math.round(f*100)}% пути`,sub:`${window.ManualPath.count(manual.stops.length)} · схема, не GPS`}; } const r = recapState(s, lt / dur), st = s.stops[r.k]; return st ? { kicker: DL(st.h.day), big: st.h.label, sub: (journey.dayNotes && journey.dayNotes[st.h.day]) || '' } : null; }
             default: return null;
           }
         },
         finale: (s, p) => {
+          if (manual) return {kicker:journey.title,big:`${window.ManualPath.count(manual.stops.length)}`,sub:'Схема по вашим отметкам, не GPS',next:''};
           if (s.recipe === 'day-summary') {
             const head = loopDay ? route2T() || 'кольцо' : p.from && p.to && p.from !== p.to ? `${p.from} → ${p.to}` : p.to || p.from || p.name || 'итог';
             return { kicker: head, big: fmtN(p.km, p.km < 100 ? 1 : 0) + ' км', sub: [p.time, p.gain ? '+' + fmtN(p.gain) + ' м' : null, p.time || p.gain ? null : dateRu(p.date)].filter(Boolean).join(' · '), next: NEXT() };

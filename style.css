@@ -70,6 +70,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .photo-position{display:block;margin-top:12px;font-size:var(--text-sm)}
 .photo-position input[type=range]{display:block;width:100%;min-height:44px}
 .photo-position output{font-size:var(--text-xs);color:var(--dim)}
+.manual-editor{display:grid;gap:12px;padding-top:16px}
+.manual-actions{display:flex;flex-wrap:wrap;gap:8px}
+.manual-actions button{flex:1 1 auto}
+#manualMap{display:block;width:100%;height:300px;border:1px solid var(--line);border-radius:var(--radius-md);touch-action:none;cursor:grab;background:var(--bg)}
+#manualMap.adding{cursor:crosshair}
+.manual-search{display:flex;align-items:end;gap:8px}
+.manual-search label{flex:1;min-width:0;margin:0}
+.manual-results{display:grid;gap:8px}
+.manual-results button{text-align:left}
+#manualCount{font-weight:400;color:var(--dim)}
 .tabs button.on{background:var(--acc);color:var(--acc-ink)}
 .tab{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4)}
 .lead{margin:0;color:var(--dim);font-size:var(--text-sm)}

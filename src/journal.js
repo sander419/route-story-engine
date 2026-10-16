@@ -355,7 +355,7 @@
       if (CH.circle) { ctx.save(); ctx.globalAlpha *= f(0.1, 0.8); ctx.fillStyle = AP.accent; ctx.beginPath(); ctx.arc(W - px(10), px(portrait ? 250 : 200), px(portrait ? 360 : 320), 0, 6.2832); ctx.fill(); ctx.restore(); }
       if (CH.stamp && E.today && E.today.day != null) {
         ctx.save(); ctx.globalAlpha *= f(1.0, 0.5); ctx.translate(W - px(portrait ? 230 : 300), portrait ? H - px(470) : H / 2); ctx.rotate(-0.21); ctx.strokeStyle = AP.accent; ctx.lineWidth = px(7); ctx.beginPath(); ctx.arc(0, 0, px(118), 0, 6.2832); ctx.stroke(); ctx.lineWidth = px(3); ctx.beginPath(); ctx.arc(0, 0, px(98), 0, 6.2832); ctx.stroke();
-        text(ctx, 'ДЕНЬ', 0, -px(18), { size: 34, weight: 600, ls: .14, color: AP.accent, align: 'center' }); text(ctx, String(E.today.day), 0, px(52), { size: 78, fam: HEAD, weight: HW, color: AP.accent, align: 'center' }); ctx.restore();
+        text(ctx, E.manualSet ? 'ТОЧЕК' : 'ДЕНЬ', 0, -px(18), { size: 34, weight: 600, ls: .14, color: AP.accent, align: 'center' }); text(ctx, String(E.today.day), 0, px(52), { size: 78, fam: HEAD, weight: HW, color: AP.accent, align: 'center' }); ctx.restore();
       }
       const km = p && p.km ? Math.round(p.km) : null, items = [km ? [km + ' км', 'дистанция'] : null, p && p.time ? [p.time, 'в пути'] : null, p && p.gain ? ['+' + p.gain + ' м', 'набор высоты'] : null, p && p.maxEle ? [p.maxEle + ' м', 'высшая точка'] : null].filter(Boolean).slice(0, 4);
       const top = px(portrait ? 300 : 230);
@@ -464,9 +464,9 @@
     function roadScene(ctx, s, p, t, lt, dur, jr, rs) {
       const c = L.road, env = rs.env, a = env;
       const zone = roadZone();   // сюда должен поместиться маршрут: не под заголовком и не под панелью
-      const sets = jr ? E.allSets() : [E.todaySet()];
-      const tr = jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);
-      const ropts = { lt: 99, bleed: zone, mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
+      const sets = E.manualSet ? [E.manualSet] : jr ? E.allSets() : [E.todaySet()];
+      const tr = E.manualSet ? E.manualProgress(lt / dur) : jr ? easeOut(lt / (dur * 0.6)) : s.recipe === 'route-reveal' ? smooth(lt / (dur * 0.9)) : E.reveal(t, s);
+      const ropts = { lt: 99, bleed: zone, mark: s.recipe === 'high-point' && s.hp ? s.hp : null, stop: !E.manualSet && s.recipe === 'journey-recap' ? E.recapPoint(s, lt, dur) : null };
       const run = E.run(s); let flatUsed = false; const ok = (E.relief !== false && reliefView(ctx, jr, sets, tr, t, a, ropts, c)) || (flatUsed = true, reliefView(ctx, jr, sets, tr, t, a, { ...ropts, flat: true, prog: (t - run.t0) / Math.max(0.1, run.t1 - run.t0) }, c));
       if (!ok) {
         const [mx, my, mw, mh] = box(c.map); drawCard(ctx, card(mw, mh, { seed: 5, grid: true }), mx, my, mw, mh, a, 0, 0);

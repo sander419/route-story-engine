@@ -9,7 +9,7 @@
 <link rel="preload" href="fonts/dinish.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css?v=10151502">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=10161001">
+<link rel="stylesheet" href="style.css?v=10161002">
 </head>
 <body>
 <header class="top">
@@ -67,6 +67,27 @@
         <button class="chip" id="day47">День из путешествия</button>
         <button class="chip" id="wj">Кругосветка @wahrider</button>
       </div>
+      <details class="look-section" id="manualBox">
+        <summary>Свой путь по точкам</summary>
+        <div class="manual-editor">
+          <p class="hint">Отмечайте места в порядке поездки. Соединения — схема, не GPS и не маршрут по дорогам.</p>
+          <div class="manual-actions"><button id="manualCopy" type="button">Взять текущий путь</button><button id="manualNew" type="button">Новый путь</button></div>
+          <label class="f">Название путешествия<input id="manualTitle" maxlength="80" value="Моё путешествие"></label>
+          <div class="manual-actions"><button id="manualAdd" type="button" aria-pressed="false">Поставить точку</button><button id="manualZoomIn" type="button" aria-label="Приблизить карту пути">+</button><button id="manualZoomOut" type="button" aria-label="Отдалить карту пути">−</button><button id="manualFit" type="button">Весь путь</button></div>
+          <canvas id="manualMap" width="720" height="320" tabindex="0" aria-label="Карта пути. Стрелки перемещают карту, плюс и минус меняют масштаб. В режиме добавления Enter ставит точку в центре."></canvas>
+          <small class="hint">Перетаскивайте карту и точки. Чтобы добавить место, нажмите «Поставить точку», затем на карту. Карта © OpenStreetMap, OpenFreeMap.</small>
+          <div class="manual-search"><label class="f">Найти город<input id="manualQuery" maxlength="100" placeholder="Город и страна"></label><button id="manualSearch" type="button">Найти</button></div>
+          <div id="manualResults" class="manual-results"></div>
+          <label class="f">Точки по порядку <output id="manualCount">0 / 2000</output><select id="manualPoint" aria-label="Выбрать точку пути"></select></label>
+          <label class="f">Название выбранной точки<input id="manualName" maxlength="80" disabled></label>
+          <div class="two"><label class="f">Широта<input id="manualLat" type="number" min="-85" max="85" step="any" disabled></label><label class="f">Долгота<input id="manualLon" type="number" min="-180" max="180" step="any" disabled></label></div>
+          <div class="manual-actions"><button id="manualUp" type="button" disabled>Раньше</button><button id="manualDown" type="button" disabled>Позже</button><button id="manualDelete" type="button" disabled>Убрать точку</button><button id="manualUndo" type="button" disabled>Вернуть удалённую</button></div>
+          <button class="go" id="manualApply" type="button" disabled>Показать этот путь в ролике</button>
+          <p id="manualStatus" class="hint" role="status">Для ролика нужны хотя бы две разные точки.</p>
+          <div class="manual-actions"><button id="manualSave" type="button">Сохранить путь в файл</button><button id="manualOpen" type="button">Загрузить путь из файла</button><input id="manualFile" type="file" accept=".json,application/json" hidden></div>
+          <small class="hint">Перед закрытием сохраните путь в файл. В следующий раз загрузите его и добавьте новые точки. Фото и GPS-треки в этот файл не входят.</small>
+        </div>
+      </details>
       <div class="trim" id="trimBox" hidden>
         <div class="f">Обрезать трек <small class="hint">уберите дорогу до старта и стоянку после финиша</small></div>
         <label class="rng">С начала <input type="range" id="trimA" min="0" max="45" step="0.5" value="0"><output id="trimAo">0 км</output></label>
@@ -239,14 +260,16 @@
 <script src="src/appearance.js?v=10161001"></script>
 <script src="src/style-icon-data.js?v=10151503"></script>
 <script src="src/style-icons.js?v=10151503"></script>
-<script src="src/journal.js?v=10161012"></script>
-<script src="src/episode.js?v=10151640"></script>
+<script src="src/journal.js?v=10161013"></script>
+<script src="src/episode.js?v=10161001"></script>
 <script src="src/exif.js?v=10141012"></script>
 <script src="src/audio.js?v=10141012"></script>
 <script src="src/export.js?v=10141012"></script>
 <script src="src/layers-export.js?v=10141012"></script>
 <script src="src/draft.js?v=10161001"></script>
 <script src="src/ui-icons.js?v=10161001"></script>
-<script src="src/ui.js?v=10161011"></script>
+<script src="src/manual-path.js?v=10161002"></script>
+<script src="src/manual-editor.js?v=10161002"></script>
+<script src="src/ui.js?v=10161012"></script>
 </body>
 </html>
