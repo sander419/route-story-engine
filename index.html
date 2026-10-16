@@ -183,6 +183,16 @@
         <div class="screens" id="screens"></div>
       </div>
       </details>
+      <details class="look-section" id="musicBox"><summary>Своя музыка</summary>
+      <div class="settings-body">
+        <label class="f">Звук ролика<select id="music"><option value="none" selected>Без музыки</option><option value="own">Своя музыка</option></select></label>
+        <label class="f">Выбрать аудиофайл<input type="file" id="musicFile" accept="audio/*,.mp3,.wav,.m4a,.ogg,.aac,.flac"></label>
+        <small class="hint">До 20 МБ и 10 минут. Короткий трек повторяется, начало и конец звучат мягко. Музыка работает в предпросмотре и скачанном ролике.</small>
+        <small id="musicStatus" class="hint" role="status">Музыка не выбрана.</small>
+        <button type="button" id="musicClear" disabled>Убрать выбранную музыку</button>
+        <small class="hint">Файл остаётся в этом браузере и не отправляется на сервер. После перезагрузки страницы выберите его снова.</small>
+      </div>
+      </details>
       <details class="look-section" id="mapBox"><summary>Карта</summary>
       <div class="settings-body">
       <div class="shows" id="mapSettings"></div>
@@ -223,8 +233,6 @@
     <div class="facts-title"></div><div id="facts" class="facts"></div>
     <select id="etype"><option value="returning-viewer" selected></option><option value="new-viewer"></option><option value="story-so-far"></option></select>
     <div id="etypeBox"></div>
-    <select id="music"><option value="none" selected></option><option value="own"></option></select>
-    <input type="file" id="musicFile" accept="audio/*">
     <select id="relief"><option value="on" selected></option><option value="off"></option></select>
     <select id="res"><option value="hd" selected>Full HD (1080)</option><option value="sd">HD (720)</option></select>
     <select id="lang"><option value="ru">Русский</option><option value="en">English</option></select>
@@ -267,13 +275,13 @@
 <script src="src/journal.js?v=10161014"></script>
 <script src="src/episode.js?v=10161003"></script>
 <script src="src/exif.js?v=10141012"></script>
-<script src="src/audio.js?v=10141012"></script>
-<script src="src/export.js?v=10141012"></script>
+<script src="src/audio.js?v=10161001"></script>
+<script src="src/export.js?v=10161001"></script>
 <script src="src/layers-export.js?v=10141012"></script>
 <script src="src/draft.js?v=10161001"></script>
 <script src="src/ui-icons.js?v=10161001"></script>
 <script src="src/manual-path.js?v=10161002"></script>
 <script src="src/manual-editor.js?v=10161002"></script>
-<script src="src/ui.js?v=10161014"></script>
+<script src="src/ui.js?v=10161015"></script>
 </body>
 </html>

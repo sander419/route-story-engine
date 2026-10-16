@@ -15,10 +15,10 @@ try {
       styles:[...document.querySelectorAll('#styles button')].map(e=>{const r=e.getBoundingClientRect();return [r.top,r.bottom];}),
       scroll:document.documentElement.scrollWidth > document.documentElement.clientWidth,
     }));
-    if (first.sections.join('|') !== 'Цвета и шрифты|Надписи|Логотип|Экраны ролика|Карта') throw new Error(`${name}: неверные группы ${first.sections}`);
+    if (first.sections.join('|') !== 'Цвета и шрифты|Надписи|Логотип|Экраны ролика|Своя музыка|Карта') throw new Error(`${name}: неверные группы ${first.sections}`);
     if (mobile && (first.open.length || first.styles.some(([top,bottom])=>top<0 || bottom>height))) throw new Error(`${name}: до выбора стиля нужна прокрутка ${JSON.stringify(first)}`);
     if (first.scroll) throw new Error(`${name}: горизонтальная прокрутка`);
-    for (const id of ['appearanceBox','labelsBox','logoBox','screensBox','mapBox']) {
+    for (const id of ['appearanceBox','labelsBox','logoBox','screensBox','musicBox','mapBox']) {
       await page.evaluate(id=>{for(const e of document.querySelectorAll('#t-look > details'))e.open=e.id===id;},id);
       const small = await page.evaluate(()=>[...document.querySelectorAll('#t-look button,#t-look summary')].filter(e=>e.getClientRects().length).filter(e=>{const r=e.getBoundingClientRect();return r.width<44 || r.height<44;}).map(e=>e.textContent.trim().slice(0,30)));
       if (small.length) throw new Error(`${name}/${id}: мелкие кнопки ${small}`);
@@ -29,7 +29,7 @@ try {
     await page.evaluate(mobile=>{for(const e of document.querySelectorAll('#t-look > details'))e.open=!mobile && e.id==='appearanceBox';document.getElementById('tabs').scrollIntoView({block:'start'});},mobile);
     await page.screenshot({path:`out/look-${name}.png`});
     if(errors.length)throw new Error(errors.join('\n'));
-    console.log('OK',name,'стиль без прокрутки; 5 групп, кнопки ≥44×44, выбор карты работает');
+    console.log('OK',name,'стиль без прокрутки; 6 групп, кнопки ≥44×44, выбор карты работает');
     await page.close();
   }
 } finally {await browser.close();}

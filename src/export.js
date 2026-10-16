@@ -53,8 +53,8 @@
     const bitrate = Math.round(W * H * fps * 0.11);
     const cfg = await pickCodec(W, H, fps, bitrate);
 
-    if (cfg && window.Mp4Muxer) {
-      const withAudio = !!(audio && window.RSAudio && (await window.RSAudio.supported()));
+    if (cfg && window.Mp4Muxer && (!audio || (window.RSAudio && await window.RSAudio.supported()))) {
+      const withAudio = !!audio;
       const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H }, audio: withAudio ? { codec: 'aac', numberOfChannels: 2, sampleRate: window.RSAudio.SR } : undefined, fastStart: 'in-memory' });
       if (withAudio) { onStage('Записываю звук…', 0); await window.RSAudio.encodeInto(muxer, audio); }
       let encErr = null;
@@ -78,15 +78,19 @@
 
     // запасной путь: запись в реальном времени
     const safari = /^((?!chrome|chromium|android|edg).)*safari/i.test(navigator.userAgent);   // Safari/iPhone умеет MP4, а не WebM
-    const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1.42E01E', 'video/mp4'];
+    const mimes = audio ? ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'] : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1.42E01E', 'video/mp4'];
     const mime = (safari ? [...mimes.slice(3), ...mimes.slice(0, 3)] : mimes).find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
     if (!mime) throw new Error('Браузер не умеет записывать видео. Откройте страницу в Chrome или Edge.');
     const stream = cv.captureStream(fps);
-    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrate });
+    let audioCtx=null,audioSrc=null,rec=null;
+    try {
+    if(audio){audioCtx=new AudioContext({sampleRate:audio.sampleRate});const dest=audioCtx.createMediaStreamDestination();audioSrc=audioCtx.createBufferSource();audioSrc.buffer=audio;audioSrc.connect(dest);for(const track of dest.stream.getAudioTracks())stream.addTrack(track);await audioCtx.resume();}
+    rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrate });
     const chunks = [];
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     const stopped = new Promise((r) => (rec.onstop = r));
     rec.start(250);
+    if(audioSrc)audioSrc.start();
     const t0 = performance.now();
     for (;;) {
       if (signal && signal.aborted) { rec.stop(); throw new Error('Отменено'); }
@@ -101,6 +105,7 @@
     rec.stop(); await stopped;
     const isMp4 = /mp4/.test(mime);
     return { blob: new Blob(chunks, { type: isMp4 ? 'video/mp4' : 'video/webm' }), ext: isMp4 ? 'mp4' : 'webm', codec: mime };
+    } finally {if(rec&&rec.state!=='inactive')rec.stop();if(audioSrc){try{audioSrc.stop();}catch(e){/* уже завершён */}}if(audioCtx)await audioCtx.close().catch(()=>{});for(const track of stream.getTracks())track.stop();}
   }
 
   window.RSExport = { exportVideo, prefetch };

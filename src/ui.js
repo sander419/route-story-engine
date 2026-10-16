@@ -1097,12 +1097,16 @@
   window.VMap.setOnTile(() => { dirty = true; window.RouteEditor?.redraw(); });
 
   /* ---- звук ---- */
-  state.music = 'none'; let musicFileBuf = null, audioKey = '', audioBuf = null, audioJob = null;
+  state.music = 'none'; let musicFileBuf = null, audioKey = '', audioBuf = null, audioJob = null, musicRevision=0, musicVersion=0, musicLoading=false, musicName='';
+  function musicControls(busy=false){$('music').disabled=$('musicFile').disabled=busy;$('musicClear').disabled=busy||!musicFileBuf;}
+  function clearMusicError(){if(/музык|аудиофайл/i.test($('err').textContent))showErr('');}
   async function audioFor(sc) {
-    if (!sc || state.music !== 'own' || !musicFileBuf || !window.RSAudio) return null;
-    const key = 'own|' + sc.duration + '|' + musicFileBuf.byteLength;
+    if (!sc || state.music !== 'own') return null;
+    if(musicLoading)throw new Error('Дождитесь загрузки музыки.');
+    if(!musicFileBuf||!window.RSAudio)throw new Error('Выберите аудиофайл для своей музыки.');
+    const version=musicVersion,file=musicFileBuf,key = 'own|' + sc.duration + '|' + version;
     if (key === audioKey && audioBuf) return audioBuf;
-    audioBuf = await window.RSAudio.fromFile(musicFileBuf, sc.duration); audioKey = key; return audioBuf;
+    const buf=await window.RSAudio.fromFile(file, sc.duration);if(version===musicVersion){audioBuf=buf;audioKey=key;}return buf;
   }
   async function syncAudio() {
     if (!playing || !scene) { window.RSAudio && window.RSAudio.stop(); return; }
@@ -1111,8 +1115,16 @@
     if (job !== audioJob || !playing || sc !== scene) return;
     if (buf) window.RSAudio.playAt(buf, t); else window.RSAudio.stop();
   }
-  $('music').onchange = () => { state.music = $('music').value; if (state.music === 'own' && !musicFileBuf) $('musicFile').click(); audioKey = ''; syncAudio(); };
-  $('musicFile').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { musicFileBuf = await f.arrayBuffer(); await window.RSAudio.fromFile(musicFileBuf, 1); } catch (er) { musicFileBuf = null; showErr('Не получилось прочитать музыку: ' + (er.message || er)); } audioKey = ''; syncAudio(); };
+  $('music').onchange = () => { ++musicRevision;musicLoading=false;state.music = $('music').value;clearMusicError();audioKey = ''; $('musicStatus').textContent=state.music==='none'?'Видео будет без музыки.':musicName||'Выберите аудиофайл ниже.';syncAudio(); };
+  $('musicFile').onchange = async e => {
+    const f=e.target.files[0];if(!f)return;const rev=++musicRevision;musicLoading=true;$('musicStatus').textContent='Читаю музыку…';
+    try {if(f.size>20*1024*1024)throw new Error('Выберите файл до 20 МБ.');const raw=await f.arrayBuffer();if(rev!==musicRevision)return;
+      const meta=await window.RSAudio.inspect(raw);if(rev!==musicRevision)return;if(!Number.isFinite(meta.duration)||meta.duration<=0||meta.duration>600)throw new Error('Выберите трек не длиннее 10 минут.');
+      musicFileBuf=raw;musicName=f.name;++musicVersion;audioKey='';audioBuf=null;state.music='own';$('music').value='own';$('musicStatus').textContent=`${f.name} · ${Math.round(meta.duration)} с`;clearMusicError();
+    } catch(er){if(rev===musicRevision){e.target.value='';showErr('Не получилось прочитать музыку: '+(er.message||er));$('musicStatus').textContent=musicName?`Прежняя музыка сохранена: ${musicName}`:'Музыка не выбрана. Можно выбрать другой файл.';}}
+    finally{if(rev===musicRevision){musicLoading=false;musicControls();syncAudio();}}
+  };
+  $('musicClear').onclick=()=>{++musicRevision;++musicVersion;musicLoading=false;musicFileBuf=null;musicName='';audioKey='';audioBuf=null;state.music='none';$('music').value='none';$('musicFile').value='';$('musicStatus').textContent='Музыка убрана.';clearMusicError();window.RSAudio.stop();musicControls();};
   document.addEventListener('pointerdown', () => { if (playing) syncAudio(); }, { once: true });   // браузер разрешает звук только после действия пользователя
 
   function play(on) { playing = on; $('play').replaceChildren(window.UIIcons.icon(on ? 'pause' : 'play')); $('play').setAttribute('aria-label', on ? 'Пауза' : 'Играть'); last = performance.now(); syncAudio(); }
@@ -1154,8 +1166,11 @@
     const btn = $('export');
     if (abort) { abort.abort(); return; }
     if ($('manualBox').open && window.RouteEditor?.dirty) { showErr('Сначала нажмите «Показать этот путь в ролике» или закройте редактор пути.'); return; }
+    if(musicLoading){showErr('Дождитесь загрузки музыки.');return;}
+    if(state.music==='own'&&!musicFileBuf){showErr('Выберите аудиофайл или вариант «Без музыки».');return;}
     const fmt = state.fmt, append = keepResult, wasHidden = $('result').hidden, selectedLength=state.videoLength;
     $('videoLength').disabled=true;
+    musicControls(true);
     let completed = false; keepResult = false;
     abort = new AbortController();
     play(false);
@@ -1192,7 +1207,7 @@
         window.__lastLayers = links;
         return;
       }
-      const audio = await audioFor(buildScene(W, H)).catch(() => null);
+      const audio = await audioFor(buildScene(W, H));
       const res = await window.RSExport.exportVideo({ audio,
         makeScene: (w, h) => buildScene(w, h),
         W, H, fps: 30, duration: dur, signal: abort.signal,
@@ -1213,7 +1228,7 @@
       if (!/Отменено/.test(e.message)) showErr('Экспорт не удался: ' + (e.message || e));
     } finally {
       if (!completed) $('result').hidden = wasHidden;
-      abort = null; $('videoLength').disabled=false; btn.textContent = exportLabel(); $('prog').hidden = true;
+      abort = null; $('videoLength').disabled=false; musicControls(); btn.textContent = exportLabel(); $('prog').hidden = true;
     }
   };
 

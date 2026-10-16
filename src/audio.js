@@ -2,12 +2,18 @@
    Кодирование — WebCodecs AudioEncoder (AAC) прямо в MP4. Без своего файла ролик без звука. */
 (function () {
   const SR = 48000;
+  const decoded = new WeakMap();
+  function decode(file) {
+    if (!decoded.has(file)) decoded.set(file,(async()=>{const ctx=new AudioContext({sampleRate:SR});try{return await ctx.decodeAudioData(file.slice(0));}finally{await ctx.close().catch(()=>{});}})());
+    return decoded.get(file);
+  }
+  async function inspect(file) {const b=await decode(file);return {duration:b.duration};}
 
   /* ---- своя музыка: декодируем, подрезаем под длину ролика, мягко гасим конец ---- */
   async function fromFile(arrayBuffer, duration) {
-    const dec = await new AudioContext({ sampleRate: SR }).decodeAudioData(arrayBuffer.slice(0));
+    const dec = await decode(arrayBuffer);
     const ctx = new OfflineAudioContext(2, Math.ceil(duration * SR), SR);
-    const s = ctx.createBufferSource(); s.buffer = dec;
+    const s = ctx.createBufferSource(); s.buffer = dec; s.loop = dec.duration < duration;
     const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, 0); g.gain.exponentialRampToValueAtTime(0.9, 0.6); g.gain.setValueAtTime(0.9, Math.max(0.7, duration - 2.5)); g.gain.linearRampToValueAtTime(0.0001, duration);
     s.connect(g).connect(ctx.destination); s.start(0);
     return ctx.startRendering();
@@ -49,5 +55,5 @@
   }
   function stop() { try { if (src) src.stop(); } catch (e) { /* уже остановлен */ } src = null; }
 
-  window.RSAudio = { fromFile, encodeInto, supported, playAt, stop, SR };
+  window.RSAudio = { fromFile, inspect, encodeInto, supported, playAt, stop, SR };
 })();
